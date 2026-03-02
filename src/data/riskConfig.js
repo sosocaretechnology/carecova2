@@ -59,12 +59,8 @@ export const DEFAULT_RISK_CONFIG = {
         { label: '6–12 months', min: 6, max: 12 },
     ],
 
-    // Fees per tenor (flat fee percentage on top of interest)
-    feesPerTenor: {
-        3: 0.02,
-        6: 0.015,
-        12: 0.01,
-    },
+    // Commissions
+    salesCommissionPct: 0.02,   // 2% for sales
 }
 
 export function getRiskConfig() {

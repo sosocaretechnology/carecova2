@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/useAuth'
 import AdminSidebar from './AdminSidebar'
 
 export default function AdminLayout() {
-    const { isAuthenticated, loading, logout } = useAuth()
+    const { isAuthenticated, session, loading, logout } = useAuth()
 
     if (loading) {
         return <div className="admin-loading">Loading CareCova Admin...</div>
@@ -20,8 +20,8 @@ export default function AdminLayout() {
                 <header className="admin-topbar">
                     <div className="admin-topbar-title">Medical Financing Admin</div>
                     <div className="admin-topbar-actions">
-                        <span className="admin-user-badge">CA</span>
-                        <span>Credit Admin</span>
+                        <span className="admin-user-badge">{session?.name?.split(' ').map(n => n[0]).join('')}</span>
+                        <span className="capitalize">{session?.name} ({session?.role})</span>
                     </div>
                 </header>
                 <main className="admin-main-content">

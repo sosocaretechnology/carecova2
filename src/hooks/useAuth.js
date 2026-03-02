@@ -32,6 +32,7 @@ export const useAuth = () => {
 
   return {
     isAuthenticated,
+    session: adminService.getSession(),
     loading,
     login,
     logout,

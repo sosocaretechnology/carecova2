@@ -45,6 +45,32 @@ export default function RulesConfig() {
 
             <div className="grid grid-cols-2 gap-4 mt-4" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 <div className="detail-card">
+                    <h2>Commercial & Commissions</h2>
+                    <p className="text-sm text-muted mb-4">Payouts and revenue share parameters.</p>
+
+                    <div className="input-group mb-4">
+                        <label className="input-label">Sales Commission (%)</label>
+                        <input
+                            type="number"
+                            className="input"
+                            value={config.salesCommissionPct * 100}
+                            onChange={e => handleChange('salesCommissionPct', e.target.value / 100)}
+                        />
+                        <div className="text-xs text-muted mt-1">Percentage earned by Sales officers on successful loan disbursements.</div>
+                    </div>
+
+                    <div className="input-group mb-4">
+                        <label className="input-label">Base Interest Rate (%)</label>
+                        <input
+                            type="number"
+                            className="input"
+                            value={config.interestRate * 100}
+                            onChange={e => handleChange('interestRate', e.target.value / 100)}
+                        />
+                    </div>
+                </div>
+
+                <div className="detail-card">
                     <h2>Affordability & Risk Thresholds</h2>
                     <p className="text-sm text-muted mb-4">These values directly impact the Affordability Checker tags and internal risk badges.</p>
 

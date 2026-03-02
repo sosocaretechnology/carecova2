@@ -1,11 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 import { adminService } from '../../services/adminService'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
 import StatusBadge from '../../components/StatusBadge'
+import { Search } from 'lucide-react'
 
 export default function Applications() {
     const navigate = useNavigate()
+    const { session } = useAuth()
     const [loading, setLoading] = useState(true)
     const [loans, setLoans] = useState([])
     const [searchTerm, setSearchTerm] = useState('')
@@ -14,6 +17,7 @@ export default function Applications() {
         sector: 'all',
         risk: 'all',
         dateRange: 'all',
+        assignment: session?.role === 'sales' ? 'my_portfolio' : 'all',
     })
 
     useEffect(() => {
@@ -41,12 +45,20 @@ export default function Applications() {
 
     const filteredLoans = useMemo(() => {
         return loans.filter(loan => {
+            // Portfolio / Assignment Filter
+            if (session?.role === 'sales') {
+                if (filters.assignment === 'my_portfolio' && loan.assignedTo !== session.username) return false
+                if (filters.assignment === 'unassigned' && loan.assignedTo !== null) return false
+            }
+
             // Search
             const searchStr = `${loan.fullName} ${loan.patientName} ${loan.id} ${loan.email} ${loan.phone}`.toLowerCase()
             if (searchTerm && !searchStr.includes(searchTerm.toLowerCase())) return false
 
             // Filters
             if (filters.status !== 'all' && loan.status !== filters.status) return false
+
+            // ... (rest of filtering logic remains same)
 
             if (filters.sector !== 'all') {
                 if (filters.sector === 'government' && loan.employmentSector !== 'government') return false
@@ -109,17 +121,30 @@ export default function Applications() {
             </div>
 
             <div className="admin-toolbar">
-                <div className="admin-search-box">
+                <div className="admin-search-wrapper flex-1">
+                    <Search className="search-icon" size={18} />
                     <input
                         type="text"
                         placeholder="Search by name, ID, phone..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="admin-input"
+                        className="admin-search-input"
                     />
                 </div>
 
                 <div className="admin-filters">
+                    {session?.role === 'sales' && (
+                        <select
+                            value={filters.assignment}
+                            onChange={(e) => handleFilterChange('assignment', e.target.value)}
+                            className="admin-select highlight"
+                        >
+                            <option value="my_portfolio">My Portfolio</option>
+                            <option value="unassigned">Open Requests</option>
+                            <option value="all">All Applications</option>
+                        </select>
+                    )}
+
                     <select
                         value={filters.status}
                         onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -166,7 +191,7 @@ export default function Applications() {
                         <option value="month">Past 30 Days</option>
                     </select>
 
-                    <button className="admin-btn-secondary" onClick={exportCSV}>
+                    <button type="button" className="button button--secondary" onClick={exportCSV}>
                         📥 Export CSV
                     </button>
                 </div>
@@ -189,7 +214,7 @@ export default function Applications() {
                     <tbody>
                         {filteredLoans.length === 0 ? (
                             <tr>
-                                <td colSpan="8" className="empty-table">No applications matched your filters.</td>
+                                <td colSpan="9" className="empty-table">No applications matched your filters.</td>
                             </tr>
                         ) : (
                             filteredLoans.map(loan => (
@@ -224,6 +249,26 @@ export default function Applications() {
                                     </td>
                                     <td>
                                         <StatusBadge status={loan.status} />
+                                    </td>
+                                    <td>
+                                        {loan.assignedTo ? (
+                                            <span className="text-sm font-medium">{loan.assignedTo === session.username ? 'Me' : loan.assignedTo}</span>
+                                        ) : (
+                                            session?.role === 'sales' ? (
+                                                <button
+                                                    type="button"
+                                                    className="button button--secondary button--compact"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        adminService.assignToMe(loan.id).then(() => window.location.reload())
+                                                    }}
+                                                >
+                                                    Claim
+                                                </button>
+                                            ) : (
+                                                <span className="text-muted text-xs italic">Unassigned</span>
+                                            )
+                                        )}
                                     </td>
                                     <td className="text-muted text-sm">
                                         {new Date(loan.submittedAt).toLocaleDateString()}

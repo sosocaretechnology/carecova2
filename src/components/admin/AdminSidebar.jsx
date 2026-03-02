@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 
 import {
     LayoutDashboard,
@@ -7,18 +8,29 @@ import {
     DollarSign,
     Settings,
     FileText,
-    LogOut
+    LogOut,
+    UserCheck,
+    AlertTriangle,
+    Send
 } from 'lucide-react';
 
 export default function AdminSidebar({ onLogout }) {
-    const navItems = [
-        { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={18} /> },
-        { name: 'Applications', path: '/admin/applications', icon: <ClipboardList size={18} /> },
-        { name: 'Active Loans', path: '/admin/loans', icon: <CreditCard size={18} /> },
-        { name: 'Repayments', path: '/admin/repayments', icon: <DollarSign size={18} /> },
-        { name: 'Rules & Config', path: '/admin/rules', icon: <Settings size={18} /> },
-        { name: 'Audit Logs', path: '/admin/audit', icon: <FileText size={18} /> },
+    const { session } = useAuth()
+    const role = session?.role || 'admin'
+
+    const allItems = [
+        { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={18} />, roles: ['admin', 'sales', 'support'] },
+        { name: 'Applications', path: '/admin/applications', icon: <ClipboardList size={18} />, roles: ['admin', 'sales', 'support'] },
+        { name: 'Active Loans', path: '/admin/loans', icon: <CreditCard size={18} />, roles: ['admin', 'sales', 'support'] },
+        { name: 'Repayments', path: '/admin/repayments', icon: <DollarSign size={18} />, roles: ['admin', 'support'] },
+        { name: 'Rules & Config', path: '/admin/rules', icon: <Settings size={18} />, roles: ['admin'] },
+        { name: 'Audit Logs', path: '/admin/audit', icon: <FileText size={18} />, roles: ['admin'] },
+        { name: 'User Management', path: '/admin/users', icon: <UserCheck size={18} />, roles: ['admin'] },
+        { name: 'Recovery', path: '/admin/recovery', icon: <AlertTriangle size={18} />, roles: ['admin', 'support', 'sales'] },
+        { name: 'Disbursement Queue', path: '/admin/disbursements', icon: <Send size={18} />, roles: ['admin'] },
     ]
+
+    const navItems = allItems.filter(item => item.roles.includes(role))
 
     return (
         <aside className="admin-sidebar">

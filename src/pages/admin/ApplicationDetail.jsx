@@ -2,19 +2,24 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
 import { loanService } from '../../services/loanService'
+import { auditService } from '../../services/auditService'
+import { useAuth } from '../../hooks/useAuth'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
 import StatusBadge from '../../components/StatusBadge'
 
 import ApplicantSnapshot from '../../components/admin/ApplicationDetail/ApplicantSnapshot'
 import VerificationRisk from '../../components/admin/ApplicationDetail/VerificationRisk'
 import DecisionPanel from '../../components/admin/ApplicationDetail/DecisionPanel'
+import SalesDataCollection from '../../components/admin/ApplicationDetail/SalesDataCollection'
 
 export default function ApplicationDetail() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const { session } = useAuth()
     const [loading, setLoading] = useState(true)
     const [loan, setLoan] = useState(null)
     const [error, setError] = useState(null)
+    const [activeTab, setActiveTab] = useState('review') // review | history
 
     useEffect(() => {
         async function loadLoanDetails() {
@@ -49,7 +54,17 @@ export default function ApplicationDetail() {
         setTimeout(loadLoanDetails, 300)
     }, [id])
 
-    // Handlers passed to DecisionPanel
+    // Handlers
+    const handleApproveStage1 = async (data) => {
+        try {
+            const updated = await adminService.approveStage1(loan.id, data)
+            setLoan({ ...updated, affordability: loan.affordability, riskFlags: loan.riskFlags })
+            alert('Stage 1 Approved. Application moved to credit review.')
+        } catch (err) {
+            alert(err.message || 'Error approving Stage 1')
+        }
+    }
+
     const handleApprove = async (terms) => {
         try {
             const updated = await adminService.approveLoan(loan.id, terms)
@@ -95,25 +110,72 @@ export default function ApplicationDetail() {
                         <h1 className="mb-0">Application {loan.id}</h1>
                         <StatusBadge status={loan.status} />
                     </div>
-                    <p className="mt-1">Submitted on {new Date(loan.submittedAt).toLocaleDateString()} at {new Date(loan.submittedAt).toLocaleTimeString()}</p>
+                    {loan.assignedTo && <p className="text-sm mt-1">Assigned to: <strong>{loan.assignedTo === session?.username ? 'Me' : loan.assignedTo}</strong></p>}
+                    <p className="mt-1 text-xs text-muted">Submitted on {new Date(loan.submittedAt).toLocaleDateString()} at {new Date(loan.submittedAt).toLocaleTimeString()}</p>
+                </div>
+
+                <div className="flex gap-2">
+                    <button className={`tab-btn ${activeTab === 'review' ? 'active' : ''}`} onClick={() => setActiveTab('review')}>Review Details</button>
+                    <button className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>Audit History</button>
                 </div>
             </div>
 
-            <div className="detail-layout-3col">
-                {/* Left Column: Applicant Snapshot */}
-                <ApplicantSnapshot loan={loan} />
+            {activeTab === 'review' ? (
+                <div className="detail-layout-3col">
+                    <ApplicantSnapshot loan={loan} />
 
-                {/* Middle Column: Verification & Risk */}
-                <VerificationRisk loan={loan} />
+                    <div className="detail-column">
+                        {session?.role === 'sales' && loan.assignedTo === session.username && (loan.status === 'pending' || loan.status === 'incomplete') ? (
+                            <SalesDataCollection
+                                loan={loan}
+                                onSave={() => {}}
+                                onApproveStage1={handleApproveStage1}
+                            />
+                        ) : (
+                            <VerificationRisk loan={loan} />
+                        )}
+                    </div>
 
-                {/* Right Column: Decision Panel */}
-                <DecisionPanel
-                    loan={loan}
-                    onApprove={handleApprove}
-                    onReject={handleReject}
-                    onRequestInfo={handleRequestInfo}
-                />
-            </div>
+                    <DecisionPanel
+                        loan={loan}
+                        session={session}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        onRequestInfo={handleRequestInfo}
+                    />
+                </div>
+            ) : (
+                <div className="detail-card full-width">
+                    <h3>Application Audit Trail</h3>
+                    <div className="audit-timeline mt-4">
+                        <AuditTimeline loanId={loan.id} />
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function AuditTimeline({ loanId }) {
+    const logs = auditService.getForLoan(loanId)
+
+    if (logs.length === 0) return <div className="empty-state p-8 text-center bg-gray-50 border-radius-sm">No recorded activity for this loan ID.</div>
+
+    return (
+        <div className="timeline-items p-4">
+            {logs.map(log => (
+                <div key={log.id} className="timeline-item flex gap-4 mb-6" style={{ borderLeft: '2px solid #e5e7eb', paddingLeft: '1.5rem', position: 'relative' }}>
+                    <div style={{ position: 'absolute', left: '-6px', top: '0', width: '10px', height: '10px', borderRadius: '50%', background: '#6366f1' }}></div>
+                    <div className="timeline-content">
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-sm capitalize">{log.action?.replace('_', ' ') || 'Action'}</span>
+                            <span className="text-xs text-muted">by {log.adminName || 'Admin'}</span>
+                        </div>
+                        <p className="text-sm text-gray-700 italic border-left-large pl-3 py-1" style={{ borderLeft: '3px solid #6366f1' }}>"{log.details || 'No details available'}"</p>
+                        <span className="text-xs text-muted block mt-1">{new Date(log.timestamp).toLocaleString()}</span>
+                    </div>
+                </div>
+            ))}
         </div>
     )
 }

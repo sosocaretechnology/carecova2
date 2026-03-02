@@ -1,4 +1,5 @@
 import { sampleLoans } from '../data/sampleLoans'
+import { mockApplications } from '../data/mockApplications'
 import { computeRiskScore } from '../utils/riskScoring'
 
 const STORAGE_KEY = 'carecova_loans'
@@ -17,7 +18,16 @@ const initializeLoans = () => {
 const getLoans = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : initializeLoans()
+    let loans = stored ? JSON.parse(stored) : initializeLoans()
+    // Ensure demo overdue loan exists for customer care/sales follow-up simulation
+    if (!loans.some((l) => l.id === 'LN-100011')) {
+      const demo = mockApplications.find((m) => m.id === 'LN-100011')
+      if (demo) {
+        loans = [...loans, JSON.parse(JSON.stringify(demo))]
+        saveLoans(loans)
+      }
+    }
+    return loans
   } catch (error) {
     console.error('Error reading loans from localStorage:', error)
     return initializeLoans()
@@ -138,13 +148,20 @@ export const loanService = {
             guarantorRelationship: applicationData.guarantorRelationship,
             guarantorAddress: applicationData.guarantorAddress,
             guarantorEmploymentType: applicationData.guarantorEmploymentType,
+            applicantPhoto: applicationData.applicantPhoto || null,
             riskScore: risk.riskScore,
             riskTier: risk.riskTier,
             riskReasons: risk.riskReasons,
             riskRecommendation: risk.riskRecommendation,
             status: 'pending',
+            stage: 1, // Start at stage 1
+            assignedTo: null,
             submittedAt: new Date().toISOString(),
             documents: applicationData.documents || {},
+            medicalInsights: null,
+            financialClarification: null,
+            repaymentStrategy: null,
+            applicantBio: null,
           }
 
           const loans = getLoans()

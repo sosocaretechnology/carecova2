@@ -26,22 +26,35 @@ export default function ApplicantSnapshot({ loan }) {
         <div className="detail-column column-snapshot">
             <div className="detail-card">
                 <h2>Applicant Identity</h2>
-                <div className="info-group">
-                    <div className="info-label">Full Name</div>
-                    <div className="info-value text-lg font-bold">{loan.fullName || loan.patientName}</div>
-                </div>
-                <div className="info-grid mt-3">
-                    <div className="info-group">
-                        <div className="info-label">Phone</div>
-                        <div className="info-value">{loan.phone}</div>
-                    </div>
-                    <div className="info-group">
-                        <div className="info-label">Email</div>
-                        <div className="info-value">{loan.email || '—'}</div>
-                    </div>
-                    <div className="info-group">
-                        <div className="info-label">Location (Triangulated)</div>
-                        <div className="info-value">{location.city}, {location.state}</div>
+                <div className="identity-header">
+                    {loan.applicantPhoto?.dataUrl && (
+                        <div className="identity-photo">
+                            <img
+                                src={loan.applicantPhoto.dataUrl}
+                                alt={loan.fullName || loan.patientName}
+                                className="identity-photo-img"
+                            />
+                        </div>
+                    )}
+                    <div className="identity-primary">
+                        <div className="info-group">
+                            <div className="info-label">Full Name</div>
+                            <div className="info-value text-lg font-bold">{loan.fullName || loan.patientName}</div>
+                        </div>
+                        <div className="info-grid mt-3">
+                            <div className="info-group">
+                                <div className="info-label">Phone</div>
+                                <div className="info-value">{loan.phone}</div>
+                            </div>
+                            <div className="info-group">
+                                <div className="info-label">Email</div>
+                                <div className="info-value">{loan.email || '—'}</div>
+                            </div>
+                            <div className="info-group">
+                                <div className="info-label">Location (Triangulated)</div>
+                                <div className="info-value">{location.city}, {location.state}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -143,10 +143,13 @@ export default function Apply() {
     coBorrowerEmployerName: '',
     coBorrowerMonthlyIncome: '',
 
+    // Identity & media
+    applicantPhoto: null,
+    documents: {},
+
     consentDataProcessing: false,
     consentTerms: false,
     consentMarketing: false,
-    documents: {},
   })
 
   // Hook for affordability & risk
@@ -445,6 +448,56 @@ export default function Apply() {
                   />
                 )}
                 {errors.id_document && <span className="input-error">{errors.id_document}</span>}
+              </div>
+
+              <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                <label className="input-label">Applicant photo (selfie)</label>
+                <p className="caption" style={{ marginTop: '0.25rem' }}>
+                  A clear photo of the applicant&apos;s face. This is used for identity verification and will show in the admin case file.
+                </p>
+                {formData.applicantPhoto?.dataUrl ? (
+                  <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <img
+                      src={formData.applicantPhoto.dataUrl}
+                      alt="Applicant"
+                      style={{ width: 72, height: 72, borderRadius: '999px', objectFit: 'cover', border: '2px solid var(--color-primary-subtle)' }}
+                    />
+                    <div>
+                      <div className="text-sm font-medium">{formData.applicantPhoto.fileName}</div>
+                      <button
+                        type="button"
+                        className="button button--ghost text-xs mt-1"
+                        onClick={() => setFormData(prev => ({ ...prev, applicantPhoto: null }))}
+                      >
+                        Remove photo
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="document-upload-input"
+                    style={{ marginTop: '0.5rem', display: 'block' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onloadend = () => {
+                        const dataUrl = reader.result
+                        setFormData(prev => ({
+                          ...prev,
+                          applicantPhoto: {
+                            fileName: file.name,
+                            fileSize: file.size,
+                            dataUrl,
+                          },
+                        }))
+                      }
+                      reader.readAsDataURL(file)
+                    }}
+                  />
+                )}
               </div>
             </div>
           </div>
