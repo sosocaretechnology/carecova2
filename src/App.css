@@ -5818,6 +5818,43 @@
   background: #f8fafc;
 }
 
+.mono-analysis-summary {
+  margin-top: 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #ffffff;
+}
+
+.mono-analysis-summary h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.mono-analysis-row {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 0.6rem;
+  padding: 0.25rem 0;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.mono-analysis-row:first-of-type {
+  border-top: none;
+}
+
+.mono-analysis-key {
+  text-transform: capitalize;
+  font-size: 0.78rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.mono-analysis-value {
+  font-size: 0.8rem;
+  color: #0f172a;
+}
+
 .mono-insights h3 {
   margin: 0 0 0.45rem;
   font-size: 0.9rem;
@@ -5832,6 +5869,101 @@
 
 .mono-warnings {
   margin-top: 0.7rem;
+}
+
+.mono-decision-card {
+  margin-top: 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+}
+
+.mono-decision-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.mono-decision-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.mono-decision-badge {
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-weight: 700;
+  font-size: 0.76rem;
+}
+
+.mono-decision-reason {
+  margin: 0.55rem 0 0;
+  font-size: 0.84rem;
+  color: #0f172a;
+}
+
+.mono-decision-reco {
+  margin: 0.45rem 0 0;
+  font-size: 0.8rem;
+  color: #334155;
+}
+
+.mono-rules-grid {
+  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.mono-rule-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 0.62rem;
+}
+
+.mono-rule-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
+
+.mono-rule-top strong {
+  font-size: 0.8rem;
+}
+
+.mono-rule-pill {
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+}
+
+.mono-rule-pill.pass {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.mono-rule-pill.fail {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.mono-rule-message {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: #334155;
+}
+
+.mono-rule-meta {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.72rem;
+  color: #64748b;
 }
 
 .mono-sections {
@@ -5887,6 +6019,30 @@
   font-size: 0.82rem;
 }
 
+.mono-section-actions {
+  margin-top: 0.6rem;
+}
+
+.mono-section-kpis {
+  margin-top: 0.55rem;
+  font-size: 0.78rem;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.45rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.mono-kpi-row {
+  margin-top: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+}
+
 .mono-section-card details {
   margin-top: 0.6rem;
 }
@@ -5920,6 +6076,10 @@
   .mono-sections {
     grid-template-columns: 1fr;
   }
+
+  .mono-rules-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 680px) {
@@ -5933,5 +6093,10 @@
 
   .mono-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mono-analysis-row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
   }
 }

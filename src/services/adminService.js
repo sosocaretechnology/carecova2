@@ -138,6 +138,10 @@ export const adminService = {
   fundWallet: async () => {},
   fundOrganizationWallet: async () => {},
 
+  getMonoInformedDecisionSectionForLoan: async () => {
+    throw new Error('Mono informed decision section not configured for local mode')
+  },
+
   // Dashboard KPIs
   getKPIs: async () => {
     const session = adminService.getSession()
