@@ -26,8 +26,28 @@ const escapeHtml = (text = '') =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
 
+const ESSENTIAL_ORG_PURPOSES = [
+  {
+    purpose: 'org_loan_repayment',
+    title: 'Loan Repayment',
+    helper: 'Collect loan repayment inflows',
+  },
+  {
+    purpose: 'org_referral_commission',
+    title: 'Commission',
+    helper: 'Referral and commission earnings',
+  },
+  {
+    purpose: 'org_loan_deposit',
+    title: 'Loan Deposit',
+    helper: 'Loan disbursement and deposit pool',
+  },
+]
+
 export default function OrganizationWallets() {
   const [wallets, setWallets] = useState([])
+  const [essentialWallets, setEssentialWallets] = useState([])
+  const [essentialOwnerId, setEssentialOwnerId] = useState('')
   const [transactions, setTransactions] = useState([])
   const [overview, setOverview] = useState(null)
   const [totalTransactions, setTotalTransactions] = useState(0)
@@ -49,6 +69,7 @@ export default function OrganizationWallets() {
   const [selectedWalletId, setSelectedWalletId] = useState('')
 
   const [actionType, setActionType] = useState('fund')
+  const [actionPurpose, setActionPurpose] = useState('org_loan_repayment')
   const [actionAmount, setActionAmount] = useState('')
   const [actionReference, setActionReference] = useState('')
   const [actionDescription, setActionDescription] = useState('')
@@ -57,6 +78,11 @@ export default function OrganizationWallets() {
     () => wallets.find((wallet) => wallet.id === selectedWalletId) || null,
     [wallets, selectedWalletId],
   )
+
+  const essentialWalletLookup = useMemo(() => {
+    const entries = essentialWallets.map((wallet) => [wallet.purpose, wallet])
+    return new Map(entries)
+  }, [essentialWallets])
 
   const walletFilters = useMemo(
     () => ({
@@ -98,7 +124,7 @@ export default function OrganizationWallets() {
     setLoading(true)
     setError('')
     try {
-      const [walletData, overviewData] = await Promise.all([
+      const [walletData, overviewData, essentialData] = await Promise.all([
         adminService.getWallets(walletFilters),
         adminService.getWalletOverview({
           ownerType: ownerTypeFilter || undefined,
@@ -106,10 +132,16 @@ export default function OrganizationWallets() {
           dateFrom: dateFrom || undefined,
           dateTo: dateTo || undefined,
         }),
+        adminService.getOrganizationEssentialWallets({
+          ownerId: ownerIdFilter || undefined,
+          currency: currencyFilter || undefined,
+        }),
       ])
 
       setWallets(walletData || [])
       setOverview(overviewData)
+      setEssentialWallets(essentialData?.wallets || [])
+      setEssentialOwnerId(essentialData?.ownerId || '')
 
       if (!selectedWalletId && walletData?.length > 0) {
         setSelectedWalletId(walletData[0].id)
@@ -166,7 +198,10 @@ export default function OrganizationWallets() {
 
   const handleAdjustWallet = async (e) => {
     e.preventDefault()
-    if (!selectedWalletId) {
+    const isOrganizationFund =
+      actionType === 'fund' && (ownerTypeFilter || 'organization') === 'organization'
+
+    if (!isOrganizationFund && !selectedWalletId) {
       setError('Select a wallet first')
       return
     }
@@ -186,7 +221,17 @@ export default function OrganizationWallets() {
         description: actionDescription.trim() || undefined,
       }
 
-      if (actionType === 'fund') {
+      if (isOrganizationFund) {
+        const result = await adminService.fundOrganizationWallet({
+          ...payload,
+          purpose: actionPurpose,
+          ownerId: ownerIdFilter.trim() || undefined,
+          currency: currencyFilter || undefined,
+        })
+        if (result?.wallet?.id) {
+          setSelectedWalletId(result.wallet.id)
+        }
+      } else if (actionType === 'fund') {
         await adminService.fundWallet(selectedWalletId, payload)
       } else {
         await adminService.debitWallet(selectedWalletId, payload)
@@ -324,6 +369,39 @@ export default function OrganizationWallets() {
 
       {error && <div className="admin-error-banner">{error}</div>}
 
+      <section className="essential-wallets-section">
+        <div className="wallets-card-header">
+          <h2>Essential Organization Wallets</h2>
+          <span>{essentialOwnerId || ownerIdFilter || 'carecova-org'}</span>
+        </div>
+        <div className="essential-wallets-grid">
+          {ESSENTIAL_ORG_PURPOSES.map((item) => {
+            const wallet = essentialWalletLookup.get(item.purpose)
+            const balance = wallet?.balance || 0
+            return (
+              <article key={item.purpose} className="essential-wallet-card">
+                <div className="essential-wallet-title">{item.title}</div>
+                <div className="essential-wallet-balance">
+                  {fmtCurrency(balance, wallet?.currency || currencyFilter || 'NGN')}
+                </div>
+                <div className="essential-wallet-helper">{item.helper}</div>
+                <button
+                  type="button"
+                  className="table-action-btn"
+                  onClick={() => {
+                    if (wallet?.id) setSelectedWalletId(wallet.id)
+                    setActionType('fund')
+                    setActionPurpose(item.purpose)
+                  }}
+                >
+                  {wallet?.id ? 'View Wallet' : 'Fund & Auto Create'}
+                </button>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
       <section className="admin-kpi-grid">
         <div className="admin-kpi-card primary">
           <div className="kpi-title">Total Wallet Balance</div>
@@ -364,9 +442,10 @@ export default function OrganizationWallets() {
 
           <select value={purposeFilter} onChange={(e) => setPurposeFilter(e.target.value)}>
             <option value="">All purposes</option>
-            <option value="org_referral_commission">Org Referral Commission</option>
-            <option value="org_medical_payment">Org Medical Payment</option>
+            <option value="org_referral_commission">Commission</option>
             <option value="org_loan_repayment">Org Loan Repayment</option>
+            <option value="org_loan_deposit">Org Loan Deposit</option>
+            <option value="org_medical_payment">Org Medical Payment</option>
             <option value="sales_commission">Sales Commission</option>
             <option value="user_main">User Main</option>
             <option value="general">General</option>
@@ -467,9 +546,11 @@ export default function OrganizationWallets() {
             <h2>Fund / Minus</h2>
           </div>
           <p className="wallets-action-target">
-            {selectedWallet
-              ? `Selected: ${selectedWallet.walletName} (${selectedWallet.ownerId})`
-              : 'Select a wallet to perform transactions'}
+            {actionType === 'fund' && (ownerTypeFilter || 'organization') === 'organization'
+              ? `Funding purpose: ${actionPurpose} (${essentialOwnerId || ownerIdFilter || 'carecova-org'})`
+              : selectedWallet
+                ? `Selected: ${selectedWallet.walletName} (${selectedWallet.ownerId})`
+                : 'Select a wallet to perform transactions'}
           </p>
 
           <form className="wallet-adjust-form" onSubmit={handleAdjustWallet}>
@@ -477,6 +558,18 @@ export default function OrganizationWallets() {
               <option value="fund">Fund Wallet</option>
               <option value="debit">Minus / Debit Wallet</option>
             </select>
+
+            {actionType === 'fund' && (ownerTypeFilter || 'organization') === 'organization' && (
+              <select value={actionPurpose} onChange={(e) => setActionPurpose(e.target.value)}>
+                {ESSENTIAL_ORG_PURPOSES.map((item) => (
+                  <option key={item.purpose} value={item.purpose}>
+                    {item.title}
+                  </option>
+                ))}
+                <option value="org_medical_payment">Org Medical Payment</option>
+                <option value="general">General</option>
+              </select>
+            )}
 
             <input
               type="number"
@@ -502,7 +595,14 @@ export default function OrganizationWallets() {
               onChange={(e) => setActionDescription(e.target.value)}
             />
 
-            <button className="admin-btn" type="submit" disabled={actionLoading || !selectedWalletId}>
+            <button
+              className="admin-btn"
+              type="submit"
+              disabled={
+                actionLoading ||
+                (actionType === 'debit' && !selectedWalletId)
+              }
+            >
               {actionLoading ? 'Processing...' : actionType === 'fund' ? 'Fund Wallet' : 'Debit Wallet'}
             </button>
           </form>

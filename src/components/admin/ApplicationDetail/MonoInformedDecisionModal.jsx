@@ -267,6 +267,15 @@ const deriveAnalysisFallback = (analysis, sections, form) => {
     asObject(asObject(asObject(resolvedSections.creditworthiness?.data).data).data)
       .existing_monthly_debt,
   )
+  const creditRoot = asObject(
+    asObject(asObject(resolvedSections.creditworthiness?.data).data).data,
+  )
+  const creditDebt = asObject(creditRoot.debt)
+  const totalExistingDebtFromCredit =
+    asNumber(creditDebt.total_debt) ?? asNumber(creditRoot.total_debt)
+  if (output.totalExistingDebt === undefined && totalExistingDebtFromCredit !== undefined) {
+    output.totalExistingDebt = round(totalExistingDebtFromCredit)
+  }
   const existingDebt =
     output.existingDebtMonthly ??
     existingDebtFromCredit ??
@@ -679,6 +688,12 @@ export default function MonoInformedDecisionModal({ open, onClose, loan }) {
                 <div className="mono-summary-label">Existing Debt</div>
                 <div className="mono-summary-value">
                   {formatCurrency(analysis.existingDebtMonthly)}
+                </div>
+              </div>
+              <div className="mono-summary-card">
+                <div className="mono-summary-label">Total Existing Debt</div>
+                <div className="mono-summary-value">
+                  {formatCurrency(analysis.totalExistingDebt)}
                 </div>
               </div>
               <div className="mono-summary-card">
