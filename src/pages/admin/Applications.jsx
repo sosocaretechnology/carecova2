@@ -217,8 +217,8 @@ export default function Applications() {
                                 <td colSpan="9" className="empty-table">No applications matched your filters.</td>
                             </tr>
                         ) : (
-                            filteredLoans.map((loan, index) => (
-                                <tr key={loan.id || loan._id || `app-${index}`} onClick={() => navigate(`/admin/applications/${loan.id || loan._id}`)} className="clickable-row">
+                            filteredLoans.map(loan => (
+                                <tr key={loan.id} onClick={() => navigate(`/admin/applications/${loan.id}`)} className="clickable-row">
                                     <td>
                                         <div className="font-medium">{loan.fullName || loan.patientName}</div>
                                         <div className="text-muted text-xs font-mono">{loan.id}</div>

@@ -56,11 +56,6 @@ const upsertLoan = (loan) => {
 
 const findLocalLoan = (id) => getLoans().find((loan) => loan.id === id)
 
-/** Backend (MongoDB) expects 24-char hex ObjectId; frontend uses LN-xxxxx. Only call API for ObjectId-shaped ids. */
-function looksLikeBackendId(id) {
-  return typeof id === 'string' && /^[a-fA-F0-9]{24}$/.test(id.trim())
-}
-
 function generateLoanId() {
   const n = Math.floor(Date.now() / 1000) % 1000000
   return `LN-${String(n).padStart(6, '0')}`
@@ -410,14 +405,13 @@ export const loanService = {
   },
 
   getApplication: async (id) => {
-    const trimmed = id?.trim()
-    if (!trimmed || trimmed === 'undefined') throw new Error('Application not found')
+    if (!id?.trim()) throw new Error('Application not found')
 
-    const localLoan = findLocalLoan(trimmed)
+    const localLoan = findLocalLoan(id.trim())
 
-    if (USE_BACKEND && looksLikeBackendId(trimmed)) {
+    if (USE_BACKEND) {
       try {
-        const remote = await request(`/loan-applications/${trimmed}`)
+        const remote = await request(`/loan-applications/${id.trim()}`)
         const normalizedRemote = normalizeLoan(remote)
         const merged = localLoan
           ? {
