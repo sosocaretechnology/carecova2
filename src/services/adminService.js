@@ -350,6 +350,254 @@ export const adminService = {
     })
   },
 
+  createMonoDirectDebitCustomerForLoan: async (loanId, payload = {}) => {
+    if (USE_BACKEND) {
+      const trimmed = assertBackendLoanId(loanId, 'Mono direct debit customer')
+      return adminRequest(`/admin/loan-applications/${trimmed}/mono/direct-debit/customer`, {
+        method: 'POST',
+        body: JSON.stringify(payload || {}),
+      })
+    }
+
+    const loans = await cloneLoans()
+    const loan = loans.find((item) => item.id === loanId)
+    if (!loan) throw new Error('Loan not found')
+
+    const existingCustomerId = loan.monoDirectDebit?.customer?.id
+    if (existingCustomerId && payload.forceCreate !== true) {
+      return {
+        applicationId: loan.id,
+        customerId: existingCustomerId,
+        status: 'successful',
+        message: 'Direct debit customer already exists for this application',
+        data: loan.monoDirectDebit.customer,
+      }
+    }
+
+    const { firstName, lastName } = resolveDirectDebitNames(
+      payload.firstName,
+      payload.lastName,
+      loan.fullName || loan.patientName,
+    )
+    const customer = {
+      id: `cus_${Date.now().toString(36)}`,
+      identity: payload.identity || null,
+      firstName,
+      lastName,
+      email: payload.email || loan.email || '',
+      phone: payload.phone || loan.phone || '',
+      address: payload.address || loan.homeAddress || '',
+      status: 'created',
+      createdAt: new Date().toISOString(),
+    }
+
+    loan.monoDirectDebit = {
+      ...(loan.monoDirectDebit || {}),
+      customer,
+      status: 'customer_created',
+      updatedAt: new Date().toISOString(),
+    }
+    saveToStorage(loans)
+
+    return {
+      applicationId: loan.id,
+      customerId: customer.id,
+      status: 'successful',
+      message: 'Created customer successfully',
+      data: customer,
+    }
+  },
+
+  initiateMonoDirectDebitMandateForLoan: async (loanId, payload = {}) => {
+    if (USE_BACKEND) {
+      const trimmed = assertBackendLoanId(loanId, 'Mono direct debit mandate')
+      return adminRequest(`/admin/loan-applications/${trimmed}/mono/direct-debit/mandate`, {
+        method: 'POST',
+        body: JSON.stringify(payload || {}),
+      })
+    }
+
+    const loans = await cloneLoans()
+    const loan = loans.find((item) => item.id === loanId)
+    if (!loan) throw new Error('Loan not found')
+    const customerId = payload.customerId || loan.monoDirectDebit?.customer?.id
+    if (!customerId) throw new Error('Create a direct debit customer before initiating a mandate')
+
+    const mandateId = `mmc_${Date.now().toString(36)}`
+    const reference = payload.reference || `CC-DD-MANDATE-${loan.id}-${Date.now()}`
+    const nextDueDate = loan.repaymentSchedule?.find((item) => !item.paid)?.dueDate
+    const lastDueDate = loan.repaymentSchedule?.[loan.repaymentSchedule.length - 1]?.dueDate
+    const amountKobo = Math.round(Number(payload.amount || Math.max(loan.outstandingBalance || loan.totalRepayment || loan.requestedAmount || 0, 0)) * 100)
+
+    loan.repaymentMethod = 'direct_debit'
+    loan.monoDirectDebit = {
+      ...(loan.monoDirectDebit || {}),
+      mandate: {
+        id: mandateId,
+        customerId,
+        reference,
+        monoUrl: `https://authorise.mono.co/${mandateId.toUpperCase()}`,
+        amountKobo,
+        amountNaira: amountKobo / 100,
+        description: payload.description || `Loan repayment mandate for ${loan.email || loan.fullName}`,
+        mandateType: payload.mandateType || 'emandate',
+        debitType: payload.debitType || 'variable',
+        startDate: payload.startDate || nextDueDate || new Date().toISOString().slice(0, 10),
+        endDate: payload.endDate || lastDueDate || new Date().toISOString().slice(0, 10),
+        status: 'ready_to_debit',
+        readyToDebit: true,
+        createdAt: new Date().toISOString(),
+      },
+      status: 'ready_to_debit',
+      updatedAt: new Date().toISOString(),
+    }
+    saveToStorage(loans)
+
+    return {
+      applicationId: loan.id,
+      mandateId,
+      reference,
+      monoUrl: loan.monoDirectDebit.mandate.monoUrl,
+      status: 'successful',
+      message: 'Payment Initiated Successfully',
+      data: loan.monoDirectDebit.mandate,
+    }
+  },
+
+  inquireMonoDirectDebitBalanceForLoan: async (loanId, payload = {}) => {
+    if (USE_BACKEND) {
+      const trimmed = assertBackendLoanId(loanId, 'Mono direct debit balance inquiry')
+      return adminRequest(`/admin/loan-applications/${trimmed}/mono/direct-debit/balance-inquiry`, {
+        method: 'POST',
+        body: JSON.stringify(payload || {}),
+      })
+    }
+
+    const loans = await cloneLoans()
+    const loan = loans.find((item) => item.id === loanId)
+    if (!loan) throw new Error('Loan not found')
+    const mandateId = payload.mandateId || loan.monoDirectDebit?.mandate?.id
+    if (!mandateId) throw new Error('Direct debit mandate has not been created for this application')
+
+    const sandboxBalanceKobo = 1000000
+    const inquiryType = payload.amount ? 'sufficiency_check' : 'balance_fetch'
+    const data = payload.amount
+      ? {
+          id: mandateId,
+          has_sufficient_balance: Number(payload.amount) <= sandboxBalanceKobo,
+          account_details: {
+            bank_code: '999',
+            account_name: loan.fullName || loan.patientName,
+            account_number: loan.repaymentAccountNumber || '0000000000',
+            bank_name: loan.repaymentBankName || 'Sandbox Bank',
+          },
+        }
+      : {
+          id: mandateId,
+          account_balance: sandboxBalanceKobo / 100,
+          account_details: {
+            bank_code: '999',
+            account_name: loan.fullName || loan.patientName,
+            account_number: loan.repaymentAccountNumber || '0000000000',
+            bank_name: loan.repaymentBankName || 'Sandbox Bank',
+          },
+        }
+
+    loan.monoDirectDebit = {
+      ...(loan.monoDirectDebit || {}),
+      balanceInquiry: {
+        inquiryType,
+        amountKobo: payload.amount ? Number(payload.amount) : undefined,
+        checkedAt: new Date().toISOString(),
+        raw: data,
+      },
+      updatedAt: new Date().toISOString(),
+    }
+    saveToStorage(loans)
+
+    return {
+      applicationId: loan.id,
+      mandateId,
+      status: 'successful',
+      message: payload.amount ? 'Successfully enquired balance.' : 'Sufficient balance available',
+      inquiryType,
+      data,
+    }
+  },
+
+  debitMonoDirectDebitMandateForLoan: async (loanId, payload = {}) => {
+    if (USE_BACKEND) {
+      const trimmed = assertBackendLoanId(loanId, 'Mono direct debit debit')
+      return adminRequest(`/admin/loan-applications/${trimmed}/mono/direct-debit/debit`, {
+        method: 'POST',
+        body: JSON.stringify(payload || {}),
+      })
+    }
+
+    const loans = await cloneLoans()
+    const loan = loans.find((item) => item.id === loanId)
+    if (!loan) throw new Error('Loan not found')
+
+    const mandateId = payload.mandateId || loan.monoDirectDebit?.mandate?.id
+    if (!mandateId) throw new Error('Direct debit mandate has not been created for this application')
+    if (loan.monoDirectDebit?.mandate?.readyToDebit === false) {
+      throw new Error('Mandate is not ready to debit yet')
+    }
+
+    const nextInstallmentIndex = loan.repaymentSchedule?.findIndex((item) => !item.paid) ?? -1
+    if (nextInstallmentIndex < 0) throw new Error('All installments have already been paid')
+
+    const amountKobo = payload.amount != null
+      ? Math.round(Number(payload.amount))
+      : Math.round(Number(loan.repaymentSchedule[nextInstallmentIndex]?.amount || 0) * 100)
+    const debitAmountNaira = Number((amountKobo / 100).toFixed(2))
+    const reference = payload.reference || `CC-DD-${loan.id}-${Date.now()}`
+
+    await adminService.recordPayment(loanId, nextInstallmentIndex, {
+      amount: debitAmountNaira,
+      method: 'Direct Debit',
+      reference,
+    })
+
+    const freshLoans = await cloneLoans()
+    const freshLoan = freshLoans.find((item) => item.id === loanId)
+    if (!freshLoan) throw new Error('Loan not found')
+
+    freshLoan.monoDirectDebit = {
+      ...(freshLoan.monoDirectDebit || {}),
+      status: 'debit_successful',
+      lastDebit: {
+        reference,
+        status: 'debit_successful',
+        amountKobo,
+        amountNaira: debitAmountNaira,
+        processedAt: new Date().toISOString(),
+      },
+      updatedAt: new Date().toISOString(),
+    }
+    saveToStorage(freshLoans)
+
+    return {
+      applicationId: freshLoan.id,
+      reference,
+      status: 'successful',
+      message: 'Account debited successfully.',
+      responseCode: '00',
+      transactionStatus: 'success',
+      data: {
+        success: true,
+        status: 'successful',
+        event: 'successful',
+        amount: amountKobo,
+        mandate: mandateId,
+        reference_number: reference,
+        date: new Date().toISOString(),
+        fee_bearer: payload.feeBearer || 'business',
+        narration: payload.narration || `Loan repayment for ${freshLoan.fullName || freshLoan.patientName}`,
+      },
+    }
+  },
+
   getWallets: async () => [],
   getWalletOverview: async () => ({ totalBalance: 0, currency: 'NGN' }),
   getWalletTransactions: async () => [],
@@ -1093,6 +1341,20 @@ async function cloneLoans() {
 function saveToStorage(loans) {
   const STORAGE_KEY = 'carecova_loans'
   localStorage.setItem(STORAGE_KEY, JSON.stringify(loans))
+}
+
+function resolveDirectDebitNames(firstName, lastName, fallbackFullName) {
+  const normalizedFirst = String(firstName || '').trim()
+  const normalizedLast = String(lastName || '').trim()
+  if (normalizedFirst && normalizedLast) {
+    return { firstName: normalizedFirst, lastName: normalizedLast }
+  }
+
+  const parts = String(fallbackFullName || '').trim().split(/\s+/).filter(Boolean)
+  return {
+    firstName: normalizedFirst || parts[0] || 'Customer',
+    lastName: normalizedLast || parts.slice(1).join(' ') || parts[0] || 'Customer',
+  }
 }
 
 function DisbursementAndRepaymentRate(loans) {

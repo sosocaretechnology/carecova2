@@ -12,6 +12,7 @@ import VerificationRisk from '../../components/admin/ApplicationDetail/Verificat
 import DecisionPanel from '../../components/admin/ApplicationDetail/DecisionPanel'
 import SalesDataCollection from '../../components/admin/ApplicationDetail/SalesDataCollection'
 import MonoInformedDecisionModal from '../../components/admin/ApplicationDetail/MonoInformedDecisionModal'
+import DirectDebitCard from '../../components/admin/DirectDebitCard'
 
 export default function ApplicationDetail() {
     const { id } = useParams()
@@ -139,6 +140,7 @@ export default function ApplicationDetail() {
     if (loading) return <div className="admin-loading">Loading application {id}...</div>
     if (error) return <div className="admin-page"><div className="alert-box alert-error">{error}</div><button className="button button--secondary mt-4" onClick={() => navigate('/admin/applications')}>← Back to Applications</button></div>
     if (!loan) return null
+    const showDirectDebit = ['approved', 'active', 'overdue'].includes(loan.status) || loan.repaymentMethod === 'direct_debit'
 
     return (
         <div className="admin-page">
@@ -173,16 +175,24 @@ export default function ApplicationDetail() {
                                 onApproveStage1={handleApproveStage1}
                             />
                         ) : (
-                            <VerificationRisk
-                                loan={loan}
-                                onInitiateMonoConnect={handleInitiateMonoConnect}
-                                onRefreshMonoStatus={handleRefreshMonoStatus}
-                                onOpenInformedDecision={handleOpenInformedDecision}
-                                monoInitiating={monoInitiating}
-                                monoRefreshing={monoRefreshing}
-                                monoFeedbackMessage={monoFeedbackMessage}
-                                monoFeedbackError={monoFeedbackError}
-                            />
+                            <>
+                                <VerificationRisk
+                                    loan={loan}
+                                    onInitiateMonoConnect={handleInitiateMonoConnect}
+                                    onRefreshMonoStatus={handleRefreshMonoStatus}
+                                    onOpenInformedDecision={handleOpenInformedDecision}
+                                    monoInitiating={monoInitiating}
+                                    monoRefreshing={monoRefreshing}
+                                    monoFeedbackMessage={monoFeedbackMessage}
+                                    monoFeedbackError={monoFeedbackError}
+                                />
+                                {showDirectDebit ? (
+                                    <DirectDebitCard
+                                        loan={loan}
+                                        onUpdated={() => loadLoanDetails({ silent: true })}
+                                    />
+                                ) : null}
+                            </>
                         )}
                     </div>
 

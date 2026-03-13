@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { trackingService } from '../../services/trackingService'
 import { adminService } from '../../services/adminService'
 import StatusBadge from '../../components/StatusBadge'
+import DirectDebitCard from '../../components/admin/DirectDebitCard'
 import {
     CheckCircle, Clock, AlertCircle, ChevronLeft,
     TrendingDown, DollarSign, Activity, X
@@ -21,11 +22,18 @@ export default function LoanDetail() {
     const [transactions, setTransactions] = useState([])
     const [transactionDetail, setTransactionDetail] = useState(null)
 
-    useEffect(() => {
-        trackingService.trackLoan(id).then(l => {
+    const loadLoan = async ({ silent = false } = {}) => {
+        try {
+            if (!silent) setLoading(true)
+            const l = await trackingService.trackLoan(id)
             setLoan(l)
-            setLoading(false)
-        }).catch(() => setLoading(false))
+        } finally {
+            if (!silent) setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        loadLoan().catch(() => setLoading(false))
     }, [id])
 
     useEffect(() => {
@@ -147,6 +155,13 @@ export default function LoanDetail() {
                     {monthsActive !== null && <span>{monthsActive} month{monthsActive !== 1 ? 's' : ''} active</span>}
                     <span>₦{totalRepayment.toLocaleString()} total</span>
                 </div>
+            </div>
+
+            <div className="mb-6">
+                <DirectDebitCard
+                    loan={loan}
+                    onUpdated={() => loadLoan({ silent: true })}
+                />
             </div>
 
             {/* Repayment Schedule Table */}
