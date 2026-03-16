@@ -22,7 +22,6 @@ export default function ApplicationDetail() {
     const [loan, setLoan] = useState(null)
     const [error, setError] = useState(null)
     const [activeTab, setActiveTab] = useState('review') // review | history
-    const [showMonoInformedDecision, setShowMonoInformedDecision] = useState(false)
     const [monoInitiating, setMonoInitiating] = useState(false)
     const [monoRefreshing, setMonoRefreshing] = useState(false)
     const [monoFeedbackMessage, setMonoFeedbackMessage] = useState('')
@@ -129,14 +128,6 @@ export default function ApplicationDetail() {
         }
     }
 
-    const handleOpenInformedDecision = () => {
-        setShowMonoInformedDecision(true)
-    }
-
-    const handleCloseInformedDecision = () => {
-        setShowMonoInformedDecision(false)
-    }
-
     if (loading) return <div className="admin-loading">Loading application {id}...</div>
     if (error) return <div className="admin-page"><div className="alert-box alert-error">{error}</div><button className="button button--secondary mt-4" onClick={() => navigate('/admin/applications')}>← Back to Applications</button></div>
     if (!loan) return null
@@ -213,11 +204,6 @@ export default function ApplicationDetail() {
                 </div>
             )}
 
-            <MonoInformedDecisionModal
-                open={showMonoInformedDecision}
-                onClose={handleCloseInformedDecision}
-                loan={loan}
-            />
         </div>
     )
 }

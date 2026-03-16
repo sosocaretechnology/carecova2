@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+
 const MONO_STATUS_META = {
     not_started: {
         label: 'Not started',
@@ -29,10 +31,10 @@ export default function MonoConnectionCard({
     refreshing = false,
     onInitiate,
     onRefresh,
-    onOpenInformedDecision,
     feedbackMessage = '',
     feedbackError = '',
 }) {
+    const navigate = useNavigate()
     const statusKey = loan.monoConnectionStatus || 'not_started'
     const statusMeta = MONO_STATUS_META[statusKey] || MONO_STATUS_META.not_started
     const hasUserEmail = Boolean(loan.email)
@@ -116,7 +118,7 @@ export default function MonoConnectionCard({
                 </button>
                 <button
                     className="button button--secondary"
-                    onClick={onOpenInformedDecision}
+                    onClick={() => navigate(`/admin/applications/${loan.id || loan._id}/informed-decision`)}
                     disabled={!loan.monoAccountId}
                 >
                     Informed Decision
