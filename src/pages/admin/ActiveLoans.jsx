@@ -5,6 +5,7 @@ import { trackingService } from '../../services/trackingService'
 import StatusBadge from '../../components/StatusBadge'
 import { AlertCircle, CheckCircle, Clock, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 export default function ActiveLoans() {
     const [loans, setLoans] = useState([])
@@ -40,7 +41,7 @@ export default function ActiveLoans() {
         return <CheckCircle size={16} className="text-success" />
     }
 
-    if (loading) return <div className="admin-loading">Loading active loans...</div>
+    if (loading) return <FullScreenLoader label="Loading active loans…" />
 
     return (
         <div className="admin-page">
@@ -49,12 +50,12 @@ export default function ActiveLoans() {
                     <h1>Active Portfolio</h1>
                     <p>Monitor disbursed loans and repayment health</p>
                 </div>
-                <div className="header-stats flex gap-4">
-                    <div className="stat-item text-right">
+                <div className="active-loans-header-stats">
+                    <div className="active-loans-stat">
                         <span className="text-xs text-muted block">Total Portfolio</span>
                         <span className="font-bold">₦{loans.reduce((s, l) => s + (l.approvedAmount || 0), 0).toLocaleString()}</span>
                     </div>
-                    <div className="stat-item text-right">
+                    <div className="active-loans-stat">
                         <span className="text-xs text-muted block">At Risk (DPD {'>'} 0)</span>
                         <span className="font-bold text-error">{loans.filter(l => (l.dpd || 0) > 0).length}</span>
                     </div>

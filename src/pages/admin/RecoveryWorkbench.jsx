@@ -3,6 +3,7 @@ import { adminService } from '../../services/adminService'
 import { trackingService } from '../../services/trackingService'
 import { useAuth } from '../../hooks/useAuth'
 import { Phone, MessageSquare, Save, AlertTriangle, Search, RefreshCcw } from 'lucide-react'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 export default function RecoveryWorkbench() {
     const [loans, setLoans] = useState([])
@@ -83,7 +84,7 @@ export default function RecoveryWorkbench() {
         l.id.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    if (loading) return <div className="admin-loading">Loading recovery cases...</div>
+    if (loading) return <FullScreenLoader label="Loading recovery cases…" />
 
     return (
         <div className="admin-page">

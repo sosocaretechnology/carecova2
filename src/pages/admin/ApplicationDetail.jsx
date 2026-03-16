@@ -11,6 +11,7 @@ import VerificationRisk from '../../components/admin/ApplicationDetail/Verificat
 import DecisionPanel from '../../components/admin/ApplicationDetail/DecisionPanel'
 import SalesDataCollection from '../../components/admin/ApplicationDetail/SalesDataCollection'
 import DirectDebitCard from '../../components/admin/DirectDebitCard'
+import InlineLoader from '../../components/ui/InlineLoader'
 
 export default function ApplicationDetail() {
     const { id } = useParams()
@@ -126,7 +127,16 @@ export default function ApplicationDetail() {
         }
     }
 
-    if (loading) return <div className="admin-loading">Loading application {id}...</div>
+    if (loading) {
+        return (
+            <div className="admin-page flex items-center justify-center" style={{ minHeight: '100vh' }}>
+                <InlineLoader
+                    label={`Loading application ${id}…`}
+                    subtitle="Fetching loan details, affordability metrics and Mono status"
+                />
+            </div>
+        )
+    }
     if (error) return <div className="admin-page"><div className="alert-box alert-error">{error}</div><button className="button button--secondary mt-4" onClick={() => navigate('/admin/applications')}>← Back to Applications</button></div>
     if (!loan) return <div className="admin-page"><div className="alert-box alert-error">Application not found</div><button className="button button--secondary mt-4" onClick={() => navigate('/admin/applications')}>← Back to Applications</button></div>
     const showDirectDebit = ['approved', 'active', 'overdue'].includes(loan.status) || loan.repaymentMethod === 'direct_debit'

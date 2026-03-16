@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '../../services/adminService'
 import { Landmark, TrendingUp, History } from 'lucide-react'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 export default function Repayments() {
     const [transactions, setTransactions] = useState([])
@@ -23,7 +24,7 @@ export default function Repayments() {
         fetchData()
     }, [])
 
-    if (loading) return <div className="admin-loading">Loading transactions...</div>
+    if (loading) return <FullScreenLoader label="Loading repayments & wallet…" />
 
     return (
         <div className="admin-page">
