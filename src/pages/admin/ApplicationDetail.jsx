@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
-import { loanService } from '../../services/loanService'
 import { auditService } from '../../services/auditService'
 import { useAuth } from '../../hooks/useAuth'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
@@ -11,7 +10,6 @@ import ApplicantSnapshot from '../../components/admin/ApplicationDetail/Applican
 import VerificationRisk from '../../components/admin/ApplicationDetail/VerificationRisk'
 import DecisionPanel from '../../components/admin/ApplicationDetail/DecisionPanel'
 import SalesDataCollection from '../../components/admin/ApplicationDetail/SalesDataCollection'
-import MonoInformedDecisionModal from '../../components/admin/ApplicationDetail/MonoInformedDecisionModal'
 import DirectDebitCard from '../../components/admin/DirectDebitCard'
 
 export default function ApplicationDetail() {
@@ -130,7 +128,7 @@ export default function ApplicationDetail() {
 
     if (loading) return <div className="admin-loading">Loading application {id}...</div>
     if (error) return <div className="admin-page"><div className="alert-box alert-error">{error}</div><button className="button button--secondary mt-4" onClick={() => navigate('/admin/applications')}>← Back to Applications</button></div>
-    if (!loan) return null
+    if (!loan) return <div className="admin-page"><div className="alert-box alert-error">Application not found</div><button className="button button--secondary mt-4" onClick={() => navigate('/admin/applications')}>← Back to Applications</button></div>
     const showDirectDebit = ['approved', 'active', 'overdue'].includes(loan.status) || loan.repaymentMethod === 'direct_debit'
 
     return (
@@ -171,7 +169,6 @@ export default function ApplicationDetail() {
                                     loan={loan}
                                     onInitiateMonoConnect={handleInitiateMonoConnect}
                                     onRefreshMonoStatus={handleRefreshMonoStatus}
-                                    onOpenInformedDecision={handleOpenInformedDecision}
                                     monoInitiating={monoInitiating}
                                     monoRefreshing={monoRefreshing}
                                     monoFeedbackMessage={monoFeedbackMessage}
