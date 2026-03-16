@@ -5,6 +5,7 @@ import { adminService } from '../../services/adminService'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
 import StatusBadge from '../../components/StatusBadge'
 import { Search } from 'lucide-react'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 export default function Applications() {
     const navigate = useNavigate()
@@ -111,7 +112,7 @@ export default function Applications() {
         document.body.removeChild(link)
     }
 
-    if (loading) return <div className="admin-loading">Loading applications...</div>
+    if (loading) return <FullScreenLoader label="Loading applications…" />
 
     return (
         <div className="admin-page">

@@ -109,10 +109,21 @@ function deriveAnalysis(rawAnalysis, sections, form) {
   return output
 }
 
-function SummaryCard({ label, value }) {
+function SummaryCard({ label, value, tone = 'neutral', badge }) {
+  const toneClass =
+    tone === 'good'
+      ? 'risk-card--good'
+      : tone === 'warning'
+        ? 'risk-card--warning'
+        : tone === 'bad'
+          ? 'risk-card--bad'
+          : 'risk-card--neutral'
   return (
-    <div className="mono-summary-card">
-      <div className="mono-summary-label">{label}</div>
+    <div className={`mono-summary-card ${toneClass}`}>
+      <div className="mono-summary-label">
+        {label}
+        {badge && <span className="mono-summary-badge">{badge}</span>}
+      </div>
       <div className="mono-summary-value">{value}</div>
     </div>
   )
@@ -137,29 +148,223 @@ export default function DecisionSupportTab({ report, sections, form }) {
     ? Object.entries(analysis.summary).filter(([, v]) => typeof v === 'string' && v.trim() !== '')
     : []
 
+  const income = analysis.averageMonthlyIncome || 0
+  const repayment = analysis.proposedMonthlyRepayment || 0
+  const safeMax = analysis.safeMaxRepayment || (income ? income * 0.3 : 0)
+  const newRepayRatio = analysis.newRepaymentToIncomeRatio || (income ? repayment / income : 0)
+  const totalDtiRatio = analysis.totalDebtToIncomeRatio || 0
+
+  const ratioToPercent = (r) => (typeof r === 'number' ? r : 0)
+
+  const responseTone =
+    report?.status === 'successful'
+      ? 'good'
+      : report?.status === 'partial_success'
+        ? 'warning'
+        : 'bad'
+
+  const sourceTone =
+    report?.source === 'live'
+      ? 'good'
+      : report?.source === 'cache'
+        ? 'warning'
+        : 'bad'
+
+  const sectionsOkTone =
+    successCount > 0 && errorCount === 0
+      ? 'good'
+      : successCount > 0 && errorCount > 0
+        ? 'warning'
+        : 'bad'
+
+  const sectionsFailedTone =
+    errorCount === 0 ? 'good' : errorCount <= 2 ? 'warning' : 'bad'
+
+  const incomeVsRepaymentTone =
+    income && repayment
+      ? repayment / income > 0.3
+        ? 'bad'
+        : repayment / income > 0.2
+          ? 'warning'
+          : 'good'
+      : 'neutral'
+
+  const incomeRangeSpread =
+    analysis.incomeMinMonthly && analysis.incomeMaxMonthly && income
+      ? (analysis.incomeMaxMonthly - analysis.incomeMinMonthly) / income
+      : 0
+  const incomeRangeTone =
+    incomeRangeSpread <= 0.2 ? 'good' : incomeRangeSpread <= 0.4 ? 'warning' : 'bad'
+
+  const incomeStabilityTone =
+    typeof analysis.incomeStabilityScore === 'number'
+      ? analysis.incomeStabilityScore >= 0.8
+        ? 'good'
+        : analysis.incomeStabilityScore >= 0.6
+          ? 'warning'
+          : 'bad'
+      : 'neutral'
+
+  const safeMaxTone =
+    income && repayment && safeMax
+      ? repayment > safeMax
+        ? 'bad'
+        : repayment > safeMax * 0.8
+          ? 'warning'
+          : 'good'
+      : 'neutral'
+
+  const existingDebtRatio =
+    income && typeof analysis.existingDebtMonthly === 'number'
+      ? analysis.existingDebtMonthly / income
+      : 0
+  const existingDebtTone =
+    existingDebtRatio === 0
+      ? 'good'
+      : existingDebtRatio < 0.2
+        ? 'good'
+        : existingDebtRatio < 0.35
+          ? 'warning'
+          : 'bad'
+
+  const totalDtiTone =
+    totalDtiRatio <= 0.4
+      ? 'good'
+      : totalDtiRatio <= 0.6
+        ? 'warning'
+        : 'bad'
+
+  const avgBalanceTone =
+    income && analysis.averageMonthEndBalance
+      ? analysis.averageMonthEndBalance >= income
+        ? 'good'
+        : analysis.averageMonthEndBalance >= income * 0.5
+          ? 'warning'
+          : 'bad'
+      : 'neutral'
+
+  const liquidityTone =
+    typeof analysis.netSurplusAfterRepayment === 'number' &&
+    typeof analysis.liquidityBufferRequired === 'number'
+      ? analysis.netSurplusAfterRepayment >= analysis.liquidityBufferRequired * 1.5
+        ? 'good'
+        : analysis.netSurplusAfterRepayment >= analysis.liquidityBufferRequired
+          ? 'warning'
+          : 'bad'
+      : 'neutral'
+
+  const creditScoreTone =
+    typeof analysis.creditScore === 'number'
+      ? analysis.creditScore >= 700
+        ? 'good'
+        : analysis.creditScore >= 550
+          ? 'warning'
+          : 'bad'
+      : 'neutral'
+
   if (!report) return <div className="text-muted">No data loaded yet.</div>
 
   return (
     <div className="id-decision-tab">
       <div className="mono-summary-grid">
-        <SummaryCard label="Response Status" value={report.status} />
-        <SummaryCard label="Source" value={report.source || 'cache'} />
-        <SummaryCard label="Sections OK" value={successCount} />
-        <SummaryCard label="Sections Failed" value={errorCount} />
-        <SummaryCard label="Avg Monthly Income" value={formatCurrency(analysis.averageMonthlyIncome)} />
-        <SummaryCard label="Income Range" value={`${formatCurrency(analysis.incomeMinMonthly)} – ${formatCurrency(analysis.incomeMaxMonthly)}`} />
-        <SummaryCard label="Income Stability" value={`${formatPercent(analysis.incomeStabilityScore)} ${analysis.incomeStabilityLabel ? `(${analysis.incomeStabilityLabel})` : ''}`} />
-        <SummaryCard label="Proposed Repayment" value={formatCurrency(analysis.proposedMonthlyRepayment)} />
-        <SummaryCard label="Safe Max (30%)" value={formatCurrency(analysis.safeMaxRepayment)} />
-        <SummaryCard label="Existing Debt (monthly)" value={formatCurrency(analysis.existingDebtMonthly)} />
-        <SummaryCard label="Total Existing Debt" value={formatCurrency(analysis.totalExistingDebt)} />
-        <SummaryCard label="Total Obligation" value={formatCurrency(analysis.totalDebtObligationMonthly)} />
-        <SummaryCard label="New Repayment Ratio" value={formatPercent(analysis.newRepaymentToIncomeRatio)} />
-        <SummaryCard label="Total DTI Ratio" value={formatPercent(analysis.totalDebtToIncomeRatio)} />
-        <SummaryCard label="Avg Month-End Balance" value={formatCurrency(analysis.averageMonthEndBalance)} />
-        <SummaryCard label="Liquidity Buffer" value={formatCurrency(analysis.netSurplusAfterRepayment)} />
-        <SummaryCard label="Required Buffer" value={formatCurrency(analysis.liquidityBufferRequired)} />
-        <SummaryCard label="Credit Score" value={typeof analysis.creditScore === 'number' ? analysis.creditScore.toLocaleString() : '—'} />
+        <SummaryCard
+          label="Response Status"
+          value={report.status}
+          tone={responseTone}
+          badge={responseTone === 'bad' ? 'API Issue' : responseTone === 'warning' ? 'Partial' : 'Healthy'}
+        />
+        <SummaryCard
+          label="Source"
+          value={report.source || 'cache'}
+          tone={sourceTone}
+          badge={sourceTone === 'good' ? 'Live' : sourceTone === 'warning' ? 'Cached' : 'Unknown'}
+        />
+        <SummaryCard
+          label="Sections OK"
+          value={successCount}
+          tone={sectionsOkTone}
+        />
+        <SummaryCard
+          label="Sections Failed"
+          value={errorCount}
+          tone={sectionsFailedTone}
+        />
+        <SummaryCard
+          label="Avg Monthly Income"
+          value={formatCurrency(analysis.averageMonthlyIncome)}
+          tone={incomeVsRepaymentTone}
+        />
+        <SummaryCard
+          label="Income Range"
+          value={`${formatCurrency(analysis.incomeMinMonthly)} – ${formatCurrency(analysis.incomeMaxMonthly)}`}
+          tone={incomeRangeTone}
+        />
+        <SummaryCard
+          label="Income Stability"
+          value={`${formatPercent(analysis.incomeStabilityScore)} ${analysis.incomeStabilityLabel ? `(${analysis.incomeStabilityLabel})` : ''}`}
+          tone={incomeStabilityTone}
+        />
+        <SummaryCard
+          label="Proposed Repayment"
+          value={formatCurrency(analysis.proposedMonthlyRepayment)}
+          tone={incomeVsRepaymentTone}
+        />
+        <SummaryCard
+          label="Safe Max (30%)"
+          value={formatCurrency(analysis.safeMaxRepayment)}
+          tone={safeMaxTone}
+        />
+        <SummaryCard
+          label="Existing Debt (monthly)"
+          value={formatCurrency(analysis.existingDebtMonthly)}
+          tone={existingDebtTone}
+        />
+        <SummaryCard
+          label="Total Existing Debt"
+          value={formatCurrency(analysis.totalExistingDebt)}
+          tone={existingDebtTone}
+        />
+        <SummaryCard
+          label="Total Obligation"
+          value={formatCurrency(analysis.totalDebtObligationMonthly)}
+          tone={totalDtiTone}
+        />
+        <SummaryCard
+          label="New Repayment Ratio"
+          value={formatPercent(analysis.newRepaymentToIncomeRatio)}
+          tone={
+            ratioToPercent(newRepayRatio) > 0.4
+              ? 'bad'
+              : ratioToPercent(newRepayRatio) > 0.3
+                ? 'warning'
+                : 'good'
+          }
+        />
+        <SummaryCard
+          label="Total DTI Ratio"
+          value={formatPercent(analysis.totalDebtToIncomeRatio)}
+          tone={totalDtiTone}
+        />
+        <SummaryCard
+          label="Avg Month-End Balance"
+          value={formatCurrency(analysis.averageMonthEndBalance)}
+          tone={avgBalanceTone}
+        />
+        <SummaryCard
+          label="Liquidity Buffer"
+          value={formatCurrency(analysis.netSurplusAfterRepayment)}
+          tone={liquidityTone}
+        />
+        <SummaryCard
+          label="Required Buffer"
+          value={formatCurrency(analysis.liquidityBufferRequired)}
+          tone={liquidityTone}
+        />
+        <SummaryCard
+          label="Credit Score"
+          value={typeof analysis.creditScore === 'number' ? analysis.creditScore.toLocaleString() : '—'}
+          tone={creditScoreTone}
+        />
         <SummaryCard
           label="Care Cova Score"
           value={

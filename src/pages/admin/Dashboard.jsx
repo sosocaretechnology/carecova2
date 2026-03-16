@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
 import { useAuth } from '../../hooks/useAuth'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 import SalesDashboardView from '../../components/admin/Dashboard/SalesDashboardView'
 import AdminDashboardView from '../../components/admin/Dashboard/AdminDashboardView'
 import SupportDashboardView from '../../components/admin/Dashboard/SupportDashboardView'
@@ -35,7 +36,7 @@ export default function Dashboard() {
     }, [])
 
     if (loading || !kpis || !queues || !insights) {
-        return <div className="admin-loading">Loading dashboard metrics...</div>
+        return <FullScreenLoader label="Loading dashboard metrics…" />
     }
 
     const renderDashboard = () => {
