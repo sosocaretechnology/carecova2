@@ -45,6 +45,7 @@ jobs:
           cp package.json deploy/package.json
           cp package-lock.json deploy/package-lock.json
           cp server.js deploy/server.js
+          cp web.config deploy/web.config
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -73,5 +74,4 @@ jobs:
           app-name: 'carecova-FE'
           slot-name: 'Production'
           package: .
-          startup-command: 'npm start'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_95BE387BABA840238FB1C2B02474A8EF }}
