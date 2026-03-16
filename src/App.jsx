@@ -24,6 +24,7 @@ import AdminLayout from './components/admin/AdminLayout'
 import Dashboard from './pages/admin/Dashboard'
 import Applications from './pages/admin/Applications'
 import ApplicationDetail from './pages/admin/ApplicationDetail'
+import InformedDecision from './pages/admin/InformedDecision'
 import ActiveLoans from './pages/admin/ActiveLoans'
 import LoanDetail from './pages/admin/LoanDetail'
 import Repayments from './pages/admin/Repayments'
@@ -39,6 +40,7 @@ import DisbursementQueue from './pages/credit/DisbursementQueue'
 import DisbursementCaseFile from './pages/credit/DisbursementCaseFile'
 import { useAuth } from './hooks/useAuth'
 import { useCustomerAuth } from './hooks/useCustomerAuth'
+import RequireRoles from './components/auth/RequireRoles'
 import './App.css'
 
 function ProtectedRoute({ children }) {
@@ -96,19 +98,118 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="applications" element={<Applications />} />
-          <Route path="applications/:id" element={<ApplicationDetail />} />
-          <Route path="loans" element={<ActiveLoans />} />
-          <Route path="loans/:id" element={<LoanDetail />} />
-          <Route path="repayments" element={<Repayments />} />
-          <Route path="wallets" element={<OrganizationWallets />} />
-          <Route path="rules" element={<RulesConfig />} />
-          <Route path="audit" element={<AuditLog />} />
-          <Route path="users" element={<UserManagement />} />
-          <Route path="recovery" element={<RecoveryWorkbench />} />
-          <Route path="disbursements" element={<DisbursementQueue />} />
-          <Route path="disbursements/:id" element={<DisbursementCaseFile />} />
+          <Route
+            path="dashboard"
+            element={
+              <RequireRoles allowedRoles={['admin', 'sales', 'support', 'credit_officer']}>
+                <Dashboard />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="applications"
+            element={
+              <RequireRoles allowedRoles={['admin', 'sales', 'support', 'credit_officer']}>
+                <Applications />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="applications/:id"
+            element={
+              <RequireRoles allowedRoles={['admin', 'sales', 'support', 'credit_officer']}>
+                <ApplicationDetail />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="applications/:id/informed-decision"
+            element={
+              <RequireRoles allowedRoles={['admin', 'credit_officer']}>
+                <InformedDecision />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="loans"
+            element={
+              <RequireRoles allowedRoles={['admin', 'sales', 'support', 'credit_officer']}>
+                <ActiveLoans />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="loans/:id"
+            element={
+              <RequireRoles allowedRoles={['admin', 'sales', 'support', 'credit_officer']}>
+                <LoanDetail />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="repayments"
+            element={
+              <RequireRoles allowedRoles={['admin', 'support', 'credit_officer']}>
+                <Repayments />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="wallets"
+            element={
+              <RequireRoles allowedRoles={['admin']}>
+                <OrganizationWallets />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="rules"
+            element={
+              <RequireRoles allowedRoles={['admin']}>
+                <RulesConfig />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="audit"
+            element={
+              <RequireRoles allowedRoles={['admin']}>
+                <AuditLog />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="users"
+            element={
+              <RequireRoles allowedRoles={['admin']}>
+                <UserManagement />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="recovery"
+            element={
+              <RequireRoles allowedRoles={['admin', 'support', 'sales']}>
+                <RecoveryWorkbench />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="disbursements"
+            element={
+              <RequireRoles allowedRoles={['admin', 'credit_officer']}>
+                <DisbursementQueue />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="disbursements/:id"
+            element={
+              <RequireRoles allowedRoles={['admin', 'credit_officer']}>
+                <DisbursementCaseFile />
+              </RequireRoles>
+            }
+          />
         </Route>
         {/* Credit Officer Portal */}
         <Route path="/credit" element={<ProtectedCreditRoute><CreditLayout /></ProtectedCreditRoute>}>

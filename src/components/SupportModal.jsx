@@ -1,4 +1,5 @@
-import { MessageCircle, Phone, Mail, X } from 'lucide-react'
+import { MessageCircle, Phone, Mail } from 'lucide-react'
+import Modal from './ui/Modal'
 
 export default function SupportModal({ isOpen, onClose, context = {} }) {
   if (!isOpen) return null
@@ -14,17 +15,18 @@ export default function SupportModal({ isOpen, onClose, context = {} }) {
   const emailUrl = 'mailto:support@carecova.com?subject=Support Request'
 
   return (
-    <div className="support-modal-overlay" onClick={onClose}>
-      <div className="support-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="support-modal-close" onClick={onClose}>
-          <X size={24} />
-        </button>
-        <h2>How can we help you?</h2>
-        <p className="support-modal-description">
-          Choose your preferred way to reach us
-        </p>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="How can we help you?"
+      size="md"
+      footer={null}
+    >
+      <p className="support-modal-description">
+        Choose your preferred way to reach us
+      </p>
 
-        <div className="support-options">
+      <div className="support-options">
           <a
             href={whatsappUrl}
             target="_blank"
@@ -68,8 +70,7 @@ export default function SupportModal({ isOpen, onClose, context = {} }) {
               <p>Coming soon</p>
             </div>
           </div>
-        </div>
       </div>
-    </div>
+    </Modal>
   )
 }

@@ -5,7 +5,6 @@ export default function VerificationRisk({
     loan,
     onInitiateMonoConnect,
     onRefreshMonoStatus,
-    onOpenInformedDecision,
     monoInitiating = false,
     monoRefreshing = false,
     monoFeedbackMessage = '',
@@ -54,7 +53,6 @@ export default function VerificationRisk({
                 refreshing={monoRefreshing}
                 onInitiate={onInitiateMonoConnect}
                 onRefresh={onRefreshMonoStatus}
-                onOpenInformedDecision={onOpenInformedDecision}
                 feedbackMessage={monoFeedbackMessage}
                 feedbackError={monoFeedbackError}
             />
