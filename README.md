@@ -40,3 +40,25 @@ Optional (if you use image uploads): add `VITE_CLOUDINARY_CLOUD_NAME` and `VITE_
 
 - Build: `npm run build` → output in `dist/`.
 - The app uses `base: '/'`; if you deploy to a subpath (e.g. `https://example.com/carecova/`), set `base: '/carecova/'` in `vite.config.ts` and rebuild.
+
+## GitHub Actions CI/CD
+
+The repo now includes `.github/workflows/frontend-ci-cd.yml`.
+
+- On every pull request: installs dependencies and runs `npm run build`.
+- On every push to `main`: builds the app and uploads the `dist/` artifact.
+- On pushes to `main` with Vercel secrets configured: deploys the frontend to Vercel.
+
+Configure these GitHub repository secrets for deployment:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+Configure these GitHub repository variables for build-time frontend env values:
+
+- `VITE_API_BASE_URL`
+- `VITE_CLOUDINARY_CLOUD_NAME`
+- `VITE_CLOUDINARY_UPLOAD_PRESET`
+
+If the Vercel secrets are missing, the deploy job is skipped and the workflow still runs CI successfully.
