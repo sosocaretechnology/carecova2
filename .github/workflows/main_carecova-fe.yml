@@ -44,6 +44,7 @@ jobs:
           cp -R dist deploy/dist
           cp package.json deploy/package.json
           cp package-lock.json deploy/package-lock.json
+          cp server.js deploy/server.js
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
