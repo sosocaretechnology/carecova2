@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 export default function Modal({
   isOpen,
   onClose,
@@ -6,7 +8,26 @@ export default function Modal({
   footer = null,
   size = 'md', // 'sm' | 'md' | 'lg'
 }) {
-  if (!isOpen) return null
+  const [visible, setVisible] = useState(isOpen)
+  const [isClosing, setIsClosing] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      setVisible(true)
+      setIsClosing(false)
+      return
+    }
+    if (visible) {
+      setIsClosing(true)
+      const timer = setTimeout(() => {
+        setVisible(false)
+        setIsClosing(false)
+      }, 200)
+      return () => clearTimeout(timer)
+    }
+  }, [isOpen, visible])
+
+  if (!visible) return null
 
   const sizeClass =
     size === 'sm' ? 'modal-content--sm' : size === 'lg' ? 'modal-content--lg' : ''
@@ -19,9 +40,16 @@ export default function Modal({
     event.stopPropagation()
   }
 
+  const overlayClassName = `modal-overlay ${isOpen ? 'modal-enter' : ''} ${
+    isClosing ? 'modal-leave' : ''
+  }`
+  const contentClassName = `modal-content ${sizeClass} ${isOpen ? 'modal-enter' : ''} ${
+    isClosing ? 'modal-leave' : ''
+  }`
+
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className={`modal-content ${sizeClass}`} onClick={handleContentClick}>
+    <div className={overlayClassName} onClick={handleOverlayClick}>
+      <div className={contentClassName} onClick={handleContentClick}>
         <div className="modal-header">
           {title && <h2>{title}</h2>}
           {onClose && (

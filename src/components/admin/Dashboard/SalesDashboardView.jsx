@@ -41,14 +41,14 @@ export default function SalesDashboardView({ kpis, queues }) {
                         <div className="queue-panel">
                             <div className="queue-header">
                                 <h3>Active Portfolio (Needs Data)</h3>
-                                <span className="queue-count">{queues.needsReview.length} items</span>
+                                <span className="queue-count">{(queues.needsReview || []).length} items</span>
                             </div>
                             <div className="queue-list">
-                                {queues.needsReview.map(app => (
+                                {(queues.needsReview || []).map(app => (
                                     <div key={app.id} className="queue-item" onClick={() => navigate(`/admin/applications/${app.id}`)}>
                                         <div className="queue-item-primary">
                                             <span className="queue-item-id">{app.id}</span>
-                                            <span className="queue-item-name">{app.fullName}</span>
+                                            <span className="queue-item-name">{app.fullName || app.patientName || app.id}</span>
                                         </div>
                                         <div className="queue-item-secondary">
                                             <span className="queue-item-amount">₦{app.requestedAmount?.toLocaleString()}</span>

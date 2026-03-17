@@ -12,6 +12,7 @@ import DecisionPanel from '../../components/admin/ApplicationDetail/DecisionPane
 import SalesDataCollection from '../../components/admin/ApplicationDetail/SalesDataCollection'
 import DirectDebitCard from '../../components/admin/DirectDebitCard'
 import InlineLoader from '../../components/ui/InlineLoader'
+import Modal from '../../components/ui/Modal'
 
 export default function ApplicationDetail() {
     const { id } = useParams()
@@ -25,6 +26,7 @@ export default function ApplicationDetail() {
     const [monoRefreshing, setMonoRefreshing] = useState(false)
     const [monoFeedbackMessage, setMonoFeedbackMessage] = useState('')
     const [monoFeedbackError, setMonoFeedbackError] = useState('')
+    const [feedbackModal, setFeedbackModal] = useState({ open: false, title: '', message: '' })
 
     const loadLoanDetails = async ({ silent = false } = {}) => {
         try {
@@ -53,13 +55,17 @@ export default function ApplicationDetail() {
     }, [id])
 
     // Handlers
+    const openFeedback = (title, message) => {
+        setFeedbackModal({ open: true, title, message })
+    }
+
     const handleApproveStage1 = async (data) => {
         try {
             const updated = await adminService.approveStage1(loan.id, data)
             setLoan({ ...updated, affordability: loan.affordability, riskFlags: loan.riskFlags })
-            alert('Stage 1 Approved. Application moved to credit review.')
+            openFeedback('Stage 1 Approved', 'Application has been moved to credit review.')
         } catch (err) {
-            alert(err.message || 'Error approving Stage 1')
+            openFeedback('Stage 1 Approval Failed', err.message || 'Error approving Stage 1')
         }
     }
 
@@ -67,9 +73,9 @@ export default function ApplicationDetail() {
         try {
             const updated = await adminService.approveLoan(loan.id, terms)
             setLoan({ ...updated, affordability: loan.affordability, riskFlags: loan.riskFlags })
-            alert('Application approved successfully')
+            openFeedback('Application Approved', 'The loan has been approved successfully.')
         } catch (err) {
-            alert(err.message || 'Error approving loan')
+            openFeedback('Approval Failed', err.message || 'Error approving loan')
         }
     }
 
@@ -77,9 +83,9 @@ export default function ApplicationDetail() {
         try {
             const updated = await adminService.rejectLoan(loan.id, reason)
             setLoan({ ...updated, affordability: loan.affordability, riskFlags: loan.riskFlags })
-            alert('Application rejected successfully')
+            openFeedback('Application Rejected', 'The application has been rejected.')
         } catch (err) {
-            alert(err.message || 'Error rejecting loan')
+            openFeedback('Rejection Failed', err.message || 'Error rejecting loan')
         }
     }
 
@@ -87,9 +93,9 @@ export default function ApplicationDetail() {
         try {
             const updated = await adminService.requestMoreInfo(loan.id, message)
             setLoan({ ...updated, affordability: loan.affordability, riskFlags: loan.riskFlags })
-            alert('Information request sent successfully')
+            openFeedback('Request Sent', 'Information request sent successfully to the applicant.')
         } catch (err) {
-            alert(err.message || 'Error requesting information')
+            openFeedback('Request Failed', err.message || 'Error requesting information')
         }
     }
 
@@ -141,7 +147,34 @@ export default function ApplicationDetail() {
     if (!loan) return <div className="admin-page"><div className="alert-box alert-error">Application not found</div><button className="button button--secondary mt-4" onClick={() => navigate('/admin/applications')}>← Back to Applications</button></div>
     const showDirectDebit = ['approved', 'active', 'overdue'].includes(loan.status) || loan.repaymentMethod === 'direct_debit'
 
+    const getStageLabel = () => {
+        switch (loan.status) {
+            case 'pending':
+            case 'submitted':
+            case 'incomplete':
+                return 'Stage 1 – Sales'
+            case 'stage_2_review':
+            case 'pending_admin_review':
+                return 'Stage 2 – Admin'
+            case 'pending_credit_review':
+            case 'ready_to_disburse':
+                return 'Stage 3 – Credit'
+            case 'approved':
+            case 'active':
+            case 'completed':
+                return 'Lifecycle – Post Approval'
+            default:
+                return '—'
+        }
+    }
+
+    const salesCanDoStage1 =
+        session?.role === 'sales' &&
+        loan.assignedTo === session.username &&
+        !(loan.stage1ApprovedBy || loan.stage1ApprovedAt)
+
     return (
+        <>
         <div className="admin-page">
             <div className="admin-page-header flex-between align-center mb-5">
                 <div>
@@ -149,11 +182,23 @@ export default function ApplicationDetail() {
                         ← Back to List
                     </button>
                     <div className="flex items-center gap-3">
-                        <h1 className="mb-0">Application {loan.id}</h1>
+                        <h1 className="mb-0">
+                            {loan.fullName || loan.patientName || 'Applicant'}
+                        </h1>
                         <StatusBadge status={loan.status} />
+                        <span className="stage-pill">{getStageLabel()}</span>
                     </div>
-                    {loan.assignedTo && <p className="text-sm mt-1">Assigned to: <strong>{loan.assignedTo === session?.username ? 'Me' : loan.assignedTo}</strong></p>}
-                    <p className="mt-1 text-xs text-muted">Submitted on {new Date(loan.submittedAt).toLocaleDateString()} at {new Date(loan.submittedAt).toLocaleTimeString()}</p>
+                    <p className="text-xs text-muted mt-1">Application ID: {loan.id}</p>
+                    {loan.assignedTo && (
+                        <p className="text-sm mt-1">
+                            Assigned to:{' '}
+                            <strong>{loan.assignedTo === session?.username ? 'Me' : loan.assignedTo}</strong>
+                        </p>
+                    )}
+                    <p className="mt-1 text-xs text-muted">
+                        Submitted on {new Date(loan.submittedAt).toLocaleDateString()} at{' '}
+                        {new Date(loan.submittedAt).toLocaleTimeString()}
+                    </p>
                 </div>
 
                 <div className="flex gap-2">
@@ -167,7 +212,7 @@ export default function ApplicationDetail() {
                     <ApplicantSnapshot loan={loan} />
 
                     <div className="detail-column">
-                        {session?.role === 'sales' && loan.assignedTo === session.username && (loan.status === 'pending' || loan.status === 'incomplete') ? (
+                        {salesCanDoStage1 ? (
                             <SalesDataCollection
                                 loan={loan}
                                 onSave={() => {}}
@@ -194,13 +239,15 @@ export default function ApplicationDetail() {
                         )}
                     </div>
 
-                    <DecisionPanel
-                        loan={loan}
-                        session={session}
-                        onApprove={handleApprove}
-                        onReject={handleReject}
-                        onRequestInfo={handleRequestInfo}
-                    />
+                    {!(session?.role === 'sales' && loan.assignedTo === session.username && (loan.status === 'pending' || loan.status === 'incomplete')) && (
+                        <DecisionPanel
+                            loan={loan}
+                            session={session}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                            onRequestInfo={handleRequestInfo}
+                        />
+                    )}
                 </div>
             ) : (
                 <div className="detail-card full-width">
@@ -212,6 +259,24 @@ export default function ApplicationDetail() {
             )}
 
         </div>
+        <Modal
+            isOpen={feedbackModal.open}
+            onClose={() => setFeedbackModal(prev => ({ ...prev, open: false }))}
+            title={feedbackModal.title}
+            size="sm"
+            footer={
+                <button
+                    type="button"
+                    className="button button--primary w-full"
+                    onClick={() => setFeedbackModal(prev => ({ ...prev, open: false }))}
+                >
+                    OK
+                </button>
+            }
+        >
+            <p className="text-sm text-muted">{feedbackModal.message}</p>
+        </Modal>
+        </>
     )
 }
 

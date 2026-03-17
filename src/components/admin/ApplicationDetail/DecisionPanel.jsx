@@ -72,7 +72,8 @@ export default function DecisionPanel({ loan, session, onApprove, onReject, onRe
     const isApproved = status === 'approved' || status === 'ready_to_disburse' || status === 'disbursed'
     const isRejected = status === 'rejected'
     const isStage2Review = status === 'stage_2_review'
-    const isPending = status === 'pending'
+    const isPending = status === 'pending' || status === 'pending_stage1'
+    const isStage1Completed = Boolean(loan.stage1ApprovedBy || loan.stage1ApprovedAt)
 
     if (isApproved || isRejected) {
         return (
@@ -100,28 +101,105 @@ export default function DecisionPanel({ loan, session, onApprove, onReject, onRe
         )
     }
 
-    // Sales sees nothing here if they are in pending (they use SalesDataCollection)
-    if (role === 'sales' && isPending) {
+    // Sales never finalize loan terms in this panel – they use SalesDataCollection instead
+    if (role === 'sales') {
         return null
     }
 
-    // Admin sees notice if still in Stage 1
-    if (role === 'admin' && isPending) {
+    // Admin sees notice (and cannot approve) if Stage 1 is not completed yet
+    if (role === 'admin' && !isStage1Completed) {
         return (
             <div className="detail-column column-decision sticky-panel">
                 <div className="detail-card highlight-border-warning">
                     <h3>Stage 1 Review Pending</h3>
-                    <p className="text-sm text-muted">Awaiting sales officer to complete medical and financial data collection.</p>
+                    <p className="text-sm text-muted">
+                        Awaiting sales officer to complete medical and financial data collection and approve Stage 1.
+                        Admin review will unlock automatically after Stage 1 is approved.
+                    </p>
                 </div>
             </div>
         )
     }
+
+    const affordability = loan.internalRiskMetrics || loan.affordability || {}
+    const dtiPct = affordability.affordabilityRatio ? Math.round(affordability.affordabilityRatio * 100) : (affordability.installmentToIncomePct || 0)
+    const docsScore = loan.completenessScore || 0
+
+    const dtiSeverity = dtiPct <= 20 ? 'success' : dtiPct <= 35 ? 'warning' : 'danger'
 
     return (
         <div className="detail-column column-decision sticky-panel">
             <div className={`recommendation-header bg-${recommendation.class}-subtle border-${recommendation.class}`}>
                 <div className={`text-${recommendation.class} font-bold text-lg`}>{recommendation.text}</div>
                 <div className="text-xs text-muted mt-1">Based on AI Risk Engine</div>
+            </div>
+
+            <div className="affordability-card mt-3">
+                <div className="affordability-card-header">
+                    <div>
+                        <div className="affordability-card-title">Decision Snapshot</div>
+                        <div className="affordability-card-subtitle">
+                            Affordability, documentation and risk at a glance before you lock final terms.
+                        </div>
+                    </div>
+                    <div className="affordability-chip-row">
+                        {affordability.affordabilityTag && (
+                            <span
+                                className={`affordability-chip ${
+                                    affordability.affordabilityTag === 'Not Affordable'
+                                        ? 'affordability-chip--danger'
+                                        : affordability.affordabilityTag === 'Tight'
+                                            ? 'affordability-chip--warning'
+                                            : 'affordability-chip--success'
+                                }`}
+                            >
+                                {affordability.affordabilityTag}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <div className="affordability-grid">
+                    <div>
+                        <div className="affordability-metric-label">DTI (Installment / Income)</div>
+                        <div className="affordability-metric-value">
+                            {dtiPct ? `${dtiPct}%` : '—'}
+                        </div>
+                        <div className="metric-bar">
+                            <div
+                                className={`metric-bar-fill metric-bar-fill--${dtiSeverity}`}
+                                style={{ width: `${Math.min(dtiPct || 0, 100)}%` }}
+                            />
+                        </div>
+                        <div className="affordability-metric-muted">
+                            Target &lt; 35% for comfortable repayment.
+                        </div>
+                    </div>
+                    <div>
+                        <div className="affordability-metric-label">Docs Completeness</div>
+                        <div className="affordability-metric-value">
+                            {docsScore ? `${docsScore}%` : '—'}
+                        </div>
+                        <div className="metric-bar">
+                            <div
+                                className="metric-bar-fill metric-bar-fill--success"
+                                style={{ width: `${Math.min(docsScore || 0, 100)}%` }}
+                            />
+                        </div>
+                        <div className="affordability-metric-muted">
+                            Review missing docs in the Case File panel.
+                        </div>
+                    </div>
+                    <div>
+                        <div className="affordability-metric-label">Risk Level</div>
+                        <div className="affordability-metric-value">
+                            {riskLevel || 'LOW'}
+                        </div>
+                        <div className="affordability-metric-muted">
+                            Use this together with Mono & internal checkers for final judgement.
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div className="decision-tabs mt-4">

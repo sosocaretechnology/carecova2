@@ -52,6 +52,7 @@ export default function InformedDecision() {
           setLoan(found)
           setForm((prev) => ({
             ...prev,
+            bvn: found.bvn || found.identityNumber || prev.bvn || '',
             principal: found.requestedAmount || found.estimatedCost || '',
             term: found.preferredDuration || '',
           }))
