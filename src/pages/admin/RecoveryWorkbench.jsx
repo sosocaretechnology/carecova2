@@ -21,10 +21,8 @@ export default function RecoveryWorkbench() {
                 candidates = candidates.filter(l => l.assignedTo === session.username)
             }
 
-            const tracked = await Promise.all(
-                candidates.map(l => trackingService.trackLoan(l.id))
-            )
-            setLoans(tracked.filter(l => l.dpd > 0))
+            const tracked = candidates.map((l) => trackingService.enrichLoan(l))
+            setLoans(tracked.filter((l) => (l.dpd || 0) > 0))
         } catch (err) {
             console.error(err)
         } finally {

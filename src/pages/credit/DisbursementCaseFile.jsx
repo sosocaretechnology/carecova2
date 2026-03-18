@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
-import { loanService } from '../../services/loanService'
 import StatusBadge from '../../components/StatusBadge'
 import { getRiskConfig } from '../../data/riskConfig'
 import {
     CheckCircle, AlertTriangle, XCircle, ArrowLeft, Loader, Beaker
 } from 'lucide-react'
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+const USE_BACKEND = !!API_BASE_URL
 
 const BANKS = [
     'Access Bank', 'GTBank', 'First Bank', 'Zenith Bank', 'UBA',
@@ -40,21 +42,27 @@ export default function DisbursementCaseFile() {
 
     useEffect(() => {
         async function load() {
-            const all = await loanService.getAllApplications()
-            const found = all.find(l => l.id === id)
-            if (found) {
-                setLoan(found)
-                const config = getRiskConfig()
-                const providerPct = config.providerCommissionPct ?? 0.07
-                const approved = found.approvedAmount || 0
-                const providerPayout = Math.round(approved * (1 - providerPct))
-                if (found.disbursementIntent) {
-                    setPayout(prev => ({ ...prev, ...found.disbursementIntent }))
-                } else {
-                    setPayout(prev => ({ ...prev, payoutAmount: providerPayout }))
+            setLoading(true)
+            try {
+                const found = await adminService.getLoanById(id)
+                if (found) {
+                    setLoan(found)
+                    const config = getRiskConfig()
+                    const providerPct = config.providerCommissionPct ?? 0.07
+                    const approved = found.approvedAmount ?? found.estimatedCost ?? found.requestedAmount ?? 0
+                    const approvedNum = typeof approved === 'number' ? approved : Number(approved) || 0
+                    const providerPayout = Math.round(approvedNum * (1 - providerPct))
+                    if (found.disbursementIntent) {
+                        const existing = found.disbursementIntent
+                        const payoutAmt = existing.payoutAmount ?? existing.providerPayout ?? providerPayout
+                        setPayout(prev => ({ ...prev, ...existing, payoutAmount: payoutAmt > 0 ? payoutAmt : providerPayout }))
+                    } else {
+                        setPayout(prev => ({ ...prev, payoutAmount: providerPayout > 0 ? providerPayout : approvedNum }))
+                    }
                 }
+            } finally {
+                setLoading(false)
             }
-            setLoading(false)
         }
         load()
     }, [id])
@@ -65,9 +73,10 @@ export default function DisbursementCaseFile() {
 
     const config = getRiskConfig()
     const providerPct = config.providerCommissionPct ?? 0.07
-    const approvedAmount = loan ? (loan.approvedAmount || 0) : 0
-    const providerPayoutComputed = Math.round(approvedAmount * (1 - providerPct))
-    const platformCommissionAmount = Math.round(approvedAmount * providerPct)
+    const approvedAmount = loan ? (loan.approvedAmount ?? loan.estimatedCost ?? loan.requestedAmount ?? 0) : 0
+    const approvedAmountNum = typeof approvedAmount === 'number' ? approvedAmount : Number(approvedAmount) || 0
+    const providerPayoutComputed = Math.round(approvedAmountNum * (1 - providerPct))
+    const platformCommissionAmount = Math.round(approvedAmountNum * providerPct)
     const amount = Number(payout.payoutAmount)
 
     const validationErrors = {
@@ -86,6 +95,11 @@ export default function DisbursementCaseFile() {
         try {
             const result = await adminService.confirmDisbursement(id, { ...payout, notes }, simulateResult)
             setLoan(result)
+            // Always refresh from backend after confirm to pick up status/wallet/schedule side-effects.
+            try {
+                const fresh = await adminService.getLoanById(id)
+                if (fresh) setLoan(fresh)
+            } catch (_) {}
         } catch (err) {
             alert(err.message)
         } finally {
@@ -118,7 +132,7 @@ export default function DisbursementCaseFile() {
                         <StatusBadge status={loan.status} />
                     </div>
                     <p className="text-xs text-muted mt-1">
-                        Approved ₦{(loan.approvedAmount || 0).toLocaleString()} for {loan.approvedDuration} months
+                        Approved ₦{approvedAmountNum.toLocaleString()} for {loan.approvedDuration ?? loan.duration} months
                     </p>
                 </div>
             </div>
@@ -180,7 +194,7 @@ export default function DisbursementCaseFile() {
                         <h3 className="detail-card-title">Offer Terms</h3>
                         <div className="detail-field-row">
                             <span className="detail-label">Approved Amount</span>
-                            <span className="detail-value font-bold">₦{(loan.approvedAmount || 0).toLocaleString()}</span>
+                            <span className="detail-value font-bold">₦{approvedAmountNum.toLocaleString()}</span>
                         </div>
                         <div className="detail-field-row">
                             <span className="detail-label">Duration</span>
@@ -296,7 +310,7 @@ export default function DisbursementCaseFile() {
                         <div className="form-group">
                             <label className="form-label">Payout breakdown</label>
                             <div className="p-3 rounded-lg border border-gray-200 bg-gray-50 text-sm">
-                                <div className="flex justify-between"><span>Approved (loan amount)</span><span className="font-medium">₦{approvedAmount.toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span>Approved (loan amount)</span><span className="font-medium">₦{approvedAmountNum.toLocaleString()}</span></div>
                                 <div className="flex justify-between"><span>Provider commission ({(providerPct * 100).toFixed(0)}%)</span><span className="font-medium">− ₦{platformCommissionAmount.toLocaleString()}</span></div>
                                 <div className="flex justify-between pt-2 border-t border-gray-200 font-bold"><span>Amount to provider</span><span>₦{providerPayoutComputed.toLocaleString()}</span></div>
                             </div>
@@ -363,19 +377,21 @@ export default function DisbursementCaseFile() {
 
                         {!isDone && !isFailed ? (
                             <>
-                                {/* Dev Simulate Tool */}
-                                <div className="p-3 mb-4 rounded-lg border border-dashed border-gray-300"
-                                    style={{ background: '#f9fafb' }}>
-                                    <div className="flex items-center gap-2 mb-2 text-xs font-bold text-muted uppercase">
-                                        <Beaker size={14} />
-                                        Simulate Payout (Dev Tool)
+                                {/* Dev Simulate Tool (local mode only) */}
+                                {!USE_BACKEND && (
+                                    <div className="p-3 mb-4 rounded-lg border border-dashed border-gray-300"
+                                        style={{ background: '#f9fafb' }}>
+                                        <div className="flex items-center gap-2 mb-2 text-xs font-bold text-muted uppercase">
+                                            <Beaker size={14} />
+                                            Simulate Payout (Dev Tool)
+                                        </div>
+                                        <select className="input text-xs" value={simulateResult}
+                                            onChange={e => setSimulateResult(e.target.value)}>
+                                            <option value="success">✅ Simulate Success (3s)</option>
+                                            <option value="fail">❌ Simulate Failure</option>
+                                        </select>
                                     </div>
-                                    <select className="input text-xs" value={simulateResult}
-                                        onChange={e => setSimulateResult(e.target.value)}>
-                                        <option value="success">✅ Simulate Success (3s)</option>
-                                        <option value="fail">❌ Simulate Failure</option>
-                                    </select>
-                                </div>
+                                )}
 
                                 <button
                                     className="button button--primary w-100 mb-3"

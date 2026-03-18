@@ -80,8 +80,11 @@ export default function Applications() {
             // Status filter
             if (filters.status !== 'all') {
                 if (filters.status === 'pending_admin_review') {
-                    const adminQueueStatuses = ['stage_2_review', 'pending_credit_review']
-                    if (!adminQueueStatuses.includes(loan.status)) return false
+                    // Stage 2 queue: backend may use stage_2_review, pending_admin_review, or stage1-approved flag
+                    const adminQueueStatuses = ['stage_2_review', 'pending_admin_review', 'pending_credit_review']
+                    const isStage1Done = Boolean(loan.stage1ApprovedBy || loan.stage1ApprovedAt)
+                    const inAdminQueue = adminQueueStatuses.includes(loan.status) || (isStage1Done && loan.status !== 'approved' && loan.status !== 'active' && loan.status !== 'completed' && loan.status !== 'rejected')
+                    if (!inAdminQueue) return false
                 } else if (loan.status !== filters.status) {
                     return false
                 }

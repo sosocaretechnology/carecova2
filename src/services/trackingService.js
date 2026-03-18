@@ -28,40 +28,39 @@ export const STATUS_LABELS = {
 }
 
 export const trackingService = {
-  trackLoan: async (loanId) => {
-    try {
-      const loan = await loanService.getApplication(loanId)
+  enrichLoan: (loan) => {
+    const enriched = { ...(loan || {}) }
 
-      // Generate repayment schedule for any post-approval status that doesn't have one
-      if (DISBURSE_ELIGIBLE.includes(loan.status) && !loan.repaymentSchedule) {
+    // Generate repayment schedule for any post-approval status that doesn't have one
+    if (DISBURSE_ELIGIBLE.includes(enriched.status) && !enriched.repaymentSchedule) {
         const repayment = computeSchedule(
-          loan.approvedAmount || loan.estimatedCost,
-          loan.approvedDuration || loan.preferredDuration
+          enriched.approvedAmount || enriched.estimatedCost,
+          enriched.approvedDuration || enriched.preferredDuration
         )
-        loan.repaymentSchedule = repayment.schedule
-        loan.totalRepayment = repayment.totalAmount
-        loan.totalInterest = repayment.totalInterest
-        loan.monthlyInstallment = repayment.monthlyPayment
+        enriched.repaymentSchedule = repayment.schedule
+        enriched.totalRepayment = repayment.totalAmount
+        enriched.totalInterest = repayment.totalInterest
+        enriched.monthlyInstallment = repayment.monthlyPayment
       }
 
       // Calculate outstanding balance and DPD
-      if (loan.repaymentSchedule) {
+      if (enriched.repaymentSchedule) {
         const now = new Date()
-        const paidAmount = loan.repaymentSchedule
+        const paidAmount = enriched.repaymentSchedule
           .filter((p) => p.paid)
           .reduce((sum, p) => sum + (p.paidAmount ?? p.amount), 0)
-        const totalAmount = loan.repaymentSchedule.reduce(
+        const totalAmount = enriched.repaymentSchedule.reduce(
           (sum, p) => sum + p.amount,
           0
         )
-        loan.outstandingBalance = totalAmount - paidAmount
-        loan.totalPaid = paidAmount
-        applyCompounding(loan, now)
+        enriched.outstandingBalance = totalAmount - paidAmount
+        enriched.totalPaid = paidAmount
+        applyCompounding(enriched, now)
 
         // Calculate DPD (Days Past Due) — only meaningful once loan is active
         let maxDpd = 0
-        if (loan.status === 'active' || loan.status === 'overdue') {
-          loan.repaymentSchedule.forEach(p => {
+        if (enriched.status === 'active' || enriched.status === 'overdue') {
+          enriched.repaymentSchedule.forEach(p => {
             if (!p.paid) {
               const dueDate = new Date(p.dueDate)
               if (dueDate < now) {
@@ -74,21 +73,21 @@ export const trackingService = {
             }
           })
         }
-        loan.dpd = maxDpd
+        enriched.dpd = maxDpd
 
         // Status transitions
-        const allPaid = loan.repaymentSchedule.every(p => p.paid)
-        if (allPaid && loan.status !== 'completed') {
-          loan.status = 'completed'
-        } else if (maxDpd > 0 && loan.status === 'active') {
-          loan.status = 'overdue'
-        } else if (maxDpd === 0 && loan.status === 'overdue') {
-          loan.status = 'active'
+        const allPaid = enriched.repaymentSchedule.every(p => p.paid)
+        if (allPaid && enriched.status !== 'completed') {
+          enriched.status = 'completed'
+        } else if (maxDpd > 0 && enriched.status === 'active') {
+          enriched.status = 'overdue'
+        } else if (maxDpd === 0 && enriched.status === 'overdue') {
+          enriched.status = 'active'
         }
 
         // Find next payment
-        const nextPayment = loan.repaymentSchedule.find((p) => !p.paid)
-        loan.nextPayment = nextPayment
+        const nextPayment = enriched.repaymentSchedule.find((p) => !p.paid)
+        enriched.nextPayment = nextPayment
           ? {
             amount: nextPayment.amount,
             dueDate: nextPayment.dueDate,
@@ -99,12 +98,14 @@ export const trackingService = {
       }
 
       // Enrich with display label
-      loan.statusLabel = STATUS_LABELS[loan.status] || loan.status
+      enriched.statusLabel = STATUS_LABELS[enriched.status] || enriched.status
 
-      return loan
-    } catch (error) {
-      throw error
-    }
+    return enriched
+  },
+
+  trackLoan: async (loanId) => {
+    const loan = await loanService.getApplication(loanId)
+    return trackingService.enrichLoan(loan)
   },
 
   calculateRepaymentSchedule,

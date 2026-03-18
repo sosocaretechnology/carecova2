@@ -1357,6 +1357,12 @@
   color: var(--color-primary-dark);
 }
 
+.status--overdue,
+.status-badge--overdue {
+  background: var(--color-error-bg);
+  color: #991b1b;
+}
+
 /* ==================== Repayment Schedule ==================== */
 .repayment-schedule {
   margin-top: var(--space-3);

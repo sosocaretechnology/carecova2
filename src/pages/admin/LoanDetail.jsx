@@ -22,11 +22,16 @@ export default function LoanDetail() {
     const [transactions, setTransactions] = useState([])
     const [transactionDetail, setTransactionDetail] = useState(null)
 
+    const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+    const USE_BACKEND = !!API_BASE_URL
+
     const loadLoan = async ({ silent = false } = {}) => {
         try {
             if (!silent) setLoading(true)
-            const l = await trackingService.trackLoan(id)
-            setLoan(l)
+            const session = adminService.getSession()
+            const isAuthedBackend = USE_BACKEND && !!session?.accessToken
+            const base = isAuthedBackend ? await adminService.getLoanById(id) : await trackingService.trackLoan(id)
+            setLoan(trackingService.enrichLoan(base))
         } finally {
             if (!silent) setLoading(false)
         }
@@ -38,8 +43,22 @@ export default function LoanDetail() {
 
     useEffect(() => {
         if (!loan?.id) return
-        const txs = adminService.getWalletTransactions().filter((t) => t.loanId === loan.id)
-        setTransactions(txs)
+        ;(async () => {
+            try {
+                const session = adminService.getSession()
+                const isAuthedBackend = USE_BACKEND && !!session?.accessToken
+                if (!isAuthedBackend) {
+                    const txs = (adminService.getWalletTransactions?.() || []).filter((t) => t.loanId === loan.id)
+                    setTransactions(txs)
+                    return
+                }
+                const txData = await adminService.getWalletTransactions({ loanId: loan.id, limit: 100 })
+                const txs = Array.isArray(txData) ? txData : (txData?.items || txData?.data || [])
+                setTransactions(txs)
+            } catch (_) {
+                setTransactions([])
+            }
+        })()
     }, [loan?.id])
 
     if (loading) return <div className="admin-loading">Loading loan details...</div>

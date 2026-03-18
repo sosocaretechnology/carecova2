@@ -7,16 +7,22 @@ export default function Repayments() {
     const [transactions, setTransactions] = useState([])
     const [walletBalance, setWalletBalance] = useState(0)
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
 
     useEffect(() => {
         async function fetchData() {
             try {
-                const txs = await adminService.getWalletTransactions()
-                const balance = adminService.getWalletBalance()
+                setError('')
+                const [txData, balance] = await Promise.all([
+                    adminService.getWalletTransactions({ ownerType: 'organization', currency: 'NGN' }),
+                    adminService.getWalletBalance({ ownerType: 'organization', currency: 'NGN' }),
+                ])
+                const txs = Array.isArray(txData) ? txData : (txData?.items || txData?.data || [])
                 setTransactions(txs)
-                setWalletBalance(balance)
+                setWalletBalance(Number(balance) || 0)
             } catch (err) {
                 console.error(err)
+                setError(err.message || 'Unable to load wallet data')
             } finally {
                 setLoading(false)
             }
@@ -43,6 +49,10 @@ export default function Repayments() {
                     </div>
                 </div>
             </div>
+
+            {error ? (
+                <div className="alert-box alert-error mt-4">{error}</div>
+            ) : null}
 
             <div className="admin-table-container mt-6">
                 <div className="p-4 border-bottom flex items-center gap-2">

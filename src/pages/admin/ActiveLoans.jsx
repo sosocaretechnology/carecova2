@@ -10,23 +10,25 @@ import FullScreenLoader from '../../components/ui/FullScreenLoader'
 export default function ActiveLoans() {
     const [loans, setLoans] = useState([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
     const navigate = useNavigate()
     const { session } = useAuth()
 
     useEffect(() => {
         async function fetchActiveLoans() {
             try {
-                const all = await adminService.getAllLoans()
-                // Filtering active/overdue loans
-                const filtered = all.filter(l => ['active', 'overdue', 'completed'].includes(l.status))
-
-                // Track each loan to get latest metrics
-                const tracked = await Promise.all(
-                    filtered.map(l => trackingService.trackLoan(l.id))
-                )
-                setLoans(tracked)
+                setError('')
+                // Backend Active Portfolio: status=approved,approved_for_disbursement,active,completed
+                const all = await adminService.getAllLoans({
+                    requireBackend: true,
+                    status: 'approved,approved_for_disbursement,active,completed',
+                })
+                // Enrich for display (DPD, nextPayment, overdue derivation from repaymentSchedule)
+                setLoans(all.map((l) => trackingService.enrichLoan(l)))
             } catch (err) {
                 console.error(err)
+                setLoans([])
+                setError(err?.message || 'Unable to load active loans')
             } finally {
                 setLoading(false)
             }
@@ -45,6 +47,11 @@ export default function ActiveLoans() {
 
     return (
         <div className="admin-page">
+            {error ? (
+                <div className="alert-box alert-error mb-4">
+                    {error}
+                </div>
+            ) : null}
             <div className="admin-page-header">
                 <div>
                     <h1>Active Portfolio</h1>

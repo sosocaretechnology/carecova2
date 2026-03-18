@@ -185,15 +185,29 @@ async function adminRequest(path, options = {}, retried = false) {
 
 function normalizeLoanFromApi(loan) {
   if (!loan) return loan
+  const approvedAmount = loan.approvedAmount ?? loan.approved_amount ?? loan.estimatedCost ?? loan.requestedAmount ?? 0
+  const rawStatus = loan.status ?? loan.applicationStatus ?? loan.stage ?? null
+  let status = rawStatus
+  if (!status && (loan.disbursedAt || loan.disbursementConfirmedAt)) status = 'active'
+  if (status === 'disbursed') status = 'active'
+  if (status === 'ready_to_disburse') status = 'approved'
   return {
     ...loan,
     id: loan.id || loan._id,
+    status,
     patientName: loan.patientName || loan.fullName,
     fullName: loan.fullName || loan.patientName,
     hospital: loan.hospital || loan.hospitalName || '—',
     estimatedCost: loan.estimatedCost ?? loan.requestedAmount ?? 0,
+    approvedAmount: typeof approvedAmount === 'number' ? approvedAmount : Number(approvedAmount) || 0,
     submittedAt: loan.submittedAt || loan.createdAt,
+    disbursedAt: loan.disbursedAt ?? loan.disbursementConfirmedAt,
   }
+}
+
+function looksLikeMissingRouteError(error) {
+  const msg = String(error?.message || '')
+  return /not found|cannot (post|get|put|patch|delete)|404/i.test(msg)
 }
 
 function requireBackendFeature(featureName) {
@@ -313,13 +327,25 @@ export const adminService = {
   getAllLoans: async (options = {}) => {
     const session = getStoredSession()
     if (USE_BACKEND && session?.accessToken) {
-      let path = '/admin/loan-applications'
-      if (options.assignedTo === 'me') {
-        path = '/admin/loan-applications?assignedTo=me'
+      const params = new URLSearchParams()
+      if (options.status != null && options.status !== '') {
+        params.set('status', String(options.status))
       }
+      if (options.search != null && String(options.search).trim() !== '') {
+        params.set('search', String(options.search).trim())
+      }
+      if (options.assignedTo === 'me' || options.assignedTo === 'unassigned') {
+        params.set('assignedTo', options.assignedTo)
+      }
+      const query = params.toString()
+      const path = query ? `/admin/loan-applications?${query}` : '/admin/loan-applications'
       const list = await adminRequest(path)
       const loans = (Array.isArray(list) ? list : list?.content ?? list?.data ?? list?.items ?? []).map(normalizeLoanFromApi)
       return loans
+    }
+    if (options.requireBackend) {
+      requireBackendFeature('Loans')
+      throw new Error('Not authenticated')
     }
     return loanService.getAllApplications()
   },
@@ -614,12 +640,81 @@ export const adminService = {
     }
   },
 
-  getWallets: async () => [],
-  getWalletOverview: async () => ({ totalBalance: 0, currency: 'NGN' }),
-  getWalletTransactions: async () => [],
-  getWalletStatement: async () => ({ entries: [] }),
-  fundWallet: async () => {},
-  fundOrganizationWallet: async () => {},
+  // --- Organization Wallets (Backend only; no mock) ---
+  getWallets: async (filters = {}) => {
+    requireBackendFeature('Wallets')
+    const query = new URLSearchParams(
+      Object.entries(filters || {}).reduce((acc, [k, v]) => {
+        if (v === undefined || v === null || v === '') return acc
+        acc[k] = String(v)
+        return acc
+      }, {})
+    ).toString()
+    const path = query ? `/admin/wallets?${query}` : '/admin/wallets'
+    return adminRequest(path)
+  },
+
+  getWalletOverview: async (filters = {}) => {
+    requireBackendFeature('Wallet overview')
+    return adminRequest('/admin/wallets/overview', {
+      method: 'POST',
+      body: JSON.stringify(filters || {}),
+    })
+  },
+
+  getOrganizationEssentialWallets: async (filters = {}) => {
+    requireBackendFeature('Essential wallets')
+    return adminRequest('/admin/wallets/essential', {
+      method: 'POST',
+      body: JSON.stringify(filters || {}),
+    })
+  },
+
+  getWalletTransactions: async (filters = {}) => {
+    requireBackendFeature('Wallet transactions')
+    return adminRequest('/admin/wallets/transactions', {
+      method: 'POST',
+      body: JSON.stringify(filters || {}),
+    })
+  },
+
+  getWalletStatement: async (walletId, filters = {}) => {
+    requireBackendFeature('Wallet statement')
+    const trimmed = String(walletId || '').trim()
+    if (!trimmed) throw new Error('Wallet id is required')
+    return adminRequest(`/admin/wallets/${encodeURIComponent(trimmed)}/statement`, {
+      method: 'POST',
+      body: JSON.stringify(filters || {}),
+    })
+  },
+
+  fundWallet: async (walletId, payload = {}) => {
+    requireBackendFeature('Wallet funding')
+    const trimmed = String(walletId || '').trim()
+    if (!trimmed) throw new Error('Wallet id is required')
+    return adminRequest(`/admin/wallets/${encodeURIComponent(trimmed)}/fund`, {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    })
+  },
+
+  fundOrganizationWallet: async (payload = {}) => {
+    requireBackendFeature('Organization wallet funding')
+    return adminRequest('/admin/wallets/organization/fund', {
+      method: 'POST',
+      body: JSON.stringify(payload || {}),
+    })
+  },
+
+  getWalletBalance: async (filters = {}) => {
+    const overview = await adminService.getWalletOverview(filters)
+    return (
+      overview?.totalBalance ??
+      overview?.balance ??
+      overview?.availableBalance ??
+      0
+    )
+  },
 
   getMonoInformedDecisionSectionForLoan: async (loanId, section, payload = {}) => {
     requireBackendFeature('Mono informed decision section')
@@ -839,9 +934,27 @@ export const adminService = {
   },
 
   approveLoan: async (loanId, terms) => {
+    const session = getStoredSession()
+    if (USE_BACKEND && session?.accessToken) {
+      const trimmed = assertBackendLoanId(loanId, 'Approve loan')
+      const payload = {
+        approvedAmount: terms.approvedAmount,
+        duration: terms.duration,
+        notes: terms.notes,
+        totalRepayable: terms.totalRepayable,
+        totalInterest: terms.totalInterest,
+        commissionOverrides: terms.commissionOverrides,
+      }
+      const updated = await adminRequest(`/admin/loan-applications/${trimmed}/approve`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+      return normalizeLoanFromApi(updated)
+    }
+
     return new Promise(async (resolve, reject) => {
       try {
-        const session = adminService.getSession()
+        const sessionSafe = adminService.getSession()
         const loans = await cloneLoans()
         const loanIndex = loans.findIndex((l) => l.id === loanId)
 
@@ -867,7 +980,7 @@ export const adminService = {
         loan.totalInterest = repayment.totalInterest
         loan.monthlyInstallment = repayment.monthlyPayment
         loan.outstandingBalance = repayment.totalAmount
-        loan.owner = session.username
+        loan.owner = sessionSafe?.username || 'admin'
         loan.decisionNotes = terms.notes || ''
         loan.decisionTags = terms.tags || []
         if (terms.commissionOverrides) {
@@ -879,7 +992,7 @@ export const adminService = {
 
         auditService.record('approve', {
           loanId,
-          adminName: session.name,
+          adminName: sessionSafe?.name || 'Admin',
           message: `Approved ₦${approvedAmount.toLocaleString()} for ${duration} months. ${terms.notes || ''}`,
         })
 
@@ -891,9 +1004,19 @@ export const adminService = {
   },
 
   rejectLoan: async (loanId, reason) => {
+    const session = getStoredSession()
+    if (USE_BACKEND && session?.accessToken) {
+      const trimmed = assertBackendLoanId(loanId, 'Reject loan')
+      const updated = await adminRequest(`/admin/loan-applications/${trimmed}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason || 'Application rejected' }),
+      })
+      return normalizeLoanFromApi(updated)
+    }
+
     return new Promise(async (resolve, reject) => {
       try {
-        const loans = await loanService.getAllApplications()
+        const loans = await cloneLoans()
         const loanIndex = loans.findIndex((l) => l.id === loanId)
 
         if (loanIndex === -1) {
@@ -909,8 +1032,7 @@ export const adminService = {
         loan.decidedAt = now
         loan.owner = 'admin'
 
-        const STORAGE_KEY = 'carecova_loans'
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(loans))
+        saveToStorage(loans)
 
         auditService.record('reject', {
           loanId,
@@ -1192,13 +1314,7 @@ export const adminService = {
     })
   },
 
-  getWalletBalance: () => {
-    return getWallet().balance
-  },
-
-  getWalletTransactions: () => {
-    return getTransactions()
-  },
+  // Wallet local helpers removed: backend is source of truth.
 
   withdrawMyCommission: async (amount) => {
     const session = adminService.getSession()
@@ -1237,11 +1353,57 @@ export const adminService = {
   // --- Disbursement Methods (Credit Officer) ---
 
   getDisbursementQueue: async () => {
+    const session = getStoredSession()
+    if (USE_BACKEND && session?.accessToken) {
+      const all = await adminService.getAllLoans({ requireBackend: true })
+      // Backend may use pending_credit_review for credit queue
+      const queueStatuses = new Set([
+        'pending_credit_review',
+        'pending_disbursement',
+        'approved',
+        'approved_credit',
+        'disbursement_processing',
+        'need_more_info',
+      ])
+      return all.filter((l) => queueStatuses.has(l.status))
+    }
     const loans = await loanService.getAllApplications()
-    return loans.filter(l => ['pending_disbursement', 'approved', 'disbursement_processing', 'need_more_info'].includes(l.status))
+    return loans.filter((l) => ['pending_disbursement', 'approved', 'disbursement_processing', 'need_more_info'].includes(l.status))
   },
 
   confirmDisbursement: async (loanId, payoutData, simulateResult = 'success') => {
+    const session = getStoredSession()
+    if (USE_BACKEND && session?.accessToken) {
+      const trimmed = assertBackendLoanId(loanId, 'Confirm disbursement')
+      const payload = {
+        ...payoutData,
+        simulateResult, // ignored by production backend; useful for sandbox
+      }
+
+      const candidatePaths = [
+        `/admin/loan-applications/${trimmed}/disburse`,
+        `/admin/loan-applications/${trimmed}/confirm-disbursement`,
+        `/admin/loan-applications/${trimmed}/disbursement/confirm`,
+      ]
+
+      let lastErr = null
+      for (const path of candidatePaths) {
+        try {
+          const updated = await adminRequest(path, {
+            method: 'POST',
+            body: JSON.stringify(payload || {}),
+          })
+          // Some backends return { loan: {...} }
+          const loan = updated?.loan ?? updated?.data ?? updated
+          return normalizeLoanFromApi(loan)
+        } catch (err) {
+          lastErr = err
+          if (!looksLikeMissingRouteError(err)) break
+        }
+      }
+      throw lastErr || new Error('Unable to confirm disbursement')
+    }
+
     return new Promise(async (resolve, reject) => {
       try {
         const session = adminService.getSession()
@@ -1292,11 +1454,19 @@ export const adminService = {
             const freshLoan = freshLoans[idx]
 
             if (simulateResult === 'success') {
-              const payout = freshLoan.disbursementIntent.providerPayout ?? payoutData.payoutAmount ?? 0
+              const intent = freshLoan.disbursementIntent || {
+                ...payoutData,
+                providerPayout: payoutData?.payoutAmount ?? 0,
+                status: 'PROCESSING',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              }
+              freshLoan.disbursementIntent = intent
+              const payout = intent.providerPayout ?? payoutData?.payoutAmount ?? 0
 
-              freshLoan.disbursementIntent.status = 'SUCCESS'
-              freshLoan.disbursementIntent.providerReference = `REF-${Date.now()}`
-              freshLoan.disbursementIntent.updatedAt = new Date().toISOString()
+              intent.status = 'SUCCESS'
+              intent.providerReference = `REF-${Date.now()}`
+              intent.updatedAt = new Date().toISOString()
               freshLoan.status = 'active'
               freshLoan.disbursedAt = new Date().toISOString()
               freshLoan.disbursedBy = session.username
@@ -1353,6 +1523,32 @@ export const adminService = {
   },
 
   requestDisbursementCorrection: async (loanId, notes) => {
+    const session = getStoredSession()
+    if (USE_BACKEND && session?.accessToken) {
+      const trimmed = assertBackendLoanId(loanId, 'Request disbursement correction')
+      const payload = { notes: notes || '' }
+      const candidatePaths = [
+        `/admin/loan-applications/${trimmed}/disbursement/request-correction`,
+        `/admin/loan-applications/${trimmed}/request-disbursement-correction`,
+        `/admin/loan-applications/${trimmed}/needs-clarification`,
+      ]
+      let lastErr = null
+      for (const path of candidatePaths) {
+        try {
+          const updated = await adminRequest(path, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+          })
+          const loan = updated?.loan ?? updated?.data ?? updated
+          return normalizeLoanFromApi(loan)
+        } catch (err) {
+          lastErr = err
+          if (!looksLikeMissingRouteError(err)) break
+        }
+      }
+      throw lastErr || new Error('Unable to request correction')
+    }
+
     return new Promise(async (resolve, reject) => {
       try {
         const session = adminService.getSession()

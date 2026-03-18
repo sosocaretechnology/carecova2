@@ -73,7 +73,8 @@ export default function DecisionPanel({ loan, session, onApprove, onReject, onRe
     const isRejected = status === 'rejected'
     const isStage2Review = status === 'stage_2_review'
     const isPending = status === 'pending' || status === 'pending_stage1'
-    const isStage1Completed = Boolean(loan.stage1ApprovedBy || loan.stage1ApprovedAt)
+    const isInStage2Status = ['stage_2_review', 'pending_admin_review', 'pending_credit_review'].includes(status)
+    const isStage1Completed = Boolean(loan.stage1ApprovedBy || loan.stage1ApprovedAt) || isInStage2Status
 
     if (isApproved || isRejected) {
         return (
