@@ -5,8 +5,11 @@ import { adminService } from '../../services/adminService'
 const STATUS_META = {
   customer_created: { label: 'Customer created', color: '#2563eb' },
   awaiting_authorization: { label: 'Awaiting authorization', color: '#d97706' },
+  rejected: { label: 'Rejected', color: '#dc2626' },
   approved: { label: 'Approved', color: '#2563eb' },
   ready_to_debit: { label: 'Ready to debit', color: '#15803d' },
+  paused: { label: 'Paused', color: '#d97706' },
+  reinstated: { label: 'Reinstated', color: '#15803d' },
   debit_processing: { label: 'Debit processing', color: '#2563eb' },
   debit_successful: { label: 'Debit successful', color: '#15803d' },
   debit_failed: { label: 'Debit failed', color: '#dc2626' },
