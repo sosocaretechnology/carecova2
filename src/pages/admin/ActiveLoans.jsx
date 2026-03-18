@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
 import { trackingService } from '../../services/trackingService'
 import StatusBadge from '../../components/StatusBadge'
+import { getStageLabel } from '../../utils/statusModel'
 import { AlertCircle, CheckCircle, Clock, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import FullScreenLoader from '../../components/ui/FullScreenLoader'
@@ -85,7 +86,7 @@ export default function ActiveLoans() {
                     </thead>
                     <tbody>
                         {loans.length === 0 ? (
-                            <tr><td colSpan="7" className="empty-table">No matching loans found.</td></tr>
+                            <tr><td colSpan="8" className="empty-table">No matching loans found.</td></tr>
                         ) : (
                             loans.map(loan => (
                             <tr key={loan.id} className="clickable-row" style={{ cursor: 'pointer' }}
@@ -115,7 +116,12 @@ export default function ActiveLoans() {
                                             {loan.dpd || 0} days
                                         </span>
                                     </td>
-                                    <td><StatusBadge status={loan.status} /></td>
+                                    <td>
+                                        <div className="stage-cell">
+                                            <StatusBadge status={loan.status} />
+                                            <span className="stage-pill">{getStageLabel(loan)}</span>
+                                        </div>
+                                    </td>
                                     <td><ChevronRight size={16} className="text-muted" /></td>
                                 </tr>
                             ))

@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { adminService } from '../../services/adminService'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
 import StatusBadge from '../../components/StatusBadge'
+import { APPLICATION_STATUS, getStageLabel } from '../../utils/statusModel'
 import { Search } from 'lucide-react'
 import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
@@ -44,27 +45,6 @@ export default function Applications() {
         loadLoans()
     }, [])
 
-    const getStageLabel = (loan) => {
-        switch (loan.status) {
-            case 'pending':
-            case 'submitted':
-            case 'incomplete':
-                return 'Stage 1 – Sales'
-            case 'stage_2_review':
-            case 'pending_admin_review':
-                return 'Stage 2 – Admin'
-            case 'pending_credit_review':
-            case 'ready_to_disburse':
-                return 'Stage 3 – Credit'
-            case 'approved':
-            case 'active':
-            case 'completed':
-                return 'Lifecycle – Post Approval'
-            default:
-                return '—'
-        }
-    }
-
     const filteredLoans = useMemo(() => {
         return loans.filter(loan => {
             // Portfolio / Assignment Filter
@@ -80,11 +60,7 @@ export default function Applications() {
             // Status filter
             if (filters.status !== 'all') {
                 if (filters.status === 'pending_admin_review') {
-                    // Stage 2 queue: backend may use stage_2_review, pending_admin_review, or stage1-approved flag
-                    const adminQueueStatuses = ['stage_2_review', 'pending_admin_review', 'pending_credit_review']
-                    const isStage1Done = Boolean(loan.stage1ApprovedBy || loan.stage1ApprovedAt)
-                    const inAdminQueue = adminQueueStatuses.includes(loan.status) || (isStage1Done && loan.status !== 'approved' && loan.status !== 'active' && loan.status !== 'completed' && loan.status !== 'rejected')
-                    if (!inAdminQueue) return false
+                    if (loan.status !== APPLICATION_STATUS.PENDING_ADMIN_REVIEW) return false
                 } else if (loan.status !== filters.status) {
                     return false
                 }
@@ -186,13 +162,14 @@ export default function Applications() {
                         {(session?.role === 'admin' || session?.role === 'super_admin') && (
                             <option value="pending_admin_review">Pending Admin Review</option>
                         )}
-                        <option value="pending">Pending</option>
-                        <option value="submitted">Submitted</option>
-                        <option value="incomplete">Incomplete</option>
-                        <option value="approved">Approved</option>
-                        <option value="active">Active</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="completed">Completed</option>
+                        <option value={APPLICATION_STATUS.PENDING}>Pending</option>
+                        <option value={APPLICATION_STATUS.SUBMITTED}>Submitted</option>
+                        <option value={APPLICATION_STATUS.INCOMPLETE}>Incomplete</option>
+                        <option value={APPLICATION_STATUS.APPROVED}>Approved</option>
+                        <option value={APPLICATION_STATUS.APPROVED_FOR_DISBURSEMENT}>Approved for Disbursement</option>
+                        <option value={APPLICATION_STATUS.ACTIVE}>Active</option>
+                        <option value={APPLICATION_STATUS.REJECTED}>Rejected</option>
+                        <option value={APPLICATION_STATUS.COMPLETED}>Completed</option>
                     </select>
 
                     <select
@@ -264,8 +241,8 @@ export default function Applications() {
                                     className="clickable-row"
                                 >
                                     <td>
-                                        <div className="font-medium">{loan.fullName || loan.patientName}</div>
-                                        <div className="text-muted text-xs font-mono">{loan.id}</div>
+                                            <div className="font-medium">{loan.fullName || loan.patientName}</div>
+                                            <div className="text-muted text-xs font-mono">{loan.id}</div>
                                     </td>
                                     <td>
                                         <div className="capitalize">{loan.employmentSector || loan.employmentType || '—'}</div>

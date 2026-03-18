@@ -939,7 +939,7 @@ export const adminService = {
       const trimmed = assertBackendLoanId(loanId, 'Approve loan')
       const payload = {
         approvedAmount: terms.approvedAmount,
-        duration: terms.duration,
+        durationMonths: terms.duration,
         notes: terms.notes,
         totalRepayable: terms.totalRepayable,
         totalInterest: terms.totalInterest,
@@ -1355,17 +1355,12 @@ export const adminService = {
   getDisbursementQueue: async () => {
     const session = getStoredSession()
     if (USE_BACKEND && session?.accessToken) {
-      const all = await adminService.getAllLoans({ requireBackend: true })
-      // Backend may use pending_credit_review for credit queue
-      const queueStatuses = new Set([
-        'pending_credit_review',
-        'pending_disbursement',
-        'approved',
-        'approved_credit',
-        'disbursement_processing',
-        'need_more_info',
-      ])
-      return all.filter((l) => queueStatuses.has(l.status))
+      // Only applications that are credit-approved and awaiting disbursement
+      const all = await adminService.getAllLoans({
+        requireBackend: true,
+        status: 'approved,approved_for_disbursement',
+      })
+      return all.filter((l) => (l.disbursementStatus || 'pending') === 'pending')
     }
     const loans = await loanService.getAllApplications()
     return loans.filter((l) => ['pending_disbursement', 'approved', 'disbursement_processing', 'need_more_info'].includes(l.status))

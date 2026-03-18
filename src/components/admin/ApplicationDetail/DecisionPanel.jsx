@@ -69,11 +69,11 @@ export default function DecisionPanel({ loan, session, onApprove, onReject, onRe
             : { text: 'Recommend Approve', class: 'success' }
 
     // Logic for what to show
-    const isApproved = status === 'approved' || status === 'ready_to_disburse' || status === 'disbursed'
+    const isApproved = status === 'approved' || status === 'approved_for_disbursement' || status === 'disbursed'
     const isRejected = status === 'rejected'
-    const isStage2Review = status === 'stage_2_review'
+    const isStage2Review = status === 'pending_admin_review'
     const isPending = status === 'pending' || status === 'pending_stage1'
-    const isInStage2Status = ['stage_2_review', 'pending_admin_review', 'pending_credit_review'].includes(status)
+    const isInStage2Status = ['pending_admin_review'].includes(status)
     const isStage1Completed = Boolean(loan.stage1ApprovedBy || loan.stage1ApprovedAt) || isInStage2Status
 
     if (isApproved || isRejected) {

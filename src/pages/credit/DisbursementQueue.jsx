@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
 import StatusBadge from '../../components/StatusBadge'
+import { getStageLabel } from '../../utils/statusModel'
 import { Search, Filter, Clock, ArrowRight } from 'lucide-react'
 
 function timeInQueue(submittedAt) {
@@ -88,12 +89,13 @@ export default function DisbursementQueue() {
                             <th>Method</th>
                             <th>Time in Queue</th>
                             <th>Status</th>
+                            <th>Disbursement</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filtered.length === 0 ? (
-                            <tr><td colSpan="7" className="empty-table">No disbursements in queue.</td></tr>
+                            <tr><td colSpan="8" className="empty-table">No disbursements in queue.</td></tr>
                         ) : (
                             filtered.map(loan => (
                                 <tr key={loan.id}>
@@ -116,7 +118,15 @@ export default function DisbursementQueue() {
                                             {timeInQueue(loan.approvedAt || loan.submittedAt)}
                                         </span>
                                     </td>
-                                    <td><StatusBadge status={loan.status} /></td>
+                                    <td>
+                                        <div className="stage-cell">
+                                            <StatusBadge status={loan.status} />
+                                            <span className="stage-pill">{getStageLabel(loan)}</span>
+                                        </div>
+                                    </td>
+                                    <td className="text-xs text-muted">
+                                        {loan.disbursementStatus || 'pending'}
+                                    </td>
                                     <td>
                                         <button
                                             type="button"

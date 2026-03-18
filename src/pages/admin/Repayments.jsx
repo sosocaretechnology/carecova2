@@ -53,6 +53,18 @@ export default function Repayments() {
             {error ? (
                 <div className="alert-box alert-error mt-4">{error}</div>
             ) : null}
+            {!error && transactions.length === 0 && (
+                <div className="alert-box alert-warning mt-4 text-xs">
+                    No wallet transactions were returned from the backend. If you have already disbursed loans or recorded repayments,
+                    the backend may not yet be writing ledger entries to the organization wallet.
+                </div>
+            )}
+            {!error && transactions.length === 0 && (
+                <div className="alert-box alert-warning mt-4 text-xs">
+                    No wallet transactions were returned from the backend. If you have confirmed disbursements or repayments,
+                    the backend may not yet be posting ledger entries to the organization wallet.
+                </div>
+            )}
 
             <div className="admin-table-container mt-6">
                 <div className="p-4 border-bottom flex items-center gap-2">
@@ -72,7 +84,17 @@ export default function Repayments() {
                     </thead>
                     <tbody>
                         {transactions.length === 0 ? (
-                            <tr><td colSpan="6" className="empty-table">No recent transactions recorded.</td></tr>
+                            <tr>
+                                <td colSpan="6" className="empty-table">
+                                    No recent transactions recorded from the backend wallet.
+                                    <br />
+                                    <span className="text-xs text-muted">
+                                        If you have already approved and disbursed loans but still see zero here,
+                                        it likely means the backend has not started creating organization wallet
+                                        ledger entries yet.
+                                    </span>
+                                </td>
+                            </tr>
                         ) : (
                             transactions.map(tx => (
                                 <tr key={tx.id}>

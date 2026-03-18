@@ -5,6 +5,7 @@ import { auditService } from '../../services/auditService'
 import { useAuth } from '../../hooks/useAuth'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
 import StatusBadge from '../../components/StatusBadge'
+import { getStageLabel } from '../../utils/statusModel'
 
 import ApplicantSnapshot from '../../components/admin/ApplicationDetail/ApplicantSnapshot'
 import VerificationRisk from '../../components/admin/ApplicationDetail/VerificationRisk'
@@ -147,27 +148,6 @@ export default function ApplicationDetail() {
     if (!loan) return <div className="admin-page"><div className="alert-box alert-error">Application not found</div><button className="button button--secondary mt-4" onClick={() => navigate('/admin/applications')}>← Back to Applications</button></div>
     const showDirectDebit = ['approved', 'active', 'overdue'].includes(loan.status) || loan.repaymentMethod === 'direct_debit'
 
-    const getStageLabel = () => {
-        switch (loan.status) {
-            case 'pending':
-            case 'submitted':
-            case 'incomplete':
-                return 'Stage 1 – Sales'
-            case 'stage_2_review':
-            case 'pending_admin_review':
-                return 'Stage 2 – Admin'
-            case 'pending_credit_review':
-            case 'ready_to_disburse':
-                return 'Stage 3 – Credit'
-            case 'approved':
-            case 'active':
-            case 'completed':
-                return 'Lifecycle – Post Approval'
-            default:
-                return '—'
-        }
-    }
-
     const salesCanDoStage1 =
         session?.role === 'sales' &&
         loan.assignedTo === session.username &&
@@ -186,7 +166,7 @@ export default function ApplicationDetail() {
                             {loan.fullName || loan.patientName || 'Applicant'}
                         </h1>
                         <StatusBadge status={loan.status} />
-                        <span className="stage-pill">{getStageLabel()}</span>
+                        <span className="stage-pill">{getStageLabel(loan)}</span>
                     </div>
                     <p className="text-xs text-muted mt-1">Application ID: {loan.id}</p>
                     {loan.assignedTo && (

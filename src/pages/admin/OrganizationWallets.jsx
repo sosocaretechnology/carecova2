@@ -368,6 +368,15 @@ export default function OrganizationWallets() {
       </div>
 
       {error && <div className="admin-error-banner">{error}</div>}
+      {!error && overview && Number(overview?.totalBalance || 0) === 0 && (
+        <div className="admin-info-banner">
+          <p className="text-sm">
+            Organization wallet balance is currently ₦0 based on backend data.
+            If loans have been disbursed but you still see zero here, confirm that the backend
+            is posting disbursement and repayment transactions into the org wallet ledger.
+          </p>
+        </div>
+      )}
 
       <section className="essential-wallets-section">
         <div className="wallets-card-header">
