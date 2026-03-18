@@ -90,6 +90,7 @@ export default function Apply() {
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [uploadingIdDocument, setUploadingIdDocument] = useState(false)
+  const [uploadingApplicantPhoto, setUploadingApplicantPhoto] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [loanId, setLoanId] = useState(null)
   const [errors, setErrors] = useState({})
@@ -146,6 +147,8 @@ export default function Apply() {
     coBorrowerMonthlyIncome: '',
 
     // Identity & media
+    bvn: '',
+    nin: '',
     applicantPhoto: null,
     documents: {},
 
@@ -425,6 +428,21 @@ export default function Apply() {
                 <h3>Identity verification</h3>
                 <p className="caption" style={{ marginTop: '0.25rem' }}>Upload any government-issued ID (e.g. NIN slip, National ID, Voter&apos;s card, International passport, Driver&apos;s license).</p>
               </div>
+
+              <Input
+                label="BVN (optional but recommended)"
+                type="text"
+                placeholder="11-digit BVN"
+                value={formData.bvn}
+                onChange={(e) => handleChange('bvn', e.target.value)}
+              />
+              <Input
+                label="NIN (optional)"
+                type="text"
+                placeholder="National Identity Number"
+                value={formData.nin}
+                onChange={(e) => handleChange('nin', e.target.value)}
+              />
               <div style={{ gridColumn: '1 / -1' }}>
                 <label className="input-label">Government-issued ID <span className="required-asterisk">*</span></label>
                 {(formData.documents && formData.documents.id_document) ? (
@@ -492,10 +510,10 @@ export default function Apply() {
                 <p className="caption" style={{ marginTop: '0.25rem' }}>
                   A clear photo of the applicant&apos;s face. This is used for identity verification and will show in the admin case file.
                 </p>
-                {formData.applicantPhoto?.dataUrl ? (
+                {formData.applicantPhoto?.dataUrl || formData.applicantPhoto?.url ? (
                   <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <img
-                      src={formData.applicantPhoto.dataUrl}
+                      src={formData.applicantPhoto.dataUrl || formData.applicantPhoto.url}
                       alt="Applicant"
                       style={{ width: 72, height: 72, borderRadius: '999px', objectFit: 'cover', border: '2px solid var(--color-primary-subtle)' }}
                     />
@@ -516,25 +534,43 @@ export default function Apply() {
                     accept="image/*"
                     className="document-upload-input"
                     style={{ marginTop: '0.5rem', display: 'block' }}
-                    onChange={(e) => {
+                    disabled={uploadingApplicantPhoto}
+                    onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
-                      const reader = new FileReader()
-                      reader.onloadend = () => {
-                        const dataUrl = reader.result
+                      setUploadingApplicantPhoto(true)
+                      try {
+                        const uploaded = await uploadFileToCloudinary(file, {
+                          folder: 'carecova/applicant-photos',
+                        })
                         setFormData(prev => ({
                           ...prev,
                           applicantPhoto: {
-                            fileName: file.name,
-                            fileSize: file.size,
-                            dataUrl,
+                            fileName: uploaded.fileName,
+                            fileSize: uploaded.fileSize,
+                            mimeType: uploaded.mimeType,
+                            url: uploaded.url,
+                            storageKey: uploaded.storageKey,
                           },
                         }))
+                      } catch (error) {
+                        setErrors(prev => ({
+                          ...prev,
+                          applicantPhoto: error.message || 'Failed to upload applicant photo',
+                        }))
+                      } finally {
+                        setUploadingApplicantPhoto(false)
+                        e.target.value = ''
                       }
-                      reader.readAsDataURL(file)
                     }}
                   />
                 )}
+                {uploadingApplicantPhoto && (
+                  <span className="caption" style={{ display: 'block', marginTop: '0.4rem' }}>
+                    Uploading applicant photo...
+                  </span>
+                )}
+                {errors.applicantPhoto && <span className="input-error">{errors.applicantPhoto}</span>}
               </div>
             </div>
           </div>
@@ -681,6 +717,8 @@ export default function Apply() {
                 <div className="review-item"><strong>Treatment:</strong> {formData.treatmentCategory || '—'}</div>
                 <div className="review-item"><strong>Urgency:</strong> {formData.urgency || '—'}</div>
                 {formData.documents?.id_document && <div className="review-item"><strong>Govt. ID:</strong> {formData.documents.id_document.fileName}</div>}
+                {formData.bvn && <div className="review-item"><strong>BVN:</strong> {formData.bvn}</div>}
+                {formData.nin && <div className="review-item"><strong>NIN:</strong> {formData.nin}</div>}
               </div>
               <div className="review-card">
                 <h3>Financial Info</h3>

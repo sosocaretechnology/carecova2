@@ -12,52 +12,80 @@ export default function Applications() {
     const { session } = useAuth()
     const [loading, setLoading] = useState(true)
     const [loans, setLoans] = useState([])
+    const [claimingId, setClaimingId] = useState(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [filters, setFilters] = useState({
-        status: 'all',
+        status: (session?.role === 'admin' || session?.role === 'super_admin') ? 'pending_admin_review' : 'all',
         sector: 'all',
         risk: 'all',
         dateRange: 'all',
         assignment: session?.role === 'sales' ? 'my_portfolio' : 'all',
     })
 
-    useEffect(() => {
-        async function loadLoans() {
-            try {
-                setLoading(true)
-                const data = await adminService.getAllLoans()
-                // Compute affordability and risk flags for each loan for table display
-                const enriched = data.map(loan => ({
-                    ...loan,
-                    affordability: computeAffordability(loan),
-                    riskFlags: computeRiskFlags(loan),
-                }))
-                // Sort newest first
-                enriched.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
-                setLoans(enriched)
-            } catch (error) {
-                console.error('Error loading loans:', error)
-            } finally {
-                setLoading(false)
-            }
+    const loadLoans = async () => {
+        try {
+            setLoading(true)
+            const data = await adminService.getAllLoans()
+            const enriched = data.map(loan => ({
+                ...loan,
+                affordability: computeAffordability(loan),
+                riskFlags: computeRiskFlags(loan),
+            }))
+            enriched.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+            setLoans(enriched)
+        } catch (error) {
+            console.error('Error loading loans:', error)
+        } finally {
+            setLoading(false)
         }
+    }
+
+    useEffect(() => {
         loadLoans()
     }, [])
+
+    const getStageLabel = (loan) => {
+        switch (loan.status) {
+            case 'pending':
+            case 'submitted':
+            case 'incomplete':
+                return 'Stage 1 – Sales'
+            case 'stage_2_review':
+            case 'pending_admin_review':
+                return 'Stage 2 – Admin'
+            case 'pending_credit_review':
+            case 'ready_to_disburse':
+                return 'Stage 3 – Credit'
+            case 'approved':
+            case 'active':
+            case 'completed':
+                return 'Lifecycle – Post Approval'
+            default:
+                return '—'
+        }
+    }
 
     const filteredLoans = useMemo(() => {
         return loans.filter(loan => {
             // Portfolio / Assignment Filter
             if (session?.role === 'sales') {
                 if (filters.assignment === 'my_portfolio' && loan.assignedTo !== session.username) return false
-                if (filters.assignment === 'unassigned' && loan.assignedTo !== null) return false
+                if (filters.assignment === 'unassigned' && loan.assignedTo != null) return false
             }
 
             // Search
             const searchStr = `${loan.fullName} ${loan.patientName} ${loan.id} ${loan.email} ${loan.phone}`.toLowerCase()
             if (searchTerm && !searchStr.includes(searchTerm.toLowerCase())) return false
 
-            // Filters
-            if (filters.status !== 'all' && loan.status !== filters.status) return false
+            // Status filter
+            if (filters.status !== 'all') {
+                if (filters.status === 'pending_admin_review') {
+                    const adminQueueStatuses = ['stage_2_review', 'pending_credit_review']
+                    if (!adminQueueStatuses.includes(loan.status)) return false
+                } else if (loan.status !== filters.status) {
+                    return false
+                }
+            }
 
             // ... (rest of filtering logic remains same)
 
@@ -152,7 +180,12 @@ export default function Applications() {
                         className="admin-select"
                     >
                         <option value="all">All Statuses</option>
+                        {(session?.role === 'admin' || session?.role === 'super_admin') && (
+                            <option value="pending_admin_review">Pending Admin Review</option>
+                        )}
                         <option value="pending">Pending</option>
+                        <option value="submitted">Submitted</option>
+                        <option value="incomplete">Incomplete</option>
                         <option value="approved">Approved</option>
                         <option value="active">Active</option>
                         <option value="rejected">Rejected</option>
@@ -219,7 +252,14 @@ export default function Applications() {
                             </tr>
                         ) : (
                             filteredLoans.map(loan => (
-                                <tr key={loan.id} onClick={() => navigate(`/admin/applications/${loan.id}`)} className="clickable-row">
+                                <tr
+                                    key={loan.id}
+                                    onClick={(e) => {
+                                        if (e.target.closest('button')) return
+                                        navigate(`/admin/applications/${loan.id}`)
+                                    }}
+                                    className="clickable-row"
+                                >
                                     <td>
                                         <div className="font-medium">{loan.fullName || loan.patientName}</div>
                                         <div className="text-muted text-xs font-mono">{loan.id}</div>
@@ -249,7 +289,10 @@ export default function Applications() {
                                         )}
                                     </td>
                                     <td>
-                                        <StatusBadge status={loan.status} />
+                                        <div className="stage-cell">
+                                            <StatusBadge status={loan.status} />
+                                            <span className="stage-pill">{getStageLabel(loan)}</span>
+                                        </div>
                                     </td>
                                     <td>
                                         {loan.assignedTo ? (
@@ -259,12 +302,23 @@ export default function Applications() {
                                                 <button
                                                     type="button"
                                                     className="button button--secondary button--compact"
-                                                    onClick={(e) => {
+                                                    disabled={claimingId === loan.id}
+                                                    data-action="claim"
+                                                    onClick={async (e) => {
                                                         e.stopPropagation()
-                                                        adminService.assignToMe(loan.id).then(() => window.location.reload())
+                                                        e.preventDefault()
+                                                        setClaimingId(loan.id)
+                                                        try {
+                                                            await adminService.assignToMe(loan.id)
+                                                            await loadLoans()
+                                                        } catch (err) {
+                                                            alert(err.message || 'Could not claim application')
+                                                        } finally {
+                                                            setClaimingId(null)
+                                                        }
                                                     }}
                                                 >
-                                                    Claim
+                                                    {claimingId === loan.id ? 'Claiming…' : 'Claim'}
                                                 </button>
                                             ) : (
                                                 <span className="text-muted text-xs italic">Unassigned</span>

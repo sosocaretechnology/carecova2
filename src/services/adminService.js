@@ -293,13 +293,14 @@ export const adminService = {
   getSession: () => {
     const s = getStoredSession()
     if (!s) return null
-    if (s.username !== undefined && !s.accessToken) return s
     return {
       username: s.admin?.username ?? s.username,
-      role: mapBackendRole(s.admin?.role),
-      name: s.admin?.displayName ?? s.admin?.name ?? s.admin?.username ?? 'Admin',
-      loggedIn: s.loggedIn,
+      role: mapBackendRole(s.admin?.role ?? s.role),
+      name: s.admin?.displayName ?? s.admin?.name ?? s.admin?.username ?? s.name ?? 'Admin',
+      loggedIn: s.loggedIn ?? true,
       loginTime: s.loginTime,
+      accessToken: s.accessToken,
+      refreshToken: s.refreshToken,
     }
   },
 
@@ -309,14 +310,29 @@ export const adminService = {
     throw new Error('Wallet API not configured for local mode')
   },
 
-  getAllLoans: async () => {
+  getAllLoans: async (options = {}) => {
     const session = getStoredSession()
     if (USE_BACKEND && session?.accessToken) {
-      const list = await adminRequest('/admin/loan-applications')
+      let path = '/admin/loan-applications'
+      if (options.assignedTo === 'me') {
+        path = '/admin/loan-applications?assignedTo=me'
+      }
+      const list = await adminRequest(path)
       const loans = (Array.isArray(list) ? list : list?.content ?? list?.data ?? list?.items ?? []).map(normalizeLoanFromApi)
       return loans
     }
     return loanService.getAllApplications()
+  },
+
+  getSalesDashboard: async () => {
+    const session = getStoredSession()
+    if (!USE_BACKEND || !session?.accessToken) return null
+    const data = await adminRequest('/admin/sales/dashboard')
+    const needsReview = (data?.queues?.needsReview ?? []).map(normalizeLoanFromApi)
+    return {
+      kpis: data?.kpis ?? {},
+      queues: { ...(data?.queues ?? {}), needsReview },
+    }
   },
 
   getLoanById: async (loanId) => {
@@ -773,9 +789,25 @@ export const adminService = {
   },
 
   approveStage1: async (loanId, data) => {
+    const session = getStoredSession()
+    if (USE_BACKEND && session?.accessToken) {
+      const trimmed = assertBackendLoanId(loanId, 'Stage 1 approval')
+      const payload = {
+        medicalInsights: data.medicalInsights,
+        financialClarification: data.financialClarification,
+        repaymentStrategy: data.repaymentStrategy,
+        applicantBio: data.applicantBio,
+      }
+      const updated = await adminRequest(`/admin/loan-applications/${trimmed}/approve-stage1`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+      return normalizeLoanFromApi(updated)
+    }
+
     return new Promise(async (resolve, reject) => {
       try {
-        const session = adminService.getSession()
+        const sessionSafe = adminService.getSession()
         const loans = await cloneLoans()
         const loanIndex = loans.findIndex((l) => l.id === loanId)
 
@@ -787,7 +819,7 @@ export const adminService = {
         const loan = loans[loanIndex]
         loan.status = 'stage_2_review'
         loan.stage1ApprovedAt = new Date().toISOString()
-        loan.stage1ApprovedBy = session.username
+        loan.stage1ApprovedBy = sessionSafe?.username || 'sales'
         loan.medicalInsights = data.medicalInsights
         loan.financialClarification = data.financialClarification
         loan.repaymentStrategy = data.repaymentStrategy
@@ -796,8 +828,8 @@ export const adminService = {
         saveToStorage(loans)
         auditService.record('stage_1_approval', {
           loanId,
-          adminName: session.name,
-          message: `Stage 1 Approved by ${session.name}`,
+          adminName: sessionSafe?.name || 'Sales',
+          message: `Stage 1 Approved by ${sessionSafe?.name || 'Sales'}`,
         })
         resolve(loan)
       } catch (error) {
@@ -975,30 +1007,45 @@ export const adminService = {
   },
 
   assignToMe: async (loanId) => {
+    const session = adminService.getSession()
+    if (!session || session.role !== 'sales') {
+      throw new Error('Only sales can assign applicants')
+    }
+    if (USE_BACKEND && session.accessToken) {
+      const trimmed = assertBackendLoanId(loanId, 'Assign to me')
+      const url = `${API_ROOT}/admin/loan-applications/${trimmed}/assign-to-me`
+      console.log('[Claim] Sending POST to backend:', url)
+      const updated = await adminRequest(`/admin/loan-applications/${trimmed}/assign-to-me`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      })
+      console.log('[Claim] Backend responded OK, loan updated:', updated?.id ?? updated?._id)
+      return normalizeLoanFromApi(updated)
+    }
+    console.warn(
+      '[Claim] Skipping backend claim. Details:',
+      {
+        viteApiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+        USE_BACKEND,
+        hasAccessToken: !!session?.accessToken,
+      },
+      'Assigning locally only — no network request.',
+    )
     return new Promise(async (resolve, reject) => {
       try {
-        const session = adminService.getSession()
-        if (!session || session.role !== 'sales') {
-          reject(new Error('Only sales can assign applicants'))
-          return
-        }
-
         const loans = await cloneLoans()
         const loanIndex = loans.findIndex((l) => l.id === loanId)
         if (loanIndex === -1) {
           reject(new Error('Loan not found'))
           return
         }
-
         const loan = loans[loanIndex]
         if (loan.assignedTo) {
           reject(new Error('Already assigned'))
           return
         }
-
         loan.assignedTo = session.username
         loan.assignedDate = new Date().toISOString()
-
         saveToStorage(loans)
         auditService.record('assign', { loanId, adminName: session.name })
         resolve(loan)

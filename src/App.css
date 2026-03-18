@@ -249,6 +249,122 @@
   font-size: var(--text-xs);
 }
 
+/* ==================== Affordability Panels (Sales/Admin) ==================== */
+
+.affordability-card {
+  border-radius: inherit;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.affordability-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.affordability-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.affordability-card-subtitle {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.affordability-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.affordability-chip {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+}
+
+.affordability-chip--success {
+  background: #ecfdf3;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+.affordability-chip--warning {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fed7aa;
+}
+.affordability-chip--danger {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.affordability-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  font-size: 0.8rem;
+}
+
+.affordability-metric-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+}
+
+.affordability-metric-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.affordability-metric-muted {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.metric-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.metric-bar-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+}
+
+.metric-bar-fill--success {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.metric-bar-fill--warning {
+  background: linear-gradient(90deg, #facc15, #ea580c);
+}
+
+.metric-bar-fill--danger {
+  background: linear-gradient(90deg, #f97373, #dc2626);
+}
+
 .hero-visual {
   position: relative;
   animation: fadeInUp 0.6s var(--ease-out) 0.2s both;
@@ -2124,7 +2240,6 @@
   place-items: center;
   z-index: 1000;
   padding: var(--space-3);
-  animation: fadeIn 0.2s var(--ease-out);
 }
 
 .modal-content {
@@ -2136,7 +2251,23 @@
   overflow-y: auto;
   box-shadow: var(--shadow-2xl);
   border: 1px solid var(--color-border-light);
-  animation: modalSlideIn 0.3s var(--ease-out);
+  transform-origin: center;
+}
+
+.modal-overlay.modal-enter {
+  animation: modalFadeIn 0.18s var(--ease-out);
+}
+
+.modal-overlay.modal-leave {
+  animation: modalFadeOut 0.18s var(--ease-in) forwards;
+}
+
+.modal-content.modal-enter {
+  animation: modalPopIn 0.22s var(--ease-out);
+}
+
+.modal-content.modal-leave {
+  animation: modalPopOut 0.18s var(--ease-in) forwards;
 }
 
 .modal-content--sm {
@@ -5034,6 +5165,46 @@
   }
 }
 
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modalPopOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+}
+
 .inline-loader {
   display: inline-flex;
   align-items: center;
@@ -5578,6 +5749,25 @@
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border-light);
   overflow-x: auto;
+}
+
+.stage-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stage-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #4b5563;
+  background: #e5e7eb;
 }
 
 .admin-table {

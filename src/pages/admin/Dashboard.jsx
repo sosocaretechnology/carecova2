@@ -18,14 +18,33 @@ export default function Dashboard() {
         async function loadData() {
             try {
                 setLoading(true)
-                const [kpiData, queueData, insightData] = await Promise.all([
-                    adminService.getKPIs(),
-                    adminService.getQueues(),
-                    adminService.getInsights()
-                ])
-                setKpis(kpiData)
-                setQueues(queueData)
-                setInsights(insightData)
+                if (session?.role === 'sales') {
+                    try {
+                        const salesData = await adminService.getSalesDashboard()
+                        if (salesData) {
+                            setKpis(salesData.kpis)
+                            setQueues(salesData.queues)
+                            setInsights({})
+                        } else {
+                            setKpis({ total: 0, stage1Approved: 0, commissionAvailable: 0, commissionLocked: 0, repaymentRate: 0 })
+                            setQueues({ needsReview: [] })
+                            setInsights({})
+                        }
+                    } catch (_) {
+                        setKpis({ total: 0, stage1Approved: 0, commissionAvailable: 0, commissionLocked: 0, repaymentRate: 0 })
+                        setQueues({ needsReview: [] })
+                        setInsights({})
+                    }
+                } else {
+                    const [kpiData, queueData, insightData] = await Promise.all([
+                        adminService.getKPIs(),
+                        adminService.getQueues(),
+                        adminService.getInsights()
+                    ])
+                    setKpis(kpiData)
+                    setQueues(queueData)
+                    setInsights(insightData)
+                }
             } catch (error) {
                 console.error('Error loading dashboard data:', error)
             } finally {
@@ -33,9 +52,9 @@ export default function Dashboard() {
             }
         }
         loadData()
-    }, [])
+    }, [session?.role])
 
-    if (loading || !kpis || !queues || !insights) {
+    if (loading || !kpis || !queues) {
         return <FullScreenLoader label="Loading dashboard metrics…" />
     }
 
@@ -47,7 +66,7 @@ export default function Dashboard() {
                 return <SupportDashboardView kpis={kpis} queues={queues} />
             case 'admin':
             default:
-                return <AdminDashboardView kpis={kpis} queues={queues} insights={insights} />
+                return <AdminDashboardView kpis={kpis} queues={queues} insights={insights ?? {}} />
         }
     }
 
