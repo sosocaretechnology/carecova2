@@ -15,7 +15,7 @@ export default function RecoveryWorkbench() {
 
     const fetchData = async () => {
         try {
-            const all = await adminService.getAllLoans()
+            const all = await adminService.getAllLoans({ requireBackend: true })
             let candidates = all.filter(l => l.status === 'overdue' || (l.dpd && l.dpd > 0) || l.status === 'active')
             if (session?.role === 'sales') {
                 candidates = candidates.filter(l => l.assignedTo === session.username)
@@ -61,10 +61,14 @@ export default function RecoveryWorkbench() {
         : Math.max(Math.round(installment.amount * 0.5), 1)
 
     try {
-      await adminService.recordPayment(selectedLoan.id, index, {
-        amount,
-        method: 'Recovery Simulation',
-        reference: `SIM-${Date.now()}`,
+      await adminService.recordRepayment({
+        loanId: selectedLoan.id,
+        installmentIndex: index,
+        amountKobo: Math.round(amount * 100),
+        amountNaira: amount,
+        paymentChannel: 'recovery_manual',
+        paymentReference: `SIM-${Date.now()}`,
+        paidAt: new Date().toISOString(),
       })
       await fetchData()
       alert(

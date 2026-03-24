@@ -17,6 +17,7 @@ import EligibilityCheck from './pages/EligibilityCheck'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import MakePayment from './pages/MakePayment'
 import PaymentConfirmation from './pages/PaymentConfirmation'
+import Notifications from './pages/Notifications'
 import FAQ from './pages/FAQ'
 import Profile from './pages/Profile'
 import AdminLogin from './pages/AdminLogin'
@@ -41,6 +42,7 @@ import DisbursementCaseFile from './pages/credit/DisbursementCaseFile'
 import { useAuth } from './hooks/useAuth'
 import { useCustomerAuth } from './hooks/useCustomerAuth'
 import RequireRoles from './components/auth/RequireRoles'
+import { NotificationProvider } from './context/NotificationContext'
 import './App.css'
 
 function ProtectedRoute({ children }) {
@@ -74,6 +76,7 @@ function ProtectedCustomerRoute({ children }) {
 function App() {
   return (
     <BrowserRouter>
+      <NotificationProvider>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
@@ -88,6 +91,7 @@ function App() {
           <Route index element={<CustomerOverview />} />
           <Route path="loans" element={<CustomerLoans />} />
           <Route path="loans/:id" element={<CustomerLoanDetail />} />
+          <Route path="notifications" element={<Notifications />} />
         </Route>
         <Route path="/offer/:applicationId" element={<Offer />} />
         <Route path="/calculator" element={<Calculator />} />
@@ -195,6 +199,14 @@ function App() {
             }
           />
           <Route
+            path="notifications"
+            element={
+              <RequireRoles allowedRoles={['admin', 'sales', 'support', 'credit_officer']}>
+                <Notifications />
+              </RequireRoles>
+            }
+          />
+          <Route
             path="disbursements"
             element={
               <RequireRoles allowedRoles={['admin', 'credit_officer']}>
@@ -219,8 +231,10 @@ function App() {
           <Route path="repayments" element={<Repayments />} />
           <Route path="disbursements" element={<DisbursementQueue />} />
           <Route path="disbursements/:id" element={<DisbursementCaseFile />} />
+          <Route path="notifications" element={<Notifications />} />
         </Route>
       </Routes>
+      </NotificationProvider>
     </BrowserRouter>
   )
 }

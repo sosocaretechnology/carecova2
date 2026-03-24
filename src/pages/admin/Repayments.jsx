@@ -59,12 +59,6 @@ export default function Repayments() {
                     the backend may not yet be writing ledger entries to the organization wallet.
                 </div>
             )}
-            {!error && transactions.length === 0 && (
-                <div className="alert-box alert-warning mt-4 text-xs">
-                    No wallet transactions were returned from the backend. If you have confirmed disbursements or repayments,
-                    the backend may not yet be posting ledger entries to the organization wallet.
-                </div>
-            )}
 
             <div className="admin-table-container mt-6">
                 <div className="p-4 border-bottom flex items-center gap-2">
@@ -100,15 +94,21 @@ export default function Repayments() {
                                 <tr key={tx.id}>
                                     <td className="font-mono text-sm text-muted">{tx.id}</td>
                                     <td>
-                                        <div className="font-medium">{tx.applicantName}</div>
-                                        <div className="text-xs text-muted">{tx.loanId}</div>
+                                        <div className="font-medium">{tx.applicantName || tx.customerName || '—'}</div>
+                                        <div className="text-xs text-muted">{tx.loanId || tx.reference || '—'}</div>
                                     </td>
-                                    <td className="font-bold">{tx.amount.toLocaleString()}</td>
-                                    <td className="text-sm">{tx.method}</td>
-                                    <td className="text-sm">{new Date(tx.date).toLocaleString()}</td>
+                                    <td className="font-bold">
+                                        {Number(
+                                            tx.amount ??
+                                            tx.amountNaira ??
+                                            (Number(tx.amountKobo || 0) / 100)
+                                        ).toLocaleString()}
+                                    </td>
+                                    <td className="text-sm">{tx.method || tx.paymentChannel || tx.type || '—'}</td>
+                                    <td className="text-sm">{new Date(tx.date || tx.createdAt || tx.paidAt || Date.now()).toLocaleString()}</td>
                                     <td>
-                                        <span className={`risk-badge ${tx.status === 'Successful' ? 'risk-badge-low' : 'risk-badge-high'}`}>
-                                            {tx.status}
+                                        <span className={`risk-badge ${String(tx.status || '').toLowerCase() === 'successful' || String(tx.status || '').toLowerCase() === 'success' || String(tx.status || '').toLowerCase() === 'paid' ? 'risk-badge-low' : 'risk-badge-high'}`}>
+                                            {tx.status || '—'}
                                         </span>
                                     </td>
                                 </tr>

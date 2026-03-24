@@ -62,13 +62,16 @@ export default function AdminDashboardView({ kpis, queues, insights }) {
                 <div className="dashboard-main-col">
                     <section className="dashboard-queues">
                         <h2>System Queues</h2>
+                        {(() => {
+                            const stage2Items = queues.needsReview.filter(q => q.status === 'pending_admin_review')
+                            return (
                         <div className="queue-panel">
                             <div className="queue-header warning">
                                 <h3>Final Credit Approval (Stage 2)</h3>
-                                <span className="queue-count">{queues.needsReview.filter(q => q.status === 'stage_2_review').length} items</span>
+                                <span className="queue-count">{stage2Items.length} items</span>
                             </div>
                             <div className="queue-list">
-                                {queues.needsReview.filter(q => q.status === 'stage_2_review').map(app => (
+                                {stage2Items.map(app => (
                                     <div key={app.id} className="queue-item" onClick={() => navigate(`/admin/applications/${app.id}`)}>
                                         <div className="queue-item-primary">
                                             <span className="queue-item-name">{app.fullName}</span>
@@ -82,6 +85,8 @@ export default function AdminDashboardView({ kpis, queues, insights }) {
                                 ))}
                             </div>
                         </div>
+                            )
+                        })()}
 
                         <div className="queue-panel">
                             <div className="queue-header danger">

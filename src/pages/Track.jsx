@@ -9,6 +9,14 @@ import RepaymentSchedule from '../components/RepaymentSchedule'
 import RepaymentDashboard from '../components/RepaymentDashboard'
 import { trackingService } from '../services/trackingService'
 
+const asNaira = (nairaValue, koboValue) => {
+  if (typeof nairaValue === 'number' && Number.isFinite(nairaValue)) return nairaValue
+  const fromKobo = Number(koboValue)
+  return Number.isFinite(fromKobo) ? fromKobo / 100 : 0
+}
+
+const formatNaira = (value) => `₦${Math.round(Number(value || 0)).toLocaleString()}`
+
 export default function Track() {
   const [searchParams] = useSearchParams()
   const [loanId, setLoanId] = useState(searchParams.get('loanId') || '')
@@ -113,7 +121,7 @@ export default function Track() {
                       </div>
                       <div className="info-item">
                         <strong>Estimated Cost:</strong>
-                        <p>₦{loan.estimatedCost.toLocaleString()}</p>
+                        <p>{formatNaira(asNaira(loan.estimatedCost, loan.estimatedCostKobo) || asNaira(loan.requestedAmount, loan.requestedAmountKobo))}</p>
                       </div>
                       <div className="info-item">
                         <strong>Status:</strong>

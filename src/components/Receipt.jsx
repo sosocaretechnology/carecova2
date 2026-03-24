@@ -1,5 +1,12 @@
 export default function Receipt({ payment, loanId }) {
   if (!payment) return null
+  const amountNaira = typeof payment.amount === 'number'
+    ? payment.amount
+    : (Number.isFinite(Number(payment.amountNaira))
+      ? Number(payment.amountNaira)
+      : (Number.isFinite(Number(payment.amountKobo)) ? Number(payment.amountKobo) / 100 : 0))
+  const method = payment.method || payment.paymentChannel || '—'
+  const processedAt = payment.processedAt || payment.paidAt || payment.createdAt
 
   return (
     <div className="receipt-card">
@@ -20,17 +27,17 @@ export default function Receipt({ payment, loanId }) {
         <div className="receipt-detail-row">
           <span className="receipt-label">Payment Amount:</span>
           <span className="receipt-value receipt-value--amount">
-            ₦{payment.amount.toLocaleString()}
+            ₦{Math.round(amountNaira).toLocaleString()}
           </span>
         </div>
         <div className="receipt-detail-row">
           <span className="receipt-label">Payment Method:</span>
-          <span className="receipt-value">{payment.method}</span>
+          <span className="receipt-value">{method}</span>
         </div>
         <div className="receipt-detail-row">
           <span className="receipt-label">Date & Time:</span>
           <span className="receipt-value">
-            {new Date(payment.processedAt).toLocaleString()}
+            {processedAt ? new Date(processedAt).toLocaleString() : '—'}
           </span>
         </div>
         <div className="receipt-detail-row">

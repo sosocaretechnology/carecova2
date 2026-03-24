@@ -27,7 +27,11 @@ export default function RepaymentSchedule({ schedule = [], className = '' }) {
               <td>
                 {payment.paid ? (
                   <span className="payment-status paid">
-                    Paid {payment.paidDate ? `(${new Date(payment.paidDate).toLocaleDateString()})` : ''}
+                    Paid {(payment.paidDate || payment.paymentDate || payment.paidOn) ? `(${new Date(payment.paidDate || payment.paymentDate || payment.paidOn).toLocaleDateString()})` : ''}
+                  </span>
+                ) : (Number(payment.paidAmount || 0) > 0 || String(payment.status || '').toLowerCase() === 'partial') ? (
+                  <span className="payment-status pending">
+                    Partial (₦{Number(payment.paidAmount || 0).toLocaleString()} paid)
                   </span>
                 ) : (
                   <span className="payment-status pending">Pending</span>

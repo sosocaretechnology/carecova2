@@ -155,14 +155,25 @@ async function adminRequest(path, options = {}, retried = false) {
   let token = session?.accessToken
   if (!token) throw new Error('Not authenticated')
 
-  const response = await fetch(`${API_ROOT}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {}),
-    },
-  })
+  let response
+  try {
+    response = await fetch(`${API_ROOT}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(options.headers || {}),
+      },
+    })
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(
+        `Unable to reach backend at ${API_ROOT}. ` +
+        'Please ensure the API server is running and the base URL is correct.',
+      )
+    }
+    throw error
+  }
 
   const { isJson, body } = await parseResponseBody(response)
   if (!response.ok) {
@@ -185,23 +196,57 @@ async function adminRequest(path, options = {}, retried = false) {
 
 function normalizeLoanFromApi(loan) {
   if (!loan) return loan
-  const approvedAmount = loan.approvedAmount ?? loan.approved_amount ?? loan.estimatedCost ?? loan.requestedAmount ?? 0
-  const rawStatus = loan.status ?? loan.applicationStatus ?? loan.stage ?? null
+  const source = loan.loan && typeof loan.loan === 'object' ? loan.loan : loan
+  const toNaira = (nairaValue, koboValue) => {
+    if (typeof nairaValue === 'number' && Number.isFinite(nairaValue)) return nairaValue
+    const fromKobo = Number(koboValue)
+    return Number.isFinite(fromKobo) ? fromKobo / 100 : undefined
+  }
+  const normalizedSchedule = Array.isArray(source.repaymentSchedule)
+    ? source.repaymentSchedule.map((item, index) => {
+        const amount = toNaira(item?.amount, item?.amountKobo) ?? 0
+        const paidAmount = toNaira(item?.paidAmount, item?.paidAmountKobo) ?? 0
+        const normalizedStatus = String(item?.status || '').toLowerCase()
+        const isPaid = item?.paid === true || normalizedStatus === 'paid'
+        return {
+          ...item,
+          month: item?.month ?? index + 1,
+          amount,
+          amountKobo: Number(item?.amountKobo) || Math.round(amount * 100),
+          paidAmount,
+          paidAmountKobo: Number(item?.paidAmountKobo) || Math.round(paidAmount * 100),
+          paid: isPaid || paidAmount >= amount,
+          paymentDate: item?.paymentDate || item?.paidAt || item?.paidOn || null,
+          paidOn: item?.paidOn || item?.paymentDate || item?.paidAt || null,
+          paymentMethod: item?.paymentMethod || item?.paymentChannel || null,
+          txReference: item?.txReference || item?.paymentReference || null,
+        }
+      })
+    : undefined
+  const approvedAmount = source.approvedAmount ?? source.approved_amount ?? source.estimatedCost ?? source.requestedAmount ?? 0
+  const rawStatus = source.status ?? source.applicationStatus ?? source.stage ?? null
   let status = rawStatus
-  if (!status && (loan.disbursedAt || loan.disbursementConfirmedAt)) status = 'active'
+  if (!status && (source.disbursedAt || source.disbursementConfirmedAt)) status = 'active'
   if (status === 'disbursed') status = 'active'
   if (status === 'ready_to_disburse') status = 'approved'
   return {
-    ...loan,
-    id: loan.id || loan._id,
+    ...source,
+    id: source.id || source._id,
     status,
-    patientName: loan.patientName || loan.fullName,
-    fullName: loan.fullName || loan.patientName,
-    hospital: loan.hospital || loan.hospitalName || '—',
-    estimatedCost: loan.estimatedCost ?? loan.requestedAmount ?? 0,
+    patientName: source.patientName || source.fullName,
+    fullName: source.fullName || source.patientName,
+    hospital: source.hospital || source.hospitalName || '—',
+    estimatedCost: source.estimatedCost ?? source.requestedAmount ?? 0,
     approvedAmount: typeof approvedAmount === 'number' ? approvedAmount : Number(approvedAmount) || 0,
-    submittedAt: loan.submittedAt || loan.createdAt,
-    disbursedAt: loan.disbursedAt ?? loan.disbursementConfirmedAt,
+    submittedAt: source.submittedAt || source.createdAt,
+    disbursedAt: source.disbursedAt ?? source.disbursementConfirmedAt,
+    totalPaid: toNaira(source.totalPaid, source.totalPaidKobo) ?? (source.totalPaid || 0),
+    outstandingBalance:
+      toNaira(source.outstandingBalance, source.outstandingBalanceKobo) ??
+      (source.outstandingBalance || 0),
+    totalRepayment: toNaira(source.totalRepayment, source.totalRepaymentKobo) ?? source.totalRepayment,
+    totalInterest: toNaira(source.totalInterest, source.totalInterestKobo) ?? source.totalInterest,
+    repaymentSchedule: normalizedSchedule ?? source.repaymentSchedule,
   }
 }
 
@@ -737,41 +782,49 @@ export const adminService = {
     const session = adminService.getSession()
     if (!session) return null
 
-    let loans = await loanService.getAllApplications()
+    const loans = await adminService.getAllLoans({ requireBackend: true })
 
     // Filter by portfolio for sales
-    if (session.role === 'sales') {
-      loans = loans.filter(l => l.assignedTo === session.username)
-    }
+    const scopedLoans = session.role === 'sales'
+      ? loans.filter(l => l.assignedTo === session.username)
+      : loans
 
     const now = new Date()
     const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000)
     const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000)
 
-    const newToday = loans.filter(l => new Date(l.submittedAt) >= oneDayAgo).length
-    const newWeek = loans.filter(l => new Date(l.submittedAt) >= sevenDaysAgo).length
+    const newToday = scopedLoans.filter(l => new Date(l.submittedAt) >= oneDayAgo).length
+    const newWeek = scopedLoans.filter(l => new Date(l.submittedAt) >= sevenDaysAgo).length
 
-    // Detailed KPI counts — support both old and new status strings
-    const newApplications = loans.filter(l => ['pending', 'pending_stage1'].includes(l.status) && new Date(l.submittedAt) >= oneDayAgo).length
-    const pendingReview = loans.filter(l => ['pending', 'pending_stage1'].includes(l.status)).length
-    const awaitingDocuments = loans.filter(l => ['incomplete', 'need_more_info'].includes(l.status)).length
-    const readyToDisburse = loans.filter(l => ['approved', 'pending_disbursement'].includes(l.status)).length
-    const activeLoansCount = loans.filter(l => l.status === 'active').length
+    // KPI counts aligned to backend status model
+    const newApplications = scopedLoans.filter(
+      l => ['submitted', 'pending', 'pending_stage1'].includes(l.status) && new Date(l.submittedAt) >= oneDayAgo
+    ).length
+    const pendingReview = scopedLoans.filter(
+      l => ['submitted', 'pending', 'pending_stage1', 'pending_admin_review'].includes(l.status)
+    ).length
+    const awaitingDocuments = scopedLoans.filter(l => ['incomplete'].includes(l.status)).length
+    const readyToDisburse = scopedLoans.filter(
+      l => ['approved', 'approved_for_disbursement'].includes(l.status) && (l.disbursementStatus || 'pending') === 'pending'
+    ).length
+    const activeLoansCount = scopedLoans.filter(l => l.status === 'active').length
 
-    const stage1Approved = loans.filter(l => ['stage_2_review', 'pending_credit_review'].includes(l.status)).length
-    const disbursed = loans.filter(l => ['active', 'completed'].includes(l.status)).length
-    const totalDisbursedAmount = loans
+    const stage1Approved = scopedLoans.filter(l => l.status === 'pending_admin_review').length
+    const disbursed = scopedLoans.filter(l => ['active', 'completed'].includes(l.status)).length
+    const totalDisbursedAmount = scopedLoans
       .filter(l => ['active', 'completed'].includes(l.status))
       .reduce((sum, l) => sum + (l.approvedAmount || 0), 0)
 
     // Disbursement KPIs (for credit_officer role)
-    const pendingDisbursements = loans.filter(l => ['pending_disbursement', 'approved'].includes(l.status))
+    const pendingDisbursements = scopedLoans.filter(
+      l => ['approved', 'approved_for_disbursement'].includes(l.status) && (l.disbursementStatus || 'pending') === 'pending'
+    )
     const pendingDisbursementCount = pendingDisbursements.length
     const pendingDisbursementAmount = pendingDisbursements.reduce((s, l) => s + (l.approvedAmount || 0), 0)
-    const disbursedToday = loans.filter(l => l.status === 'active' && l.disbursedAt && new Date(l.disbursedAt) >= oneDayAgo)
+    const disbursedToday = scopedLoans.filter(l => l.status === 'active' && l.disbursedAt && new Date(l.disbursedAt) >= oneDayAgo)
     const disbursedTodayCount = disbursedToday.length
     const disbursedTodayAmount = disbursedToday.reduce((s, l) => s + (l.approvedAmount || 0), 0)
-    const failedDisbursements = loans.filter(l => l.disbursementIntent?.status === 'FAILED').length
+    const failedDisbursements = scopedLoans.filter(l => String(l.disbursementStatus || '').toLowerCase() === 'failed').length
 
     const config = getRiskConfig()
     let commissionEarned = 0
@@ -793,7 +846,7 @@ export const adminService = {
     // Overdue logic
     let overdueCount = 0
     let overdueValue = 0
-    loans.filter(l => l.status === 'active' && l.repaymentSchedule).forEach(l => {
+    scopedLoans.filter(l => l.status === 'active' && l.repaymentSchedule).forEach(l => {
       const overdue = l.repaymentSchedule.filter(p => !p.paid && new Date(p.dueDate) < now)
       if (overdue.length > 0) {
         overdueCount++
@@ -801,7 +854,7 @@ export const adminService = {
       }
     })
 
-    const repaymentRate = DisbursementAndRepaymentRate(loans)
+    const repaymentRate = DisbursementAndRepaymentRate(scopedLoans)
 
     return {
       newToday, newWeek, pending: pendingReview, stage1Approved, disbursed,
@@ -813,28 +866,40 @@ export const adminService = {
       // Disbursement KPIs
       pendingDisbursementCount, pendingDisbursementAmount,
       disbursedTodayCount, disbursedTodayAmount, failedDisbursements,
-      total: loans.length,
+      total: scopedLoans.length,
     }
   },
 
   // Dashboard queues
   getQueues: async () => {
-    const loans = await loanService.getAllApplications()
+    const session = getStoredSession()
+    let loans = []
+    if (USE_BACKEND && session?.accessToken) {
+      loans = await adminService.getAllLoans({ requireBackend: true })
+    } else {
+      loans = await loanService.getAllApplications()
+    }
     const now = new Date()
     const fortyEightHoursAgo = new Date(now - 48 * 60 * 60 * 1000)
 
     const needsReview = loans
-      .filter(l => l.status === 'pending')
+      .filter(l => l.status === 'pending_admin_review')
       .sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt))
       .slice(0, 10)
 
     const highRisk = loans
-      .filter(l => l.status === 'pending' && (l.riskScore ?? 0) > 35)
+      .filter(l =>
+        ['submitted', 'pending', 'pending_stage1', 'pending_admin_review', 'approved', 'approved_for_disbursement'].includes(l.status) &&
+        (l.riskScore ?? l.internalRiskMetrics?.riskScore ?? 0) > 35
+      )
       .sort((a, b) => (b.riskScore ?? 0) - (a.riskScore ?? 0))
       .slice(0, 10)
 
     const stuck = loans
-      .filter(l => l.status === 'pending' && new Date(l.submittedAt) < fortyEightHoursAgo)
+      .filter(l =>
+        ['submitted', 'pending', 'pending_stage1', 'pending_admin_review'].includes(l.status) &&
+        new Date(l.submittedAt) < fortyEightHoursAgo
+      )
       .sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt))
       .slice(0, 10)
 
@@ -844,7 +909,7 @@ export const adminService = {
   // Dashboard insights
   getInsights: async () => {
     const session = adminService.getSession()
-    let loans = await loanService.getAllApplications()
+    let loans = await adminService.getAllLoans({ requireBackend: true })
 
     if (session && session.role === 'sales') {
       loans = loans.filter(l => l.assignedTo === session.username)
@@ -859,25 +924,58 @@ export const adminService = {
     }
 
     // Approval rate
-    const decidedCount = loans.filter(l => ['approved', 'rejected', 'active', 'completed', 'stage_2_review'].includes(l.status)).length
-    const approvedCount = loans.filter(l => ['approved', 'active', 'completed', 'stage_2_review'].includes(l.status)).length
+    const decidedCount = loans.filter(l => ['approved', 'approved_for_disbursement', 'active', 'completed', 'admin_rejected', 'sales_rejected', 'rejected'].includes(l.status)).length
+    const approvedCount = loans.filter(l => ['approved', 'approved_for_disbursement', 'active', 'completed'].includes(l.status)).length
     const approvalRate = decidedCount > 0 ? Math.round((approvedCount / decidedCount) * 100) : 0
 
     // Top rejection reasons
     const rejectionReasons = {}
-    loans.filter(l => l.status === 'rejected' && l.rejectionReason).forEach(l => {
-      rejectionReasons[l.rejectionReason] = (rejectionReasons[l.rejectionReason] || 0) + 1
+    loans.filter(l => ['rejected', 'admin_rejected', 'sales_rejected'].includes(l.status) && (l.rejectionReason || l.reason)).forEach(l => {
+      const reason = l.rejectionReason || l.reason
+      rejectionReasons[reason] = (rejectionReasons[reason] || 0) + 1
     })
     const topRejections = Object.entries(rejectionReasons)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([reason, count]) => ({ reason, count }))
 
-    // Trends (Mocked for dashboard)
+    // Last 7 days trends derived from live backend loan data
+    const days = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date()
+      d.setHours(0, 0, 0, 0)
+      d.setDate(d.getDate() - (6 - i))
+      return d
+    })
+    const keyOf = (dateValue) => {
+      const d = new Date(dateValue)
+      if (Number.isNaN(d.getTime())) return null
+      d.setHours(0, 0, 0, 0)
+      return d.toISOString().slice(0, 10)
+    }
+    const dayKeys = days.map(d => d.toISOString().slice(0, 10))
+    const appMap = Object.fromEntries(dayKeys.map(k => [k, 0]))
+    const disbMap = Object.fromEntries(dayKeys.map(k => [k, 0]))
+    const repayMap = Object.fromEntries(dayKeys.map(k => [k, 0]))
+
+    loans.forEach((loan) => {
+      const submittedKey = keyOf(loan.submittedAt)
+      if (submittedKey && appMap[submittedKey] != null) appMap[submittedKey] += 1
+
+      const disbursedKey = keyOf(loan.disbursedAt || loan.disbursementConfirmedAt)
+      if (disbursedKey && disbMap[disbursedKey] != null) disbMap[disbursedKey] += Number(loan.approvedAmount || 0)
+
+      if (Array.isArray(loan.repaymentSchedule)) {
+        loan.repaymentSchedule.forEach((p) => {
+          const paidKey = keyOf(p.paidOn || p.paymentDate)
+          if (paidKey && repayMap[paidKey] != null) repayMap[paidKey] += Number(p.paidAmount || (p.paid ? p.amount : 0) || 0)
+        })
+      }
+    })
+
     const trends = {
-      applications: [12, 19, 3, 5, 2, 3, 10],
-      disbursement: [500000, 1200000, 800000, 1500000, 2000000, 1800000, 2500000],
-      repayment: [400000, 1000000, 750000, 1300000, 1800000, 1700000, 2200000]
+      applications: dayKeys.map(k => appMap[k]),
+      disbursement: dayKeys.map(k => disbMap[k]),
+      repayment: dayKeys.map(k => repayMap[k]),
     }
 
     return { avgDecisionTimeHours, approvalRate, topRejections, decidedCount, approvedCount, trends }
@@ -1232,7 +1330,114 @@ export const adminService = {
     })
   },
 
+  recordRepayment: async (payload = {}) => {
+    const session = getStoredSession()
+    if (USE_BACKEND && !session?.accessToken) {
+      throw new Error('Not authenticated')
+    }
+    if (USE_BACKEND && session?.accessToken) {
+      return adminRequest('/admin/repayments', {
+        method: 'POST',
+        body: JSON.stringify(payload || {}),
+      })
+    }
+
+    const loanId = payload.loanId
+    const amountNaira =
+      typeof payload.amountNaira === 'number'
+        ? payload.amountNaira
+        : Number(payload.amountKobo || 0) / 100
+    const method = payload.paymentChannel || payload.method || 'Unknown'
+    const reference = payload.paymentReference || payload.reference
+    const scheduleIndex = Number(payload.installmentIndex)
+
+    return adminService.recordPayment(
+      loanId,
+      Number.isFinite(scheduleIndex) ? scheduleIndex : 0,
+      {
+        amount: Number.isFinite(amountNaira) ? amountNaira : 0,
+        method,
+        reference,
+      },
+    )
+  },
+
+  getRepaymentsByLoan: async (loanId, filters = {}) => {
+    const session = getStoredSession()
+    if (USE_BACKEND && !session?.accessToken) {
+      throw new Error('Not authenticated')
+    }
+    if (USE_BACKEND && session?.accessToken) {
+      const trimmed = assertBackendLoanId(loanId, 'Repayments')
+      const query = new URLSearchParams(
+        Object.entries({ loanId: trimmed, ...(filters || {}) }).reduce((acc, [k, v]) => {
+          if (v === undefined || v === null || v === '') return acc
+          acc[k] = String(v)
+          return acc
+        }, {}),
+      ).toString()
+      const response = await adminRequest(`/admin/repayments${query ? `?${query}` : ''}`)
+      const normalizeItem = (item) => {
+        const amountKobo = Number(item?.amountKobo)
+        const amountNairaRaw = item?.amountNaira
+        const amountNaira = typeof amountNairaRaw === 'number'
+          ? amountNairaRaw
+          : (Number.isFinite(amountKobo) ? amountKobo / 100 : Number(item?.amount) || 0)
+        return {
+          ...item,
+          amountKobo: Number.isFinite(amountKobo) ? amountKobo : Math.round(amountNaira * 100),
+          amountNaira,
+          amount: amountNaira,
+          paymentChannel: item?.paymentChannel || item?.method || 'unknown',
+          paymentReference: item?.paymentReference || item?.reference || item?.id,
+          paidAt: item?.paidAt || item?.createdAt || item?.date,
+        }
+      }
+      const items = Array.isArray(response)
+        ? response.map(normalizeItem)
+        : (Array.isArray(response?.items) ? response.items.map(normalizeItem) : null)
+      if (Array.isArray(response)) return items
+      if (items) return { ...response, items }
+      return response
+    }
+
+    const txs = getTransactions().filter((tx) => tx.loanId === loanId && String(tx.type || '').toLowerCase() === 'repayment')
+    return txs.map((tx) => ({
+      id: tx.id,
+      loanId: tx.loanId,
+      amountNaira: Number(tx.amount) || 0,
+      amountKobo: Math.round((Number(tx.amount) || 0) * 100),
+      paymentChannel: tx.method || 'unknown',
+      paymentReference: tx.id,
+      paidAt: tx.date,
+      status: String(tx.status || '').toLowerCase() === 'successful' ? 'paid' : String(tx.status || '').toLowerCase(),
+      applicantName: tx.applicantName,
+    }))
+  },
+
   recordPayment: async (loanId, installmentIndex, paymentData) => {
+    const session = getStoredSession()
+    if (USE_BACKEND && !session?.accessToken) {
+      throw new Error('Not authenticated')
+    }
+    if (USE_BACKEND && session?.accessToken) {
+      const trimmed = assertBackendLoanId(loanId, 'Repayment')
+      const amountNaira = Number(paymentData?.amount || 0)
+      if (!Number.isFinite(amountNaira) || amountNaira <= 0) {
+        throw new Error('Payment amount must be greater than zero')
+      }
+      const paidAt = paymentData?.paidAt || new Date().toISOString()
+      return adminService.recordRepayment({
+        loanId: trimmed,
+        installmentIndex,
+        amountKobo: Math.round(amountNaira * 100),
+        amountNaira,
+        paymentChannel: paymentData?.method || 'manual',
+        paymentReference: paymentData?.reference || `PMT-${Date.now()}`,
+        paidAt,
+      })
+    }
+
     return new Promise(async (resolve, reject) => {
       try {
         const session = adminService.getSession()

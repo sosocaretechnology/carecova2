@@ -29,6 +29,9 @@ export default function LoanDetail() {
         try {
             if (!silent) setLoading(true)
             const session = adminService.getSession()
+            if (USE_BACKEND && !session?.accessToken) {
+                throw new Error('Session expired. Please sign in again.')
+            }
             const isAuthedBackend = USE_BACKEND && !!session?.accessToken
             const base = isAuthedBackend ? await adminService.getLoanById(id) : await trackingService.trackLoan(id)
             setLoan(trackingService.enrichLoan(base))
@@ -46,13 +49,16 @@ export default function LoanDetail() {
         ;(async () => {
             try {
                 const session = adminService.getSession()
+                if (USE_BACKEND && !session?.accessToken) {
+                    throw new Error('Session expired. Please sign in again.')
+                }
                 const isAuthedBackend = USE_BACKEND && !!session?.accessToken
                 if (!isAuthedBackend) {
-                    const txs = (adminService.getWalletTransactions?.() || []).filter((t) => t.loanId === loan.id)
+                    const txs = await adminService.getRepaymentsByLoan(loan.id)
                     setTransactions(txs)
                     return
                 }
-                const txData = await adminService.getWalletTransactions({ loanId: loan.id, limit: 100 })
+                const txData = await adminService.getRepaymentsByLoan(loan.id, { limit: 100 })
                 const txs = Array.isArray(txData) ? txData : (txData?.items || txData?.data || [])
                 setTransactions(txs)
             } catch (_) {
@@ -208,7 +214,7 @@ export default function LoanDetail() {
                                     const isCurrent = !installment.paid && !isOverdue && i === schedule.findIndex(p => !p.paid)
                                     const paidAt = installment.paidOn || installment.paymentDate
                                     const tx = installment.txReference
-                                        ? transactions.find((t) => t.id === installment.txReference)
+                                        ? transactions.find((t) => String(t.id) === String(installment.txReference) || String(t.paymentReference) === String(installment.txReference))
                                         : null
                                     const openDetail = () => {
                                         if (!installment.paid) return
@@ -327,7 +333,13 @@ export default function LoanDetail() {
                                 </div>
                                 <div>
                                     <strong style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-caption)' }}>Amount</strong>
-                                    <p style={{ margin: '4px 0 0', fontWeight: 600 }}>₦{Number(transactionDetail.tx.amount).toLocaleString()}</p>
+                                    <p style={{ margin: '4px 0 0', fontWeight: 600 }}>
+                                        ₦{Number(
+                                            transactionDetail.tx.amount ??
+                                            transactionDetail.tx.amountNaira ??
+                                            (Number(transactionDetail.tx.amountKobo || 0) / 100)
+                                        ).toLocaleString()}
+                                    </p>
                                 </div>
                                 <div>
                                     <strong style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-caption)' }}>Date</strong>
@@ -339,7 +351,7 @@ export default function LoanDetail() {
                                 </div>
                                 <div>
                                     <strong style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-caption)' }}>Method</strong>
-                                    <p style={{ margin: '4px 0 0', fontWeight: 600 }}>{transactionDetail.tx.method || '—'}</p>
+                                    <p style={{ margin: '4px 0 0', fontWeight: 600 }}>{transactionDetail.tx.method || transactionDetail.tx.paymentChannel || '—'}</p>
                                 </div>
                                 <div>
                                     <strong style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-caption)' }}>Status</strong>

@@ -1,6 +1,7 @@
 import { Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import AdminSidebar from './AdminSidebar'
+import NotificationBell from '../NotificationBell'
 
 export default function AdminLayout() {
     const { isAuthenticated, session, loading, logout } = useAuth()
@@ -20,6 +21,7 @@ export default function AdminLayout() {
                 <header className="admin-topbar">
                     <div className="admin-topbar-title">Medical Financing Admin</div>
                     <div className="admin-topbar-actions">
+                        <NotificationBell notificationsPath="/admin/notifications" />
                         <span className="admin-user-badge">{session?.name?.split(' ').map(n => n[0]).join('')}</span>
                         <span className="capitalize">{session?.name} ({session?.role})</span>
                     </div>

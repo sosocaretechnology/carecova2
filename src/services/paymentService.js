@@ -45,14 +45,19 @@ export const paymentService = {
       setTimeout(() => {
         try {
           const transactionId = generateTransactionId()
+          const numericAmount = Number(amount || 0)
+          if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+            throw new Error('Payment amount must be greater than zero')
+          }
+          const processedAt = new Date().toISOString()
 
           const payment = {
             id: transactionId,
             loanId,
-            amount,
+            amount: numericAmount,
             method,
             status: 'completed',
-            processedAt: new Date().toISOString(),
+            processedAt,
             receiptUrl: `/receipts/${transactionId}`,
           }
 
@@ -65,9 +70,35 @@ export const paymentService = {
 
           if (loan && loan.repaymentSchedule) {
             const nextUnpaid = loan.repaymentSchedule.find((p) => !p.paid)
-            if (nextUnpaid && amount >= nextUnpaid.amount) {
-              nextUnpaid.paid = true
-              nextUnpaid.paidDate = new Date().toISOString()
+            if (nextUnpaid) {
+              const currentPaid = Number(nextUnpaid.paidAmount || 0)
+              const due = Number(nextUnpaid.amount || 0)
+              const updatedPaid = currentPaid + numericAmount
+              const isFullyPaid = updatedPaid >= due
+
+              nextUnpaid.paidAmount = updatedPaid
+              nextUnpaid.paid = isFullyPaid
+              nextUnpaid.status = isFullyPaid ? 'PAID' : 'PARTIAL'
+              nextUnpaid.paidDate = processedAt
+              nextUnpaid.paymentDate = processedAt
+              nextUnpaid.paidOn = processedAt
+              nextUnpaid.paymentMethod = method || 'Simulated Payment'
+              nextUnpaid.txReference = transactionId
+
+              const totalPaid = (loan.repaymentSchedule || []).reduce(
+                (sum, item) => sum + (Number(item.paidAmount || 0) || (item.paid ? Number(item.amount || 0) : 0)),
+                0,
+              )
+              const totalRepayment = (loan.repaymentSchedule || []).reduce(
+                (sum, item) => sum + Number(item.amount || 0),
+                0,
+              )
+              loan.totalPaid = totalPaid
+              loan.outstandingBalance = Math.max(totalRepayment - totalPaid, 0)
+              if (loan.outstandingBalance <= 0) {
+                loan.status = 'completed'
+                loan.completedAt = processedAt
+              }
               localStorage.setItem('carecova_loans', JSON.stringify(loans))
             }
           }

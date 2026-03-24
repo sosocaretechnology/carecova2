@@ -4,19 +4,38 @@ import ProgressBar from './ProgressBar'
 import RepaymentSchedule from './RepaymentSchedule'
 import StatusBadge from './StatusBadge'
 
+const asNaira = (nairaValue, koboValue) => {
+  if (typeof nairaValue === 'number' && Number.isFinite(nairaValue)) return nairaValue
+  const fromKobo = Number(koboValue)
+  return Number.isFinite(fromKobo) ? fromKobo / 100 : 0
+}
+
+const formatNaira = (value) => `₦${Math.round(Number(value || 0)).toLocaleString()}`
+
 export default function RepaymentDashboard({ loan }) {
   if (!loan || !loan.repaymentSchedule) {
     return null
   }
 
-  const totalAmount = loan.repaymentSchedule.reduce((sum, p) => sum + p.amount, 0)
-  const paidAmount = loan.repaymentSchedule
-    .filter((p) => p.paid)
-    .reduce((sum, p) => sum + p.amount, 0)
+  const schedule = loan.repaymentSchedule.map((item) => {
+    const amount = asNaira(item.amount, item.amountKobo)
+    const paidAmount = asNaira(item.paidAmount, item.paidAmountKobo)
+    const paid = item.paid === true || String(item.status || '').toLowerCase() === 'paid'
+    return {
+      ...item,
+      amount,
+      paidAmount,
+      paid,
+    }
+  })
+
+  const totalAmount = schedule.reduce((sum, p) => sum + p.amount, 0)
+  const paidAmount = schedule
+    .reduce((sum, p) => sum + (p.paidAmount || (p.paid ? p.amount : 0)), 0)
   const outstandingBalance = totalAmount - paidAmount
   const progressPercentage = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0
 
-  const nextPayment = loan.repaymentSchedule.find((p) => !p.paid)
+  const nextPayment = schedule.find((p) => !p.paid)
 
   return (
     <div className="repayment-dashboard">
@@ -29,21 +48,21 @@ export default function RepaymentDashboard({ loan }) {
         <div className="repayment-summary-card repayment-summary-card--primary">
           <div className="repayment-summary-label">Total Loan Amount</div>
           <div className="repayment-summary-value">
-            ₦{totalAmount.toLocaleString()}
+            {formatNaira(totalAmount)}
           </div>
         </div>
 
         <div className="repayment-summary-card">
           <div className="repayment-summary-label">Amount Paid</div>
           <div className="repayment-summary-value repayment-summary-value--success">
-            ₦{paidAmount.toLocaleString()}
+            {formatNaira(paidAmount)}
           </div>
         </div>
 
         <div className="repayment-summary-card">
           <div className="repayment-summary-label">Outstanding Balance</div>
           <div className="repayment-summary-value repayment-summary-value--warning">
-            ₦{outstandingBalance.toLocaleString()}
+            {formatNaira(outstandingBalance)}
           </div>
         </div>
 
@@ -51,7 +70,7 @@ export default function RepaymentDashboard({ loan }) {
           <div className="repayment-summary-card repayment-summary-card--highlight">
             <div className="repayment-summary-label">Next Payment Due</div>
             <div className="repayment-summary-value">
-              ₦{nextPayment.amount.toLocaleString()}
+              {formatNaira(nextPayment.amount)}
             </div>
             <div className="repayment-summary-date">
               {new Date(nextPayment.dueDate).toLocaleDateString('en-US', {
@@ -85,7 +104,7 @@ export default function RepaymentDashboard({ loan }) {
 
       <div className="repayment-schedule-section">
         <h3>Payment History & Schedule</h3>
-        <RepaymentSchedule schedule={loan.repaymentSchedule} />
+        <RepaymentSchedule schedule={schedule} />
       </div>
     </div>
   )

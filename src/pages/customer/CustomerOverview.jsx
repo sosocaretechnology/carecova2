@@ -4,6 +4,14 @@ import { useCustomerAuth } from '../../hooks/useCustomerAuth'
 import { loanService } from '../../services/loanService'
 import StatusBadge from '../../components/StatusBadge'
 
+const asNaira = (nairaValue, koboValue) => {
+  if (typeof nairaValue === 'number' && Number.isFinite(nairaValue)) return nairaValue
+  const fromKobo = Number(koboValue)
+  return Number.isFinite(fromKobo) ? fromKobo / 100 : 0
+}
+
+const formatNaira = (value) => `₦${Math.round(Number(value || 0)).toLocaleString()}`
+
 export default function CustomerOverview() {
   const { customer } = useCustomerAuth()
   const [loans, setLoans] = useState([])
@@ -27,7 +35,15 @@ export default function CustomerOverview() {
   const activeLoans = loans.filter((l) => l.status === 'active' || l.status === 'overdue')
   const pendingOrApproved = loans.filter((l) => ['pending', 'approved', 'pending_disbursement'].includes(l.status))
   const nextPayment = activeLoans
-    .flatMap((l) => (l.repaymentSchedule || []).filter((p) => !p.paid).map((p) => ({ loan: l, ...p })))
+    .flatMap((l) =>
+      (l.repaymentSchedule || [])
+        .map((p) => ({
+          ...p,
+          amount: asNaira(p.amount, p.amountKobo),
+        }))
+        .filter((p) => !p.paid)
+        .map((p) => ({ loan: l, ...p })),
+    )
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))[0]
 
   if (loading) {
@@ -50,7 +66,7 @@ export default function CustomerOverview() {
         </div>
         {nextPayment && (
           <div className="customer-overview-card">
-            <div className="customer-overview-card-value">₦{nextPayment.amount?.toLocaleString()}</div>
+            <div className="customer-overview-card-value">{formatNaira(nextPayment.amount)}</div>
             <div className="customer-overview-card-label">Next payment due</div>
             <div className="customer-overview-card-meta">{new Date(nextPayment.dueDate).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
           </div>
@@ -67,7 +83,7 @@ export default function CustomerOverview() {
               <li key={loan.id}>
                 <Link to={`/portal/loans/${loan.id}`} className="customer-overview-list-item">
                   <span className="customer-overview-list-id">{loan.id}</span>
-                  <span className="customer-overview-list-amount">₦{(loan.approvedAmount || loan.estimatedCost || 0).toLocaleString()}</span>
+                  <span className="customer-overview-list-amount">{formatNaira(loan.approvedAmount || loan.estimatedCost || loan.requestedAmount)}</span>
                   <StatusBadge status={loan.status} />
                 </Link>
               </li>

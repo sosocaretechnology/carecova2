@@ -1,6 +1,7 @@
 import { Outlet, Navigate, NavLink, useNavigate } from 'react-router-dom'
 import { useCustomerAuth } from '../../hooks/useCustomerAuth'
 import { Link } from 'react-router-dom'
+import NotificationBell from '../NotificationBell'
 
 export default function CustomerLayout() {
   const { isAuthenticated, customer, loading, logout } = useCustomerAuth()
@@ -35,8 +36,12 @@ export default function CustomerLayout() {
             <NavLink to="/portal/loans" className={({ isActive }) => (isActive ? 'customer-portal-nav-link active' : 'customer-portal-nav-link')}>
               My loans
             </NavLink>
+            <NavLink to="/portal/notifications" className={({ isActive }) => (isActive ? 'customer-portal-nav-link active' : 'customer-portal-nav-link')}>
+              Notifications
+            </NavLink>
           </nav>
           <div className="customer-portal-user">
+            <NotificationBell notificationsPath="/portal/notifications" />
             <span className="customer-portal-name">{name}</span>
             <button type="button" className="customer-portal-logout" onClick={handleLogout}>
               Sign out

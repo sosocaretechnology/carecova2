@@ -1363,6 +1363,64 @@
   color: #991b1b;
 }
 
+.direct-debit-input {
+  max-width: 400px;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  min-height: 38px;
+  background: #ffffff;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.direct-debit-input::placeholder {
+  color: #94a3b8;
+}
+
+.direct-debit-input:hover {
+  border-color: #94a3b8;
+}
+
+.direct-debit-input:focus {
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+}
+
+.direct-debit-steps-grid {
+  align-items: stretch;
+}
+
+.direct-debit-step-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 100%;
+  min-height: 340px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.direct-debit-step-card .text-xs.text-muted {
+  line-height: 1.35;
+}
+
+.direct-debit-step-card .button {
+  border-radius: 10px;
+}
+
+.direct-debit-step-card .button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.direct-debit-step-card .info-grid {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
 /* ==================== Repayment Schedule ==================== */
 .repayment-schedule {
   margin-top: var(--space-3);
@@ -1817,6 +1875,8 @@
   margin: 0 auto;
   width: 100%;
   padding: var(--space-5) var(--space-4);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: var(--radius-xl);
 }
 
 .customer-portal-loading,
@@ -1828,6 +1888,324 @@
 
 .customer-portal-error a {
   color: var(--color-primary);
+}
+
+/* Notifications */
+.notification-bell {
+  position: relative;
+}
+
+.notification-bell-button {
+  position: relative;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.notification-bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+}
+
+.notification-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(360px, calc(100vw - 32px));
+  background: #fff;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 2000;
+}
+
+.notification-panel-header,
+.notification-panel-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.notification-panel-footer {
+  border-bottom: none;
+  border-top: 1px solid var(--color-border-light);
+  justify-content: flex-end;
+}
+
+.notification-panel-body {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.notification-item {
+  border: 1px solid var(--color-border-light);
+  background: #fff;
+  text-align: left;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.notification-item.unread,
+.notification-card.unread {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.notification-item-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.notification-item-title {
+  font-weight: 600;
+  font-size: var(--text-body-sm);
+}
+
+.notification-item-body {
+  color: var(--color-text-muted);
+  font-size: var(--text-caption);
+  margin-bottom: 6px;
+}
+
+.notification-item-time {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.notification-priority {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.notification-priority.low {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.notification-priority.medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.notification-priority.high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.notification-item-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 0 2px;
+}
+
+.notification-category {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.notification-category.stage1 {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.notification-category.admin_review {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.notification-category.credit {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.notification-category.repayment {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.notification-category.recovery {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.notification-category.customer {
+  background: #fae8ff;
+  color: #86198f;
+}
+
+.notification-category.system {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.notifications-toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.notifications-category-filter {
+  min-width: 200px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  background: #fff;
+}
+
+.notifications-filter-hint {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+}
+
+.notification-link-btn,
+.notification-view-all {
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--text-caption);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.notification-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-body-sm);
+}
+
+.notifications-page {
+  display: grid;
+  gap: 14px;
+}
+
+.notifications-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notifications-page-header h1 {
+  margin: 0 0 4px;
+}
+
+.notifications-page-header p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.notifications-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.notifications-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.notifications-tabs button {
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.notifications-tabs button.active {
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+.notifications-type-filter {
+  min-width: 180px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  background: #fff;
+}
+
+.notifications-list {
+  display: grid;
+  gap: 10px;
+}
+
+.notification-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  padding: 10px;
+}
+
+.notification-card-main {
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  padding: 0;
+}
+
+.notifications-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .notifications-page-header {
+    flex-direction: column;
+  }
+  .notification-card {
+    flex-direction: column;
+  }
 }
 
 /* Customer Overview */
@@ -1967,6 +2345,11 @@
   box-shadow: var(--shadow-md);
 }
 
+.customer-loans-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .customer-loans-card-header {
   display: flex;
   align-items: center;
@@ -1977,6 +2360,12 @@
 .customer-loans-card-id {
   font-family: var(--font-mono);
   font-weight: 600;
+}
+
+.customer-loans-card-meta {
+  margin-top: 4px;
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
 }
 
 .customer-loans-card-body {
@@ -1996,11 +2385,25 @@
   color: var(--color-text-muted);
 }
 
+.customer-loans-card-progress-track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--color-border-light);
+  margin-bottom: var(--space-1);
+  overflow: hidden;
+}
+
 .customer-loans-card-progress-bar {
   height: 6px;
   background: var(--color-primary);
   border-radius: 99px;
-  margin-bottom: var(--space-1);
+}
+
+.customer-loans-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .customer-loans-card-footer {
@@ -2009,11 +2412,31 @@
   border-top: 1px solid var(--color-border-light);
   font-size: var(--text-caption);
   color: var(--color-text-muted);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.customer-loans-card-view {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .customer-loans-card-actions .button {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 /* Customer Loan Detail */
+.customer-loan-detail {
+  display: grid;
+  gap: var(--space-4);
+}
+
 .customer-loan-detail-header {
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-2);
 }
 
 .customer-loan-detail-back {
@@ -2040,6 +2463,48 @@
   margin-top: var(--space-2);
 }
 
+.customer-loan-detail-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.customer-loan-detail-summary-card {
+  background: #ffffff;
+  border: 1px solid #dbe3ec;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.customer-loan-detail-summary-label {
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.customer-loan-detail-summary-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.customer-loan-detail-info {
+  background: #ffffff;
+  border: 1px solid #dbe3ec;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.customer-loan-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
 .customer-loan-detail-info h2 {
   font-size: 1.125rem;
   margin-bottom: var(--space-3);
@@ -2060,6 +2525,92 @@
 .customer-loan-detail-status-note {
   font-size: var(--text-body-sm);
   color: var(--color-text-muted);
+}
+
+.customer-loan-detail-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.customer-loan-detail-timeline-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  background: #ffffff;
+}
+
+.customer-loan-detail-timeline-item.success {
+  border-left: 3px solid var(--color-success);
+}
+
+.customer-loan-detail-timeline-item.danger {
+  border-left: 3px solid var(--color-danger);
+}
+
+.customer-loan-detail-timeline-label {
+  font-weight: 600;
+}
+
+.customer-loan-detail-timeline-date {
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+}
+
+.customer-loan-detail-note-stack {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.customer-loan-detail-note {
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-sage);
+  font-size: var(--text-body-sm);
+}
+
+.customer-loan-detail-note--danger {
+  background: #fee2e2;
+}
+
+.customer-loan-detail-note--warning {
+  background: #fef3c7;
+}
+
+.customer-repayment-table-wrap {
+  overflow-x: auto;
+}
+
+.customer-repayment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body-sm);
+}
+
+.customer-repayment-table th,
+.customer-repayment-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--color-border-light);
+  white-space: nowrap;
+}
+
+.customer-repayment-table th {
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 768px) {
+  .customer-portal-main {
+    border-radius: 0;
+    padding: var(--space-4) var(--space-3);
+  }
 }
 
 .admin-dashboard {

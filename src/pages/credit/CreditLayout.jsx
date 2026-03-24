@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { adminService } from '../../services/adminService'
 import { LayoutDashboard, Send, LogOut } from 'lucide-react'
+import NotificationBell from '../../components/NotificationBell'
 
 export default function CreditLayout() {
     const { session } = useAuth()
@@ -17,6 +18,7 @@ export default function CreditLayout() {
         { name: 'Active Loans', path: '/credit/loans', icon: <LayoutDashboard size={18} /> },
         { name: 'Repayments', path: '/credit/repayments', icon: <LayoutDashboard size={18} /> },
         { name: 'Disbursement Queue', path: '/credit/disbursements', icon: <Send size={18} /> },
+        { name: 'Notifications', path: '/credit/notifications', icon: <Send size={18} /> },
     ]
 
     return (
@@ -56,6 +58,7 @@ export default function CreditLayout() {
                         {session?.role === 'admin' ? 'Disbursement & Credit Operations' : 'Credit Officer Portal'}
                     </div>
                     <div className="admin-topbar-actions">
+                        <NotificationBell notificationsPath="/credit/notifications" />
                         <span className="admin-user-badge">{session?.name?.split(' ').map(n => n[0]).join('')}</span>
                         <span className="capitalize">{session?.name} ({session?.role})</span>
                     </div>
