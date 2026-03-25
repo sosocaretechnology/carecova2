@@ -454,6 +454,15 @@ export const loanService = {
   },
 
   getLoansByCustomerId: async (customerId, customerPhone) => {
+    if (USE_BACKEND) {
+      const params = new URLSearchParams()
+      if (customerPhone) params.set('phone', customerPhone)
+      if (!params.toString()) return []
+      const list = await request(`/loan-applications/customer/loans?${params.toString()}`)
+      const items = Array.isArray(list) ? list : (list?.items || list?.data || [])
+      return items.map(normalizeLoan)
+    }
+
     return new Promise((resolve) => {
       setTimeout(() => {
         const loans = getLoans()

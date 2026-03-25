@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useCustomerAuth } from '../../hooks/useCustomerAuth'
 import { loanService } from '../../services/loanService'
 import { trackingService } from '../../services/trackingService'
+import { paymentService } from '../../services/paymentService'
 import RepaymentDashboard from '../../components/RepaymentDashboard'
 import StatusBadge from '../../components/StatusBadge'
 
@@ -25,8 +26,11 @@ export default function CustomerLoanDetail() {
   const { id } = useParams()
   const { customer } = useCustomerAuth()
   const [loan, setLoan] = useState(null)
+  const [repayments, setRepayments] = useState([])
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
+  const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+  const USE_BACKEND = !!API_BASE_URL
 
   useEffect(() => {
     let cancelled = false
@@ -48,6 +52,27 @@ export default function CustomerLoanDetail() {
     load()
     return () => { cancelled = true }
   }, [id, customer?.id, customer?.phone])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadRepayments() {
+      if (!USE_BACKEND || !loan?.id) {
+        setRepayments([])
+        return
+      }
+      try {
+        const list = await paymentService.getLoanRepayments({
+          loanId: loan.id,
+          limit: 100,
+        })
+        if (!cancelled) setRepayments(Array.isArray(list) ? list : [])
+      } catch (_) {
+        if (!cancelled) setRepayments([])
+      }
+    }
+    loadRepayments()
+    return () => { cancelled = true }
+  }, [USE_BACKEND, loan?.id])
 
   if (loading) {
     return <div className="customer-portal-loading">Loading loan details...</div>
@@ -101,6 +126,14 @@ export default function CustomerLoanDetail() {
       }
     : null
   const nextDue = nextPayment || fallbackNextDue
+  const repaymentRows = repayments.map((item) => ({
+    id: item.id,
+    amount: Number(item.amountNaira ?? (Number(item.amountKobo || 0) / 100) ?? 0),
+    channel: item.paymentChannel || '—',
+    reference: item.paymentReference || item.id,
+    status: item.status || 'paid',
+    paidAt: item.paidAt || item.createdAt || null,
+  }))
   const lifecycle = [
     { label: 'Submitted', value: loan.submittedAt || loan.createdAt, type: 'base' },
     { label: 'Offer approved', value: loan.approvedAt || loan.decidedAt, type: 'success' },
@@ -253,6 +286,37 @@ export default function CustomerLoanDetail() {
                         <td>{item.paymentDate ? formatDateTime(item.paymentDate) : '—'}</td>
                         <td>{item.paymentReference || '—'}</td>
                         <td>{item.paymentChannel || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {USE_BACKEND && (
+              <div className="customer-repayment-table-wrap" style={{ marginTop: 16 }}>
+                <h3 style={{ marginBottom: 8 }}>Repayment transactions</h3>
+                <table className="customer-repayment-table">
+                  <thead>
+                    <tr>
+                      <th>Reference</th>
+                      <th>Amount</th>
+                      <th>Channel</th>
+                      <th>Status</th>
+                      <th>Paid at</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {repaymentRows.length === 0 ? (
+                      <tr>
+                        <td colSpan="5">No repayments recorded yet.</td>
+                      </tr>
+                    ) : repaymentRows.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.reference}</td>
+                        <td>{formatNaira(row.amount)}</td>
+                        <td>{row.channel}</td>
+                        <td className="capitalize">{String(row.status).toLowerCase()}</td>
+                        <td>{row.paidAt ? formatDateTime(row.paidAt) : '—'}</td>
                       </tr>
                     ))}
                   </tbody>

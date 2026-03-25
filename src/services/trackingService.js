@@ -2,6 +2,8 @@ import { loanService } from './loanService'
 import { computeSchedule, applyCompounding } from '../utils/lendingEngine'
 
 const DISBURSE_ELIGIBLE = ['approved', 'pending_disbursement', 'disbursement_processing', 'active', 'overdue', 'completed']
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+const USE_BACKEND = !!API_BASE_URL
 
 function calculateRepaymentSchedule(loanAmount, duration, interestRate) {
   const result = computeSchedule(loanAmount, duration, interestRate != null ? { interestRate, lendingInterestRatePerMonth: interestRate } : undefined)
@@ -32,7 +34,7 @@ export const trackingService = {
     const enriched = { ...(loan || {}) }
 
     // Generate repayment schedule for any post-approval status that doesn't have one
-    if (DISBURSE_ELIGIBLE.includes(enriched.status) && !enriched.repaymentSchedule) {
+    if (!USE_BACKEND && DISBURSE_ELIGIBLE.includes(enriched.status) && !enriched.repaymentSchedule) {
         const repayment = computeSchedule(
           enriched.approvedAmount || enriched.estimatedCost,
           enriched.approvedDuration || enriched.preferredDuration
@@ -47,15 +49,20 @@ export const trackingService = {
       if (enriched.repaymentSchedule) {
         const now = new Date()
         const paidAmount = enriched.repaymentSchedule
-          .filter((p) => p.paid)
-          .reduce((sum, p) => sum + (p.paidAmount ?? p.amount), 0)
+          .reduce((sum, p) => {
+            const explicitPaid = Number(p.paidAmount ?? (p.paidAmountKobo != null ? Number(p.paidAmountKobo) / 100 : 0))
+            if (Number.isFinite(explicitPaid) && explicitPaid > 0) return sum + explicitPaid
+            return sum + (p.paid ? Number(p.amount || 0) : 0)
+          }, 0)
         const totalAmount = enriched.repaymentSchedule.reduce(
           (sum, p) => sum + p.amount,
           0
         )
         enriched.outstandingBalance = totalAmount - paidAmount
         enriched.totalPaid = paidAmount
-        applyCompounding(enriched, now)
+        if (!USE_BACKEND) {
+          applyCompounding(enriched, now)
+        }
 
         // Calculate DPD (Days Past Due) — only meaningful once loan is active
         let maxDpd = 0
