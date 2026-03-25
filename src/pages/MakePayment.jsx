@@ -7,7 +7,6 @@ import PaymentMethodSelector from '../components/PaymentMethodSelector'
 import Input from '../components/Input'
 import { trackingService } from '../services/trackingService'
 import { paymentService } from '../services/paymentService'
-import { adminService } from '../services/adminService'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 const USE_BACKEND = !!API_BASE_URL
@@ -58,29 +57,29 @@ export default function MakePayment() {
 
     try {
       const amountNaira = parseFloat(amount)
-      const result = USE_BACKEND
-        ? await adminService.recordRepayment({
-            loanId: loan.id,
-            amountKobo: Math.round(amountNaira * 100),
-            amountNaira,
-            paymentChannel: selectedMethod,
-            paymentReference: `WEB-${Date.now()}`,
-            paidAt: new Date().toISOString(),
-            payerType: 'applicant',
-          })
-        : await paymentService.processPayment({
-            loanId: loan.id,
-            amount: amountNaira,
-            method: selectedMethod,
-          })
-
-      const transactionId =
-        result?.repayment?.id ||
-        result?.id ||
-        result?.transactionId
-      if (!transactionId) {
-        throw new Error('Payment submitted but no transaction reference was returned')
+      if (USE_BACKEND) {
+        const link = await paymentService.createRepaymentLink({
+          loanId: loan.id,
+          amount: amountNaira,
+          email: loan.email,
+        })
+        if (!link?.authorizationUrl) {
+          throw new Error('Payment link generation failed')
+        }
+        try {
+          sessionStorage.setItem('carecova_pending_payment_loan_id', String(loan.id))
+        } catch (_) {}
+        window.location.assign(link.authorizationUrl)
+        return
       }
+
+      const result = await paymentService.processPayment({
+        loanId: loan.id,
+        amount: amountNaira,
+        method: selectedMethod,
+      })
+      const transactionId = result?.id || result?.transactionId
+      if (!transactionId) throw new Error('Payment submitted but no transaction reference was returned')
 
       navigate(`/payment-confirmation?transactionId=${transactionId}&loanId=${loan.id}`)
     } catch (err) {
@@ -195,7 +194,7 @@ export default function MakePayment() {
 
                 <div style={{ display: 'grid', gap: 8 }}>
                   <Button type="submit" variant="primary" className="full-width" disabled={loading}>
-                    {loading ? 'Processing Payment...' : 'Proceed to Payment'}
+                    {loading ? 'Preparing Payment...' : (USE_BACKEND ? 'Proceed to Paystack' : 'Proceed to Payment')}
                   </Button>
                   <Button type="button" variant="secondary" className="full-width" disabled={loading} onClick={handleSimulatePayment}>
                     {loading ? 'Simulating...' : 'Simulate Payment (Demo)'}

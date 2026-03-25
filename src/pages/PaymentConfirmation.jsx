@@ -13,21 +13,41 @@ const USE_BACKEND = !!API_BASE_URL
 export default function PaymentConfirmation() {
   const [searchParams] = useSearchParams()
   const transactionId = searchParams.get('transactionId')
-  const loanId = searchParams.get('loanId')
+  const paystackReference = searchParams.get('reference') || searchParams.get('trxref')
+  const loanIdParam = searchParams.get('loanId')
   const source = searchParams.get('source')
 
   const [payment, setPayment] = useState(null)
+  const [resolvedLoanId, setResolvedLoanId] = useState(loanIdParam || '')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadPayment = async () => {
-      if (transactionId) {
-        try {
-          let paymentData = null
+      if (!transactionId && !paystackReference) {
+        setLoading(false)
+        return
+      }
+      try {
+        let paymentData = null
+        if (USE_BACKEND && paystackReference) {
+          const found = await paymentService.getTransactionByReference(paystackReference)
+          paymentData = {
+            id: found.reference || paystackReference,
+            loanId: found.loanApplicationId || loanIdParam,
+            amount: Number(found.amount || 0),
+            method: 'Paystack',
+            status: found.repaymentStatus || found.paymentStatus || 'pending',
+            processedAt: found.paidAt || new Date().toISOString(),
+          }
+          if (paymentData.loanId) {
+            setResolvedLoanId(paymentData.loanId)
+          }
+        } else if (transactionId) {
           const session = adminService.getSession()
           const canUseAdminRepayments = USE_BACKEND && !!session?.accessToken
           if (canUseAdminRepayments) {
-            const loanRepayments = await adminService.getRepaymentsByLoan(loanId, { limit: 100 })
+            const targetLoanId = loanIdParam || resolvedLoanId
+            const loanRepayments = await adminService.getRepaymentsByLoan(targetLoanId, { limit: 100 })
             const items = Array.isArray(loanRepayments)
               ? loanRepayments
               : (loanRepayments?.items || loanRepayments?.data || [])
@@ -35,7 +55,7 @@ export default function PaymentConfirmation() {
             if (found) {
               paymentData = {
                 id: found.id,
-                loanId: found.loanId || loanId,
+                loanId: found.loanId || targetLoanId,
                 amount: Number(found.amountNaira ?? (Number(found.amountKobo || 0) / 100) ?? 0),
                 method: found.paymentChannel || found.method || 'Unknown',
                 status: found.status || 'completed',
@@ -56,16 +76,19 @@ export default function PaymentConfirmation() {
               throw new Error('Repayment receipt not found from backend')
             }
           }
-          setPayment(paymentData)
-        } catch (error) {
-          console.error('Error loading payment:', error)
-        } finally {
-          setLoading(false)
+          if (paymentData?.loanId) {
+            setResolvedLoanId(paymentData.loanId)
+          }
         }
+        setPayment(paymentData)
+      } catch (error) {
+        console.error('Error loading payment:', error)
+      } finally {
+        setLoading(false)
       }
     }
     loadPayment()
-  }, [transactionId])
+  }, [transactionId, paystackReference, loanIdParam, source])
 
   const handleDownloadReceipt = () => {
     // In a real implementation, this would generate and download a PDF
@@ -109,14 +132,22 @@ export default function PaymentConfirmation() {
     )
   }
 
+  const normalizedStatus = String(payment.status || '').toLowerCase()
+  const isSuccess = ['paid', 'success', 'completed'].includes(normalizedStatus)
+  const title = isSuccess ? 'Payment Successful!' : 'Payment Processing'
+  const subtitle = isSuccess
+    ? 'Your payment has been processed'
+    : 'We are still confirming your payment. Please refresh in a moment.'
+  const trackLoanId = payment.loanId || resolvedLoanId
+
   return (
     <>
       <Header />
       <main>
         <section className="page-hero">
           <div className="container">
-            <h1>Payment Successful!</h1>
-            <p>Your payment has been processed</p>
+            <h1>{title}</h1>
+            <p>{subtitle}</p>
           </div>
         </section>
 
@@ -138,7 +169,7 @@ export default function PaymentConfirmation() {
                 <Button variant="ghost" onClick={handleEmailReceipt}>
                   Email Receipt
                 </Button>
-                <Link to={`/track?loanId=${loanId}`}>
+                <Link to={trackLoanId ? `/track?loanId=${trackLoanId}` : '/portal/loans'}>
                   <Button variant="secondary">View Loan Details</Button>
                 </Link>
               </div>

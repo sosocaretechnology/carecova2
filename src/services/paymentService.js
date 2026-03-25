@@ -1,11 +1,13 @@
 /**
  * Payment Service
- * Handles payment processing
- * 
- * Future API endpoint: POST /api/payments/process
+ * Handles customer repayments (backend via Paystack) and demo simulation fallback.
  */
+import { customerAuthService } from './customerAuthService'
 
 const PAYMENT_STORAGE_KEY = 'carecova_payments'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+const API_ROOT = API_BASE_URL ? `${API_BASE_URL}/api` : ''
+const USE_BACKEND = !!API_BASE_URL
 
 const generateTransactionId = () => {
   return `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
@@ -31,7 +33,92 @@ const savePayment = (payment) => {
   }
 }
 
+async function request(path, options = {}) {
+  const response = await fetch(`${API_ROOT}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+    ...options,
+  })
+
+  const contentType = response.headers.get('content-type') || ''
+  const isJson = contentType.includes('application/json')
+  const body = isJson ? await response.json() : await response.text()
+
+  if (!response.ok) {
+    const message =
+      (isJson && (Array.isArray(body?.message) ? body.message.join(', ') : body?.message)) ||
+      (typeof body === 'string' ? body : 'Request failed')
+    throw new Error(message)
+  }
+
+  return body
+}
+
+function resolvePhoneLast4(explicitPhoneLast4) {
+  const supplied = String(explicitPhoneLast4 || '').replace(/\D/g, '')
+  if (supplied.length === 4) return supplied
+
+  const session = customerAuthService.getSession()
+  const digits = String(session?.phone || '').replace(/\D/g, '')
+  if (digits.length < 4) {
+    throw new Error('Unable to verify phone number for repayment. Please sign in again.')
+  }
+  return digits.slice(-4)
+}
+
 export const paymentService = {
+  createRepaymentLink: async ({
+    loanId,
+    amount,
+    email,
+    phoneLast4,
+  }) => {
+    if (!USE_BACKEND) {
+      throw new Error('Repayment link generation requires backend API')
+    }
+    const payload = {
+      loanApplicationId: String(loanId || '').trim(),
+      phoneLast4: resolvePhoneLast4(phoneLast4),
+      ...(amount != null ? { amount: Number(amount) } : {}),
+      ...(email ? { email: String(email).trim().toLowerCase() } : {}),
+    }
+    return request('/payments/customer/repayment-link', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  getLoanRepayments: async ({
+    loanId,
+    page = 1,
+    limit = 50,
+    phoneLast4,
+  }) => {
+    if (!USE_BACKEND) return []
+    const params = new URLSearchParams({
+      loanApplicationId: String(loanId || '').trim(),
+      phoneLast4: resolvePhoneLast4(phoneLast4),
+      page: String(page),
+      limit: String(limit),
+    })
+    const response = await request(`/payments/customer/repayments?${params.toString()}`)
+    return Array.isArray(response) ? response : (response?.items || [])
+  },
+
+  getTransactionByReference: async (reference, phoneLast4) => {
+    if (!USE_BACKEND) {
+      throw new Error('Payment transaction lookup requires backend API')
+    }
+    const ref = String(reference || '').trim()
+    if (!ref) throw new Error('Payment reference is required')
+    const params = new URLSearchParams({
+      phoneLast4: resolvePhoneLast4(phoneLast4),
+    })
+    return request(`/payments/customer/transaction/${encodeURIComponent(ref)}?${params.toString()}`)
+  },
+
   /**
    * Process a payment
    * @param {Object} paymentData - Payment details
@@ -117,6 +204,9 @@ export const paymentService = {
    * @returns {Promise<Array>} Array of payments
    */
   getPaymentHistory: async (loanId) => {
+    if (USE_BACKEND) {
+      return paymentService.getLoanRepayments({ loanId, limit: 100 })
+    }
     return new Promise((resolve) => {
       setTimeout(() => {
         const payments = getPayments()
