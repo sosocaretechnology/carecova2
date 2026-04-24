@@ -111,6 +111,7 @@ function mapBackendRole(backendRole) {
     reviewer: 'admin',
     sales: 'sales',
     customer_service: 'support',
+    provider: 'provider',
   }
   return (backendRole && map[backendRole]) || backendRole || 'admin'
 }
@@ -875,7 +876,11 @@ export const adminService = {
     const session = getStoredSession()
     let loans = []
     if (USE_BACKEND && session?.accessToken) {
-      loans = await adminService.getAllLoans({ requireBackend: true })
+      try {
+        loans = await adminService.getAllLoans({ requireBackend: true })
+      } catch (_) {
+        loans = await loanService.getAllApplications()
+      }
     } else {
       loans = await loanService.getAllApplications()
     }
@@ -909,7 +914,12 @@ export const adminService = {
   // Dashboard insights
   getInsights: async () => {
     const session = adminService.getSession()
-    let loans = await adminService.getAllLoans({ requireBackend: true })
+    let loans
+    try {
+      loans = await adminService.getAllLoans({ requireBackend: true })
+    } catch (_) {
+      return { avgDecisionTimeHours: 0, approvalRate: 0, topRejections: [], decidedCount: 0, approvedCount: 0, trends: { applications: [], disbursement: [], repayment: [] } }
+    }
 
     if (session && session.role === 'sales') {
       loans = loans.filter(l => l.assignedTo === session.username)
@@ -1719,6 +1729,33 @@ export const adminService = {
       } catch (error) {
         reject(error)
       }
+    })
+  },
+
+  // --- Provider Management ---
+
+  getProviders: async () => {
+    const session = getStoredSession()
+    if (!USE_BACKEND || !session?.accessToken) return []
+    const data = await adminRequest('/admin/providers')
+    return Array.isArray(data) ? data : data?.providers ?? data?.data ?? data?.items ?? []
+  },
+
+  createProvider: async (payload) => {
+    requireBackendFeature('Provider management')
+    return adminRequest('/admin/providers', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  updateProviderStatus: async (providerId, status) => {
+    requireBackendFeature('Provider management')
+    const trimmed = String(providerId || '').trim()
+    if (!trimmed) throw new Error('Provider ID is required')
+    return adminRequest(`/admin/providers/${encodeURIComponent(trimmed)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
     })
   },
 
