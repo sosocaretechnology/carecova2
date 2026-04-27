@@ -3,20 +3,48 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
 import Input from '../components/Input'
 import { useAuth } from '../hooks/useAuth'
+import { adminService } from '../services/adminService'
 
 export default function AdminLogin() {
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, login, logout } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/admin/dashboard')
+    let cancelled = false
+    const verifyExistingSession = async () => {
+      if (!isAuthenticated) {
+        if (!cancelled) setCheckingSession(false)
+        return
+      }
+
+      try {
+        await adminService.getKPIs()
+        if (!cancelled) navigate('/admin/dashboard')
+      } catch (err) {
+        const message = String(err?.message || '')
+        if (/unable to reach backend/i.test(message)) {
+          await logout()
+          if (!cancelled) {
+            setError('Backend is unreachable. Please start the API server, then sign in again.')
+          }
+        } else if (/session expired|not authenticated|401/i.test(message)) {
+          await logout()
+          if (!cancelled) setError('Your session expired. Please sign in again.')
+        } else if (!cancelled) {
+          navigate('/admin/dashboard')
+        }
+      } finally {
+        if (!cancelled) setCheckingSession(false)
+      }
     }
-  }, [isAuthenticated, navigate])
+    verifyExistingSession()
+    return () => { cancelled = true }
+  }, [isAuthenticated, navigate, logout])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -59,8 +87,8 @@ export default function AdminLogin() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <Button type="submit" variant="primary" className="full-width" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+          <Button type="submit" variant="primary" className="full-width" disabled={loading || checkingSession}>
+            {checkingSession ? 'Checking session...' : loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
         <div className="login-note">

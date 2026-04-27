@@ -7,8 +7,6 @@ const PROVIDER_TYPES = [
   { value: 'clinic', label: 'Clinic' },
   { value: 'dental', label: 'Dental' },
   { value: 'gym', label: 'Gym / Wellness' },
-  { value: 'pharmacy', label: 'Pharmacy' },
-  { value: 'other', label: 'Other' },
 ]
 
 const EMPTY_FORM = {
@@ -65,22 +63,18 @@ export default function ProviderManagement() {
     if (!form.name.trim()) return setFormError('Facility name is required')
     if (!form.email.trim()) return setFormError('Facility email is required')
     if (!form.phone.trim()) return setFormError('Phone number is required')
-    if (!form.staffEmail.trim()) return setFormError('Staff login email is required')
-    if (!form.staffPassword.trim()) return setFormError('Staff password is required')
-    if (form.staffPassword.length < 8) return setFormError('Password must be at least 8 characters')
 
     setSubmitting(true)
     try {
-      await adminService.createProvider({
+      const payload = {
         name: form.name.trim(),
         type: form.type,
         email: form.email.trim(),
         phone: form.phone.trim(),
-        address: form.address.trim(),
-        contactName: form.contactName.trim(),
-        staffEmail: form.staffEmail.trim(),
-        staffPassword: form.staffPassword,
-        staffRole: form.staffRole,
+        ...(form.address.trim() ? { address: form.address.trim() } : {}),
+      }
+      await adminService.createProvider({
+        ...payload,
       })
       setFormSuccess(`Provider "${form.name}" created successfully!`)
       setForm(EMPTY_FORM)
@@ -100,8 +94,8 @@ export default function ProviderManagement() {
     const id = provider.id || provider._id
     setTogglingId(id)
     try {
-      const newStatus = (provider.status === 'active' || provider.isActive === true) ? 'inactive' : 'active'
-      await adminService.updateProviderStatus(id, newStatus)
+      const shouldBeActive = !(provider.status === 'active' || provider.isActive === true)
+      await adminService.updateProviderStatus(id, shouldBeActive)
       await load()
     } catch (err) {
       alert(err.message || 'Failed to update provider status')
@@ -398,14 +392,14 @@ export default function ProviderManagement() {
               {/* Section: Login Credentials */}
               <div style={{ marginBottom: '20px' }}>
                 <p style={{ margin: '0 0 4px', fontSize: '0.8125rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Portal Login Credentials
+                  Portal Login Credentials (Optional)
                 </p>
                 <p style={{ margin: '0 0 14px', fontSize: '0.8125rem', color: '#9ca3af' }}>
-                  These credentials will be shared with the provider to access the portal.
+                  This API currently creates only the facility record. Staff credentials are not sent on create.
                 </p>
                 <div style={{ display: 'grid', gap: '14px' }}>
                   <div>
-                    <label style={labelStyle}>Login Email *</label>
+                    <label style={labelStyle}>Login Email</label>
                     <input
                       name="staffEmail" type="email" value={form.staffEmail} onChange={handleInput}
                       placeholder="staff@facility.com"
@@ -415,7 +409,7 @@ export default function ProviderManagement() {
                     />
                   </div>
                   <div>
-                    <label style={labelStyle}>Password *</label>
+                    <label style={labelStyle}>Password</label>
                     <div style={{ position: 'relative' }}>
                       <input
                         name="staffPassword" type={showPassword ? 'text' : 'password'}

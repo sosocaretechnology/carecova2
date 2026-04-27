@@ -11,7 +11,8 @@ import {
     LogOut,
     UserCheck,
     AlertTriangle,
-    Send
+    Send,
+    Building2,
 } from 'lucide-react';
 
 export default function AdminSidebar({ onLogout }) {
@@ -27,6 +28,7 @@ export default function AdminSidebar({ onLogout }) {
         { name: 'Rules & Config', path: '/admin/rules', icon: <Settings size={18} />, roles: ['admin'] },
         { name: 'Audit Logs', path: '/admin/audit', icon: <FileText size={18} />, roles: ['admin'] },
         { name: 'User Management', path: '/admin/users', icon: <UserCheck size={18} />, roles: ['admin'] },
+        { name: 'Providers', path: '/admin/providers', icon: <Building2 size={18} />, roles: ['admin'] },
         { name: 'Recovery', path: '/admin/recovery', icon: <AlertTriangle size={18} />, roles: ['admin', 'support', 'sales'] },
         { name: 'Disbursement Queue', path: '/admin/disbursements', icon: <Send size={18} />, roles: ['admin'] },
     ]

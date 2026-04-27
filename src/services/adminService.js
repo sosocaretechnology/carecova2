@@ -1749,13 +1749,17 @@ export const adminService = {
     })
   },
 
-  updateProviderStatus: async (providerId, status) => {
+  updateProviderStatus: async (providerId, statusOrActive) => {
     requireBackendFeature('Provider management')
     const trimmed = String(providerId || '').trim()
     if (!trimmed) throw new Error('Provider ID is required')
+    const isActive =
+      typeof statusOrActive === 'boolean'
+        ? statusOrActive
+        : String(statusOrActive || '').toLowerCase() === 'active'
     return adminRequest(`/admin/providers/${encodeURIComponent(trimmed)}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ isActive }),
     })
   },
 

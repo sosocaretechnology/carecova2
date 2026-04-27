@@ -34,6 +34,7 @@ import AuditLog from './pages/admin/AuditLog'
 import UserManagement from './pages/admin/UserManagement'
 import RecoveryWorkbench from './pages/admin/RecoveryWorkbench'
 import OrganizationWallets from './pages/admin/OrganizationWallets'
+import ProviderManagement from './pages/admin/ProviderManagement'
 // Credit Officer Portal
 import CreditLayout from './pages/credit/CreditLayout'
 import CreditDashboard from './pages/credit/CreditDashboard'
@@ -187,6 +188,14 @@ function App() {
             element={
               <RequireRoles allowedRoles={['admin']}>
                 <UserManagement />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="providers"
+            element={
+              <RequireRoles allowedRoles={['admin']}>
+                <ProviderManagement />
               </RequireRoles>
             }
           />
