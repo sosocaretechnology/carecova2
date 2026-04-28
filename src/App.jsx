@@ -97,14 +97,16 @@ function App() {
         <Route path="/eligibility" element={<EligibilityCheck />} />
         <Route path="/track" element={<Track />} />
         <Route path="/login" element={<CustomerLogin />} />
-        <Route path="/provider/login" element={<ProviderLogin />} />
-        <Route path="/provider" element={<ProviderLayout />}>
-          <Route index element={<ProviderOverview />} />
-          <Route path="patients" element={<ProviderPatients />} />
-          <Route path="loans" element={<ProviderLoans />} />
-          <Route path="repayments" element={<ProviderRepayments />} />
-          <Route path="profile" element={<ProviderProfile />} />
-          <Route path="register-patient" element={<ProviderRegisterPatient />} />
+        <Route path="/provider">
+          <Route path="login" element={<ProviderLogin />} />
+          <Route element={<ProviderLayout />}>
+            <Route index element={<ProviderOverview />} />
+            <Route path="patients" element={<ProviderPatients />} />
+            <Route path="loans" element={<ProviderLoans />} />
+            <Route path="repayments" element={<ProviderRepayments />} />
+            <Route path="profile" element={<ProviderProfile />} />
+            <Route path="register-patient" element={<ProviderRegisterPatient />} />
+          </Route>
         </Route>
         <Route path="/portal" element={<ProtectedCustomerRoute><CustomerLayout /></ProtectedCustomerRoute>}>
           <Route index element={<CustomerOverview />} />
