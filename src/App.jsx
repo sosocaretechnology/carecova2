@@ -40,6 +40,14 @@ import CreditLayout from './pages/credit/CreditLayout'
 import CreditDashboard from './pages/credit/CreditDashboard'
 import DisbursementQueue from './pages/credit/DisbursementQueue'
 import DisbursementCaseFile from './pages/credit/DisbursementCaseFile'
+import ProviderLogin from './pages/provider/ProviderLogin'
+import ProviderLayout from './components/provider/ProviderLayout'
+import ProviderOverview from './pages/provider/ProviderOverview'
+import ProviderPatients from './pages/provider/ProviderPatients'
+import ProviderLoans from './pages/provider/ProviderLoans'
+import ProviderRepayments from './pages/provider/ProviderRepayments'
+import ProviderProfile from './pages/provider/ProviderProfile'
+import ProviderRegisterPatient from './pages/provider/ProviderRegisterPatient'
 import { useAuth } from './hooks/useAuth'
 import { useCustomerAuth } from './hooks/useCustomerAuth'
 import RequireRoles from './components/auth/RequireRoles'
@@ -74,6 +82,7 @@ function ProtectedCustomerRoute({ children }) {
   return children
 }
 
+
 function App() {
   return (
     <BrowserRouter>
@@ -88,6 +97,15 @@ function App() {
         <Route path="/eligibility" element={<EligibilityCheck />} />
         <Route path="/track" element={<Track />} />
         <Route path="/login" element={<CustomerLogin />} />
+        <Route path="/provider/login" element={<ProviderLogin />} />
+        <Route path="/provider" element={<ProviderLayout />}>
+          <Route index element={<ProviderOverview />} />
+          <Route path="patients" element={<ProviderPatients />} />
+          <Route path="loans" element={<ProviderLoans />} />
+          <Route path="repayments" element={<ProviderRepayments />} />
+          <Route path="profile" element={<ProviderProfile />} />
+          <Route path="register-patient" element={<ProviderRegisterPatient />} />
+        </Route>
         <Route path="/portal" element={<ProtectedCustomerRoute><CustomerLayout /></ProtectedCustomerRoute>}>
           <Route index element={<CustomerOverview />} />
           <Route path="loans" element={<CustomerLoans />} />

@@ -1749,6 +1749,15 @@ export const adminService = {
     })
   },
 
+  assignProviderToLoan: async (loanId, providerId) => {
+    requireBackendFeature('Assign provider')
+    const trimmed = assertBackendLoanId(loanId, 'Assign provider')
+    return adminRequest(`/admin/loan-applications/${encodeURIComponent(trimmed)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ providerId }),
+    })
+  },
+
   updateProviderStatus: async (providerId, statusOrActive) => {
     requireBackendFeature('Provider management')
     const trimmed = String(providerId || '').trim()

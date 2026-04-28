@@ -28,6 +28,10 @@ export default function ApplicationDetail() {
     const [monoFeedbackMessage, setMonoFeedbackMessage] = useState('')
     const [monoFeedbackError, setMonoFeedbackError] = useState('')
     const [feedbackModal, setFeedbackModal] = useState({ open: false, title: '', message: '' })
+    const [providers, setProviders] = useState([])
+    const [selectedProviderId, setSelectedProviderId] = useState('')
+    const [assigningProvider, setAssigningProvider] = useState(false)
+    const [assignProviderError, setAssignProviderError] = useState('')
 
     const loadLoanDetails = async ({ silent = false } = {}) => {
         try {
@@ -54,6 +58,28 @@ export default function ApplicationDetail() {
         }, 300)
         return () => clearTimeout(timer)
     }, [id])
+
+    useEffect(() => {
+        if (session?.role === 'admin') {
+            adminService.getProviders().then(setProviders).catch(() => {})
+        }
+    }, [session?.role])
+
+    const handleAssignProvider = async () => {
+        if (!selectedProviderId) return
+        setAssigningProvider(true)
+        setAssignProviderError('')
+        try {
+            await adminService.assignProviderToLoan(loan.id, selectedProviderId)
+            await loadLoanDetails({ silent: true })
+            openFeedback('Provider Assigned', 'The provider has been linked to this application.')
+            setSelectedProviderId('')
+        } catch (err) {
+            setAssignProviderError(err.message || 'Failed to assign provider')
+        } finally {
+            setAssigningProvider(false)
+        }
+    }
 
     // Handlers
     const openFeedback = (title, message) => {
@@ -220,13 +246,61 @@ export default function ApplicationDetail() {
                     </div>
 
                     {!(session?.role === 'sales' && loan.assignedTo === session.username && (loan.status === 'pending' || loan.status === 'incomplete')) && (
-                        <DecisionPanel
-                            loan={loan}
-                            session={session}
-                            onApprove={handleApprove}
-                            onReject={handleReject}
-                            onRequestInfo={handleRequestInfo}
-                        />
+                        <div className="detail-column">
+                            <DecisionPanel
+                                loan={loan}
+                                session={session}
+                                onApprove={handleApprove}
+                                onReject={handleReject}
+                                onRequestInfo={handleRequestInfo}
+                            />
+                            {session?.role === 'admin' && (
+                                <div className="detail-card mt-4">
+                                    <h3 style={{ margin: '0 0 4px', fontSize: '0.9375rem', fontWeight: 600 }}>Assign Provider</h3>
+                                    {loan.providerName || loan.provider?.name ? (
+                                        <p style={{ margin: '0 0 12px', fontSize: '0.8125rem', color: '#6b7280' }}>
+                                            Currently linked: <strong style={{ color: '#111827' }}>{loan.providerName || loan.provider?.name}</strong>
+                                        </p>
+                                    ) : (
+                                        <p style={{ margin: '0 0 12px', fontSize: '0.8125rem', color: '#9ca3af' }}>No provider linked yet.</p>
+                                    )}
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <select
+                                            value={selectedProviderId}
+                                            onChange={(e) => { setSelectedProviderId(e.target.value); setAssignProviderError('') }}
+                                            style={{
+                                                flex: 1, padding: '8px 10px', borderRadius: '8px',
+                                                border: '1.5px solid #e2e8f0', fontSize: '0.875rem',
+                                                background: '#fff', outline: 'none',
+                                            }}
+                                        >
+                                            <option value="">Select a provider…</option>
+                                            {providers.map((p) => (
+                                                <option key={p.id || p._id} value={p.id || p._id}>
+                                                    {p.name || p.facilityName || p.email}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            onClick={handleAssignProvider}
+                                            disabled={!selectedProviderId || assigningProvider}
+                                            style={{
+                                                padding: '8px 16px', borderRadius: '8px', border: 'none',
+                                                background: selectedProviderId ? '#2563eb' : '#e5e7eb',
+                                                color: selectedProviderId ? '#fff' : '#9ca3af',
+                                                fontWeight: 600, fontSize: '0.875rem', cursor: selectedProviderId ? 'pointer' : 'not-allowed',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {assigningProvider ? 'Saving…' : 'Assign'}
+                                        </button>
+                                    </div>
+                                    {assignProviderError && (
+                                        <p style={{ margin: '8px 0 0', fontSize: '0.8125rem', color: '#dc2626' }}>{assignProviderError}</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
             ) : (

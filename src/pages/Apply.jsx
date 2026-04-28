@@ -14,7 +14,6 @@ import ConsentCheckbox from '../components/ConsentCheckbox'
 import { NIGERIAN_STATES, PREFERRED_CONTACT_OPTIONS } from '../data/locationData'
 import { trackingService } from '../services/trackingService'
 import MoneyInput from '../components/MoneyInput'
-import { getSuggestedHospitals } from '../data/mockPartnerHospitals'
 import { useAffordabilityCheck } from '../hooks/useAffordabilityCheck'
 import { uploadFileToCloudinary } from '../services/cloudinaryService'
 
@@ -86,6 +85,7 @@ export default function Apply() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const draftId = searchParams.get('draftId')
+  const providerIdParam = searchParams.get('providerId')
 
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -95,6 +95,13 @@ export default function Apply() {
   const [loanId, setLoanId] = useState(null)
   const [errors, setErrors] = useState({})
   const [draftIdState, setDraftIdState] = useState(null)
+
+  // Provider / hospital picker
+  const [providerList, setProviderList] = useState([])
+  const [providerListLoading, setProviderListLoading] = useState(true)
+  const [hospitalMode, setHospitalMode] = useState('select') // 'select' | 'custom'
+  const [hospitalSearch, setHospitalSearch] = useState('')
+  const [showHospitalDropdown, setShowHospitalDropdown] = useState(false)
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -164,6 +171,25 @@ export default function Apply() {
     formData.monthlyExpenses,
     formData.preferredDuration
   );
+
+  // Fetch active providers for hospital picker
+  useEffect(() => {
+    const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+    if (!apiBase) { setProviderListLoading(false); return }
+    fetch(`${apiBase}/api/provider/public/providers?limit=100`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.providers ?? []
+        setProviderList(list)
+      })
+      .catch((err) => {
+        console.error('[CareCova] Failed to load provider list:', err.message)
+      })
+      .finally(() => setProviderListLoading(false))
+  }, [])
 
   useEffect(() => {
     const loadDraft = async () => {
@@ -256,7 +282,8 @@ export default function Apply() {
         disposableIncome,
         estimatedInstallment,
         affordabilityRatio
-      }
+      },
+      ...(providerIdParam ? { providerId: providerIdParam } : {}),
     };
   }
 
@@ -363,7 +390,6 @@ export default function Apply() {
   const renderStep = () => {
     switch (currentStep) {
       case 1: {
-        const suggestedHospitals = getSuggestedHospitals(formData.state, formData.lga || formData.city);
         return (
           <div className="step-content">
             <h2>Applicant &amp; Treatment Location</h2>
@@ -385,44 +411,181 @@ export default function Apply() {
               <Input label="Home address (optional)" type="text" placeholder="Street, area" value={formData.homeAddress} onChange={(e) => handleChange('homeAddress', e.target.value)} onBlur={() => setErrors((prev) => ({ ...prev, ...validateStep(1, formData) }))} error={errors.homeAddress} />
 
               <div className="form-section-label" style={{ gridColumn: '1 / -1', marginTop: '1rem', borderTop: '1px solid #ddd', paddingTop: '1rem' }}>
-                <h3>Hospital Details</h3>
+                <h3>Hospital / Clinic Details</h3>
+                <p className="caption" style={{ marginTop: '0.25rem' }}>Select the facility where you will receive treatment, or enter your own.</p>
               </div>
 
-              {suggestedHospitals.length > 0 && (
-                <div style={{ gridColumn: '1 / -1', background: '#f5fdf9', padding: '1rem', borderRadius: '8px', border: '1px solid #d1fae5' }}>
-                  <h4>Suggested Partner Hospitals Near You</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-                    {suggestedHospitals.map(h => (
-                      <div key={h.id}
-                        style={{ padding: '10px', background: formData.suggestedHospitalId === h.id ? '#10b981' : 'white', color: formData.suggestedHospitalId === h.id ? 'white' : 'black', border: '1px solid #e5e7eb', borderRadius: '4px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        onClick={() => {
-                          handleChange('suggestedHospitalId', h.id);
-                          handleChange('hospitalName', h.name);
-                          handleChange('hospitalAddress', h.address);
-                          handleChange('isPartnerSuggested', true);
-                        }}>
-                        <div>
-                          <strong>{h.name}</strong>
-                          <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{h.address}</div>
-                        </div>
-                        <span className="badge" style={{ background: formData.suggestedHospitalId === h.id ? 'rgba(255,255,255,0.2)' : '#e5e7eb', color: formData.suggestedHospitalId === h.id ? 'white' : 'inherit' }}>{h.distance}</span>
-                      </div>
-                    ))}
-                    <div style={{ padding: '10px', background: !formData.isPartnerSuggested && formData.hospitalName ? '#10b981' : 'white', color: !formData.isPartnerSuggested && formData.hospitalName ? 'white' : 'black', border: '1px solid #e5e7eb', borderRadius: '4px', cursor: 'pointer' }}
-                      onClick={() => {
-                        handleChange('suggestedHospitalId', '');
-                        handleChange('isPartnerSuggested', false);
-                        handleChange('hospitalName', '');
-                        handleChange('hospitalAddress', '');
-                      }}>
-                      <strong>My hospital is not listed</strong>
-                    </div>
-                  </div>
+              {/* Hospital Picker */}
+              <div style={{ gridColumn: '1 / -1' }}>
+                {/* Mode toggle */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setHospitalMode('select'); setHospitalSearch(''); setShowHospitalDropdown(false) }}
+                    style={{
+                      padding: '7px 16px', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', border: '1.5px solid',
+                      borderColor: hospitalMode === 'select' ? '#2563eb' : '#e2e8f0',
+                      background: hospitalMode === 'select' ? '#eff6ff' : '#fff',
+                      color: hospitalMode === 'select' ? '#2563eb' : '#6b7280',
+                    }}
+                  >
+                    Select from our network
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHospitalMode('custom')
+                      handleChange('suggestedHospitalId', '')
+                      handleChange('isPartnerSuggested', false)
+                      handleChange('hospitalName', '')
+                      handleChange('hospitalAddress', '')
+                    }}
+                    style={{
+                      padding: '7px 16px', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', border: '1.5px solid',
+                      borderColor: hospitalMode === 'custom' ? '#2563eb' : '#e2e8f0',
+                      background: hospitalMode === 'custom' ? '#eff6ff' : '#fff',
+                      color: hospitalMode === 'custom' ? '#2563eb' : '#6b7280',
+                    }}
+                  >
+                    Enter my own hospital
+                  </button>
                 </div>
-              )}
 
-              <Input label="Hospital name" type="text" placeholder="Name of your hospital" value={formData.hospitalName} onChange={(e) => { handleChange('hospitalName', e.target.value); handleChange('isPartnerSuggested', false); }} onBlur={() => setErrors((prev) => ({ ...prev, ...validateStep(1, formData) }))} error={errors.hospitalName} required />
-              <Input label="Hospital area/address (optional)" type="text" placeholder="Address" value={formData.hospitalAddress} onChange={(e) => { handleChange('hospitalAddress', e.target.value); handleChange('isPartnerSuggested', false); }} />
+                {hospitalMode === 'select' ? (
+                  <div>
+                    {/* Search / combobox */}
+                    <div style={{ position: 'relative' }}>
+                      <label className="input-label">
+                        Hospital / Clinic name <span className="required-asterisk">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Search by name…"
+                        value={hospitalSearch || formData.hospitalName}
+                        onFocus={() => { setHospitalSearch(formData.hospitalName || ''); setShowHospitalDropdown(true) }}
+                        onChange={(e) => {
+                          setHospitalSearch(e.target.value)
+                          setShowHospitalDropdown(true)
+                          if (!e.target.value) {
+                            handleChange('hospitalName', '')
+                            handleChange('hospitalAddress', '')
+                            handleChange('suggestedHospitalId', '')
+                            handleChange('isPartnerSuggested', false)
+                          }
+                        }}
+                        onBlur={() => setTimeout(() => setShowHospitalDropdown(false), 180)}
+                        style={{
+                          width: '100%', padding: '10px 14px', borderRadius: '8px',
+                          border: errors.hospitalName ? '1.5px solid #ef4444' : '1.5px solid #e2e8f0',
+                          fontSize: '0.9375rem', outline: 'none', boxSizing: 'border-box',
+                          background: '#fff',
+                        }}
+                      />
+                      {showHospitalDropdown && (
+                        <div style={{
+                          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 50,
+                          background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.1)', maxHeight: '260px', overflowY: 'auto',
+                        }}>
+                          {(() => {
+                            if (providerListLoading) {
+                              return <div style={{ padding: '14px 16px', color: '#9ca3af', fontSize: '0.875rem' }}>Loading facilities…</div>
+                            }
+                            const term = (hospitalSearch || '').toLowerCase()
+                            const filtered = providerList.filter(
+                              (p) => !term || (p.name || '').toLowerCase().includes(term)
+                            )
+                            if (filtered.length === 0) {
+                              return (
+                                <div style={{ padding: '14px 16px', color: '#9ca3af', fontSize: '0.875rem' }}>
+                                  No matching facilities found.{' '}
+                                  <button type="button" onClick={() => { setHospitalMode('custom'); handleChange('hospitalName', hospitalSearch); setShowHospitalDropdown(false) }}
+                                    style={{ color: '#2563eb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '0.875rem' }}>
+                                    Enter "{hospitalSearch}" manually
+                                  </button>
+                                </div>
+                              )
+                            }
+                            return filtered.map((p) => {
+                              const pid = p.id || p._id
+                              const selected = formData.suggestedHospitalId === pid
+                              return (
+                                <div
+                                  key={pid}
+                                  onMouseDown={() => {
+                                    handleChange('hospitalName', p.name)
+                                    handleChange('hospitalAddress', p.address || '')
+                                    handleChange('suggestedHospitalId', pid)
+                                    handleChange('isPartnerSuggested', true)
+                                    setHospitalSearch('')
+                                    setShowHospitalDropdown(false)
+                                    setErrors((prev) => ({ ...prev, hospitalName: '' }))
+                                  }}
+                                  style={{
+                                    padding: '11px 16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    background: selected ? '#eff6ff' : 'transparent',
+                                    borderBottom: '1px solid #f3f4f6',
+                                  }}
+                                >
+                                  <div>
+                                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#111827' }}>{p.name}</div>
+                                    {(p.address || p.type) && (
+                                      <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '2px' }}>
+                                        {[p.type, p.address].filter(Boolean).join(' · ')}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {selected && <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#2563eb', padding: '2px 8px', borderRadius: '10px', fontWeight: 600 }}>Selected</span>}
+                                </div>
+                              )
+                            })
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                    {/* Show selected facility */}
+                    {formData.hospitalName && !showHospitalDropdown && (
+                      <div style={{
+                        marginTop: '10px', padding: '10px 14px', borderRadius: '8px',
+                        background: '#f0fdf4', border: '1px solid #bbf7d0',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#166534' }}>{formData.hospitalName}</div>
+                          {formData.hospitalAddress && <div style={{ fontSize: '0.8rem', color: '#4ade80' }}>{formData.hospitalAddress}</div>}
+                          {formData.isPartnerSuggested && <span style={{ fontSize: '0.75rem', background: '#bbf7d0', color: '#166534', padding: '1px 7px', borderRadius: '8px', fontWeight: 600 }}>CareCova Network</span>}
+                        </div>
+                        <button type="button" onClick={() => { handleChange('hospitalName', ''); handleChange('hospitalAddress', ''); handleChange('suggestedHospitalId', ''); handleChange('isPartnerSuggested', false); setHospitalSearch('') }}
+                          style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500 }}>
+                          Change
+                        </button>
+                      </div>
+                    )}
+                    {errors.hospitalName && <p style={{ margin: '6px 0 0', fontSize: '0.8125rem', color: '#ef4444' }}>{errors.hospitalName}</p>}
+                  </div>
+                ) : (
+                  /* Custom entry mode */
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <Input
+                      label="Hospital / Clinic name"
+                      type="text"
+                      placeholder="e.g. Lagos University Teaching Hospital"
+                      value={formData.hospitalName}
+                      onChange={(e) => { handleChange('hospitalName', e.target.value); handleChange('isPartnerSuggested', false) }}
+                      onBlur={() => setErrors((prev) => ({ ...prev, ...validateStep(1, formData) }))}
+                      error={errors.hospitalName}
+                      required
+                    />
+                    <Input
+                      label="Hospital area / address (optional)"
+                      type="text"
+                      placeholder="Street, area or city"
+                      value={formData.hospitalAddress}
+                      onChange={(e) => { handleChange('hospitalAddress', e.target.value); handleChange('isPartnerSuggested', false) }}
+                    />
+                  </div>
+                )}
+              </div>
 
               <div className="form-section-label" style={{ gridColumn: '1 / -1', marginTop: '1rem', borderTop: '1px solid #ddd', paddingTop: '1rem' }}>
                 <h3>Identity verification</h3>
