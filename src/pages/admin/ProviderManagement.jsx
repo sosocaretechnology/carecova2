@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Building2, Plus, X, Eye, EyeOff, CheckCircle, XCircle, RefreshCw, Pencil, KeyRound } from 'lucide-react'
+import { Building2, Plus, X, Eye, EyeOff, CheckCircle, XCircle, RefreshCw, Pencil, KeyRound, Trash2 } from 'lucide-react'
 import { adminService } from '../../services/adminService'
 
 const PROVIDER_TYPES = [
@@ -33,6 +33,11 @@ export default function ProviderManagement() {
   const [editSubmitting, setEditSubmitting] = useState(false)
   const [editError, setEditError] = useState('')
   const [editSuccess, setEditSuccess] = useState('')
+
+  // Delete confirmation
+  const [deleteProvider, setDeleteProvider] = useState(null)
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   // Reset password modal
   const [resetProvider, setResetProvider] = useState(null)
@@ -134,6 +139,21 @@ export default function ProviderManagement() {
       alert(err.message || 'Failed to update provider status')
     } finally {
       setTogglingId(null)
+    }
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────────
+  const handleDelete = async () => {
+    setDeleteSubmitting(true)
+    setDeleteError('')
+    try {
+      await adminService.deleteProvider(deleteProvider.id || deleteProvider._id)
+      setDeleteProvider(null)
+      await load()
+    } catch (err) {
+      setDeleteError(err.message || 'Failed to delete provider')
+    } finally {
+      setDeleteSubmitting(false)
     }
   }
 
@@ -254,6 +274,10 @@ export default function ProviderManagement() {
                           <button onClick={() => openReset(p)} title="Reset portal password" style={actionBtn('#fef3c7', '#d97706')}>
                             <KeyRound size={13} />
                           </button>
+                          {/* Delete */}
+                          <button onClick={() => { setDeleteProvider(p); setDeleteError('') }} title="Delete provider" style={actionBtn('#fef2f2', '#dc2626')}>
+                            <Trash2 size={13} />
+                          </button>
                           {/* Toggle status */}
                           <button
                             disabled={togglingId === id}
@@ -350,6 +374,31 @@ export default function ProviderManagement() {
               <button type="submit" disabled={editSubmitting} style={btnPrimary}>{editSubmitting ? 'Saving…' : 'Save Changes'}</button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* ── Delete Confirmation Modal ────────────────────────────────────────── */}
+      {deleteProvider && (
+        <Modal title="Delete Provider" subtitle={`Permanently remove ${deleteProvider.name}`} onClose={() => setDeleteProvider(null)}>
+          <div style={{ padding: '24px' }}>
+            <div style={{ padding: '14px 16px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca', fontSize: '0.875rem', color: '#991b1b', marginBottom: '20px' }}>
+              <strong>This cannot be undone.</strong> Deleting this provider will permanently remove their facility record and portal login account. Patient applications already linked to them will remain in the system.
+            </div>
+            <p style={{ margin: '0 0 20px', fontSize: '0.9375rem', color: '#374151' }}>
+              Are you sure you want to delete <strong>{deleteProvider.name}</strong>?
+            </p>
+            {deleteError && <div style={errorBox}>{deleteError}</div>}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setDeleteProvider(null)} style={btnSecondary}>Cancel</button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteSubmitting}
+                style={{ ...btnPrimary, background: deleteSubmitting ? '#fca5a5' : 'linear-gradient(135deg,#dc2626,#b91c1c)' }}
+              >
+                {deleteSubmitting ? 'Deleting…' : 'Yes, Delete Provider'}
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
 

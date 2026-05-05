@@ -1749,6 +1749,13 @@ export const adminService = {
     })
   },
 
+  deleteProvider: async (providerId) => {
+    requireBackendFeature('Delete provider')
+    const trimmed = String(providerId || '').trim()
+    if (!trimmed) throw new Error('Provider ID is required')
+    return adminRequest(`/admin/providers/${encodeURIComponent(trimmed)}`, { method: 'DELETE' })
+  },
+
   updateProvider: async (providerId, data) => {
     requireBackendFeature('Update provider')
     const trimmed = String(providerId || '').trim()
