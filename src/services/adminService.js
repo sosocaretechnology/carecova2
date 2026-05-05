@@ -1749,6 +1749,26 @@ export const adminService = {
     })
   },
 
+  updateProvider: async (providerId, data) => {
+    requireBackendFeature('Update provider')
+    const trimmed = String(providerId || '').trim()
+    if (!trimmed) throw new Error('Provider ID is required')
+    return adminRequest(`/admin/providers/${encodeURIComponent(trimmed)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  },
+
+  resetProviderPassword: async (providerId, newPassword) => {
+    requireBackendFeature('Reset provider password')
+    const trimmed = String(providerId || '').trim()
+    if (!trimmed) throw new Error('Provider ID is required')
+    return adminRequest(`/admin/providers/${encodeURIComponent(trimmed)}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ newPassword }),
+    })
+  },
+
   assignProviderToLoan: async (loanId, providerId) => {
     requireBackendFeature('Assign provider')
     const trimmed = assertBackendLoanId(loanId, 'Assign provider')

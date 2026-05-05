@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Building2, Plus, X, Eye, EyeOff, CheckCircle, XCircle, RefreshCw } from 'lucide-react'
+import { Building2, Plus, X, Eye, EyeOff, CheckCircle, XCircle, RefreshCw, Pencil, KeyRound } from 'lucide-react'
 import { adminService } from '../../services/adminService'
 
 const PROVIDER_TYPES = [
@@ -10,28 +10,37 @@ const PROVIDER_TYPES = [
 ]
 
 const EMPTY_FORM = {
-  name: '',
-  type: 'hospital',
-  email: '',
-  phone: '',
-  address: '',
-  contactName: '',
-  staffEmail: '',
-  staffPassword: '',
-  staffRole: 'staff',
+  name: '', type: 'hospital', email: '', phone: '', address: '',
 }
 
 export default function ProviderManagement() {
   const [providers, setProviders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [submitting, setSubmitting] = useState(false)
-  const [formError, setFormError] = useState('')
-  const [formSuccess, setFormSuccess] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [togglingId, setTogglingId] = useState(null)
+
+  // Add modal
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [addForm, setAddForm] = useState(EMPTY_FORM)
+  const [addSubmitting, setAddSubmitting] = useState(false)
+  const [addError, setAddError] = useState('')
+  const [addSuccess, setAddSuccess] = useState('')
+  const [showAddPassword, setShowAddPassword] = useState(false)
+
+  // Edit modal
+  const [editProvider, setEditProvider] = useState(null)
+  const [editForm, setEditForm] = useState(EMPTY_FORM)
+  const [editSubmitting, setEditSubmitting] = useState(false)
+  const [editError, setEditError] = useState('')
+  const [editSuccess, setEditSuccess] = useState('')
+
+  // Reset password modal
+  const [resetProvider, setResetProvider] = useState(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [resetSubmitting, setResetSubmitting] = useState(false)
+  const [resetError, setResetError] = useState('')
+  const [resetSuccess, setResetSuccess] = useState('')
 
   const load = async () => {
     setLoading(true)
@@ -49,53 +58,77 @@ export default function ProviderManagement() {
 
   useEffect(() => { load() }, [])
 
-  const handleInput = (e) => {
-    const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
-    setFormError('')
-  }
+  const isActive = (p) => p.status === 'active' || p.isActive === true
+  const formatDate = (d) => !d ? '—' : new Date(d).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
+  const typeLabel = (type) => PROVIDER_TYPES.find((t) => t.value === type)?.label ?? type ?? '—'
 
-  const handleSubmit = async (e) => {
+  // ── Add ──────────────────────────────────────────────────────────────────────
+  const handleAdd = async (e) => {
     e.preventDefault()
-    setFormError('')
-    setFormSuccess('')
-
-    if (!form.name.trim()) return setFormError('Facility name is required')
-    if (!form.email.trim()) return setFormError('Facility email is required')
-    if (!form.phone.trim()) return setFormError('Phone number is required')
-
-    setSubmitting(true)
+    setAddError('')
+    setAddSuccess('')
+    if (!addForm.name.trim()) return setAddError('Facility name is required')
+    if (!addForm.email.trim()) return setAddError('Facility email is required')
+    if (!addForm.phone.trim()) return setAddError('Phone number is required')
+    setAddSubmitting(true)
     try {
-      const payload = {
-        name: form.name.trim(),
-        type: form.type,
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        ...(form.address.trim() ? { address: form.address.trim() } : {}),
-      }
       await adminService.createProvider({
-        ...payload,
+        name: addForm.name.trim(),
+        type: addForm.type,
+        email: addForm.email.trim(),
+        phone: addForm.phone.trim(),
+        ...(addForm.address.trim() ? { address: addForm.address.trim() } : {}),
       })
-      setFormSuccess(`Provider "${form.name}" created successfully!`)
-      setForm(EMPTY_FORM)
+      setAddSuccess(`Provider "${addForm.name}" created successfully!`)
+      setAddForm(EMPTY_FORM)
       await load()
-      setTimeout(() => {
-        setShowModal(false)
-        setFormSuccess('')
-      }, 2000)
+      setTimeout(() => { setShowAddModal(false); setAddSuccess('') }, 2000)
     } catch (err) {
-      setFormError(err.message || 'Failed to create provider')
+      setAddError(err.message || 'Failed to create provider')
     } finally {
-      setSubmitting(false)
+      setAddSubmitting(false)
     }
   }
 
+  // ── Edit ─────────────────────────────────────────────────────────────────────
+  const openEdit = (p) => {
+    setEditProvider(p)
+    setEditForm({ name: p.name || '', type: p.type || 'hospital', email: p.email || '', phone: p.phone || '', address: p.address || '' })
+    setEditError('')
+    setEditSuccess('')
+  }
+
+  const handleEdit = async (e) => {
+    e.preventDefault()
+    setEditError('')
+    setEditSuccess('')
+    if (!editForm.name.trim()) return setEditError('Facility name is required')
+    setEditSubmitting(true)
+    try {
+      const id = editProvider.id || editProvider._id
+      await adminService.updateProvider(id, {
+        name: editForm.name.trim(),
+        type: editForm.type,
+        email: editForm.email.trim(),
+        phone: editForm.phone.trim(),
+        address: editForm.address.trim(),
+      })
+      setEditSuccess('Provider updated successfully!')
+      await load()
+      setTimeout(() => { setEditProvider(null); setEditSuccess('') }, 1500)
+    } catch (err) {
+      setEditError(err.message || 'Failed to update provider')
+    } finally {
+      setEditSubmitting(false)
+    }
+  }
+
+  // ── Toggle status ─────────────────────────────────────────────────────────────
   const handleToggleStatus = async (provider) => {
     const id = provider.id || provider._id
     setTogglingId(id)
     try {
-      const shouldBeActive = !(provider.status === 'active' || provider.isActive === true)
-      await adminService.updateProviderStatus(id, shouldBeActive)
+      await adminService.updateProviderStatus(id, !(provider.status === 'active' || provider.isActive === true))
       await load()
     } catch (err) {
       alert(err.message || 'Failed to update provider status')
@@ -104,14 +137,32 @@ export default function ProviderManagement() {
     }
   }
 
-  const isActive = (p) => p.status === 'active' || p.isActive === true
-
-  const formatDate = (d) => {
-    if (!d) return '—'
-    return new Date(d).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
+  // ── Reset password ────────────────────────────────────────────────────────────
+  const openReset = (p) => {
+    setResetProvider(p)
+    setNewPassword('')
+    setShowNewPassword(false)
+    setResetError('')
+    setResetSuccess('')
   }
 
-  const typeLabel = (type) => PROVIDER_TYPES.find((t) => t.value === type)?.label ?? type ?? '—'
+  const handleReset = async (e) => {
+    e.preventDefault()
+    setResetError('')
+    setResetSuccess('')
+    if (newPassword.length < 8) return setResetError('Password must be at least 8 characters')
+    setResetSubmitting(true)
+    try {
+      const id = resetProvider.id || resetProvider._id
+      await adminService.resetProviderPassword(id, newPassword)
+      setResetSuccess('Password reset successfully!')
+      setTimeout(() => { setResetProvider(null); setResetSuccess('') }, 1800)
+    } catch (err) {
+      setResetError(err.message || 'Failed to reset password')
+    } finally {
+      setResetSubmitting(false)
+    }
+  }
 
   return (
     <div>
@@ -124,71 +175,26 @@ export default function ProviderManagement() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={load}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              padding: '9px 16px', borderRadius: '8px', border: '1.5px solid #e2e8f0',
-              background: '#fff', color: '#374151', fontWeight: 500, fontSize: '0.875rem',
-              cursor: 'pointer',
-            }}
-          >
+          <button onClick={load} style={btnSecondary}>
             <RefreshCw size={15} /> Refresh
           </button>
-          <button
-            onClick={() => { setShowModal(true); setForm(EMPTY_FORM); setFormError(''); setFormSuccess('') }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              padding: '10px 20px', borderRadius: '8px', border: 'none',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#fff', fontWeight: 600, fontSize: '0.875rem',
-              cursor: 'pointer', boxShadow: '0 3px 10px rgba(37,99,235,0.3)',
-            }}
-          >
+          <button onClick={() => { setShowAddModal(true); setAddForm(EMPTY_FORM); setAddError(''); setAddSuccess('') }} style={btnPrimary}>
             <Plus size={16} /> Add Provider
           </button>
         </div>
       </div>
 
-      {/* Error Banner */}
-      {error && (
-        <div style={{
-          marginBottom: '20px', padding: '12px 16px', borderRadius: '8px',
-          background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626',
-          fontSize: '0.875rem',
-        }}>
-          {error}
-        </div>
-      )}
+      {error && <div style={errorBanner}>{error}</div>}
 
       {/* Provider Table */}
-      <div style={{
-        background: '#fff', borderRadius: '12px',
-        border: '1px solid #e5e7eb', overflow: 'hidden',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-      }}>
+      <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
         {loading ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: '#9ca3af' }}>
-            Loading providers…
-          </div>
+          <div style={{ padding: '60px', textAlign: 'center', color: '#9ca3af' }}>Loading providers…</div>
         ) : providers.length === 0 ? (
           <div style={{ padding: '60px', textAlign: 'center' }}>
             <Building2 size={44} color="#d1d5db" style={{ marginBottom: '16px' }} />
-            <p style={{ margin: 0, color: '#9ca3af', fontSize: '0.9375rem', fontWeight: 500 }}>
-              No providers yet.
-            </p>
-            <p style={{ margin: '4px 0 16px', color: '#d1d5db', fontSize: '0.8125rem' }}>
-              Add a hospital or clinic to get started.
-            </p>
-            <button
-              onClick={() => setShowModal(true)}
-              style={{
-                padding: '10px 20px', borderRadius: '8px', border: 'none',
-                background: '#2563eb', color: '#fff', fontWeight: 600,
-                fontSize: '0.875rem', cursor: 'pointer',
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-              }}
-            >
+            <p style={{ margin: 0, color: '#9ca3af', fontSize: '0.9375rem', fontWeight: 500 }}>No providers yet.</p>
+            <button onClick={() => setShowAddModal(true)} style={{ ...btnPrimary, marginTop: '16px' }}>
               <Plus size={16} /> Add First Provider
             </button>
           </div>
@@ -201,10 +207,9 @@ export default function ProviderManagement() {
                   <th>Type</th>
                   <th>Email</th>
                   <th>Phone</th>
-                  <th>Patients</th>
                   <th>Status</th>
                   <th>Added</th>
-                  <th>Action</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -215,12 +220,7 @@ export default function ProviderManagement() {
                     <tr key={id}>
                       <td style={{ fontWeight: 600, color: '#111827' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{
-                            width: '32px', height: '32px', borderRadius: '8px',
-                            background: '#eff6ff', border: '1px solid #bfdbfe',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            flexShrink: 0,
-                          }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eff6ff', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <Building2 size={16} color="#2563eb" />
                           </div>
                           {p.name || '—'}
@@ -229,9 +229,6 @@ export default function ProviderManagement() {
                       <td style={{ color: '#6b7280', fontSize: '0.875rem' }}>{typeLabel(p.type)}</td>
                       <td style={{ color: '#6b7280', fontSize: '0.875rem' }}>{p.email || '—'}</td>
                       <td style={{ color: '#6b7280', fontSize: '0.875rem' }}>{p.phone || '—'}</td>
-                      <td style={{ fontWeight: 500, color: '#111827' }}>
-                        {p.patientCount ?? p.totalPatients ?? '—'}
-                      </td>
                       <td>
                         <span style={{
                           display: 'inline-flex', alignItems: 'center', gap: '4px',
@@ -246,20 +243,32 @@ export default function ProviderManagement() {
                       </td>
                       <td style={{ color: '#6b7280', fontSize: '0.8125rem' }}>{formatDate(p.createdAt)}</td>
                       <td>
-                        <button
-                          disabled={togglingId === id}
-                          onClick={() => handleToggleStatus(p)}
-                          style={{
-                            padding: '6px 12px', borderRadius: '6px', border: 'none',
-                            background: active ? '#fef2f2' : '#f0fdf4',
-                            color: active ? '#dc2626' : '#16a34a',
-                            fontWeight: 600, fontSize: '0.75rem',
-                            cursor: togglingId === id ? 'wait' : 'pointer',
-                            opacity: togglingId === id ? 0.6 : 1,
-                          }}
-                        >
-                          {togglingId === id ? 'Saving…' : active ? 'Deactivate' : 'Activate'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
+                          {/* Edit */}
+                          <button onClick={() => openEdit(p)} title="Edit provider details" style={actionBtn('#eff6ff', '#2563eb')}>
+                            <Pencil size={13} />
+                          </button>
+                          {/* Reset password */}
+                          <button onClick={() => openReset(p)} title="Reset portal password" style={actionBtn('#fef3c7', '#d97706')}>
+                            <KeyRound size={13} />
+                          </button>
+                          {/* Toggle status */}
+                          <button
+                            disabled={togglingId === id}
+                            onClick={() => handleToggleStatus(p)}
+                            style={{
+                              padding: '5px 10px', borderRadius: '6px', border: 'none',
+                              background: active ? '#fef2f2' : '#f0fdf4',
+                              color: active ? '#dc2626' : '#16a34a',
+                              fontWeight: 600, fontSize: '0.75rem',
+                              cursor: togglingId === id ? 'wait' : 'pointer',
+                              opacity: togglingId === id ? 0.6 : 1,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {togglingId === id ? 'Saving…' : active ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -267,256 +276,200 @@ export default function ProviderManagement() {
               </tbody>
             </table>
             <div style={{ padding: '12px 20px', borderTop: '1px solid #f3f4f6', fontSize: '0.8125rem', color: '#9ca3af' }}>
-              {providers.length} provider{providers.length !== 1 ? 's' : ''} total ·{' '}
-              {providers.filter(isActive).length} active
+              {providers.length} provider{providers.length !== 1 ? 's' : ''} · {providers.filter(isActive).length} active
             </div>
           </>
         )}
       </div>
 
-      {/* Add Provider Modal */}
-      {showModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '16px',
-        }}>
-          <div style={{
-            background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '560px',
-            maxHeight: '90vh', overflowY: 'auto',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-          }}>
-            {/* Modal Header */}
-            <div style={{
-              padding: '20px 24px', borderBottom: '1px solid #f3f4f6',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#111827' }}>
-                  Add New Provider
-                </h3>
-                <p style={{ margin: '2px 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>
-                  Create a facility and set up their login credentials
-                </p>
+      {/* ── Add Provider Modal ───────────────────────────────────────────────── */}
+      {showAddModal && (
+        <Modal title="Add New Provider" subtitle="Create a facility and set up their login credentials" onClose={() => setShowAddModal(false)}>
+          <form onSubmit={handleAdd} style={{ padding: '24px' }}>
+            <SectionLabel>Facility Information</SectionLabel>
+            <div style={{ display: 'grid', gap: '14px', marginBottom: '20px' }}>
+              <Field label="Facility Name *"><input name="name" value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Lagos General Hospital" style={inputStyle} /></Field>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <Field label="Facility Type *">
+                  <select name="type" value={addForm.type} onChange={(e) => setAddForm(f => ({ ...f, type: e.target.value }))} style={inputStyle}>
+                    {PROVIDER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </Field>
+                <Field label="Phone *"><input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="08XXXXXXXXX" style={inputStyle} /></Field>
               </div>
-              <button
-                onClick={() => setShowModal(false)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#9ca3af', padding: '4px',
-                }}
-              >
-                <X size={20} />
-              </button>
+              <Field label="Facility Email *"><input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="contact@facility.com" style={inputStyle} /></Field>
+              <Field label="Address"><input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="123 Street, City, State" style={inputStyle} /></Field>
             </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
-              {/* Section: Facility Info */}
-              <div style={{ marginBottom: '20px' }}>
-                <p style={{ margin: '0 0 14px', fontSize: '0.8125rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Facility Information
-                </p>
-                <div style={{ display: 'grid', gap: '14px' }}>
-                  <div>
-                    <label style={labelStyle}>Facility Name *</label>
-                    <input
-                      name="name" value={form.name} onChange={handleInput}
-                      placeholder="e.g. Lagos General Hospital"
-                      style={inputStyle}
-                      onFocus={(e) => (e.target.style.borderColor = '#2563eb')}
-                      onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                    />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                    <div>
-                      <label style={labelStyle}>Facility Type *</label>
-                      <select
-                        name="type" value={form.type} onChange={handleInput}
-                        style={{ ...inputStyle, cursor: 'pointer' }}
-                        onFocus={(e) => (e.target.style.borderColor = '#2563eb')}
-                        onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                      >
-                        {PROVIDER_TYPES.map((t) => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={labelStyle}>Phone *</label>
-                      <input
-                        name="phone" value={form.phone} onChange={handleInput}
-                        placeholder="08XXXXXXXXX"
-                        style={inputStyle}
-                        onFocus={(e) => (e.target.style.borderColor = '#2563eb')}
-                        onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Facility Email *</label>
-                    <input
-                      name="email" type="email" value={form.email} onChange={handleInput}
-                      placeholder="contact@facility.com"
-                      style={inputStyle}
-                      onFocus={(e) => (e.target.style.borderColor = '#2563eb')}
-                      onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Address</label>
-                    <input
-                      name="address" value={form.address} onChange={handleInput}
-                      placeholder="123 Street, City, State"
-                      style={inputStyle}
-                      onFocus={(e) => (e.target.style.borderColor = '#2563eb')}
-                      onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Contact Person Name</label>
-                    <input
-                      name="contactName" value={form.contactName} onChange={handleInput}
-                      placeholder="e.g. Dr. Ade Okafor"
-                      style={inputStyle}
-                      onFocus={(e) => (e.target.style.borderColor = '#2563eb')}
-                      onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                    />
-                  </div>
+            <div style={{ borderTop: '1px solid #f3f4f6', marginBottom: '20px' }} />
+            <SectionLabel>Portal Login Password (optional)</SectionLabel>
+            <div style={{ marginBottom: '20px' }}>
+              <Field label="Password">
+                <div style={{ position: 'relative' }}>
+                  <input type={showAddPassword ? 'text' : 'password'} value={addForm.password || ''} onChange={(e) => setAddForm(f => ({ ...f, password: e.target.value }))} placeholder="Minimum 8 characters" style={{ ...inputStyle, paddingRight: '40px' }} />
+                  <button type="button" onClick={() => setShowAddPassword(s => !s)} style={eyeBtn}>
+                    {showAddPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
+              </Field>
+            </div>
+
+            {addError && <div style={errorBox}>{addError}</div>}
+            {addSuccess && <div style={successBox}>{addSuccess}</div>}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setShowAddModal(false)} style={btnSecondary}>Cancel</button>
+              <button type="submit" disabled={addSubmitting} style={btnPrimary}>{addSubmitting ? 'Creating…' : 'Create Provider'}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── Edit Provider Modal ──────────────────────────────────────────────── */}
+      {editProvider && (
+        <Modal title="Edit Provider" subtitle={`Updating details for ${editProvider.name}`} onClose={() => setEditProvider(null)}>
+          <form onSubmit={handleEdit} style={{ padding: '24px' }}>
+            <div style={{ display: 'grid', gap: '14px', marginBottom: '20px' }}>
+              <Field label="Facility Name *"><input value={editForm.name} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} style={inputStyle} /></Field>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <Field label="Facility Type">
+                  <select value={editForm.type} onChange={(e) => setEditForm(f => ({ ...f, type: e.target.value }))} style={inputStyle}>
+                    {PROVIDER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </Field>
+                <Field label="Phone"><input value={editForm.phone} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} style={inputStyle} /></Field>
               </div>
+              <Field label="Email"><input type="email" value={editForm.email} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></Field>
+              <Field label="Address"><input value={editForm.address} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Street, City, State" style={inputStyle} /></Field>
+            </div>
+            {editError && <div style={errorBox}>{editError}</div>}
+            {editSuccess && <div style={successBox}>{editSuccess}</div>}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setEditProvider(null)} style={btnSecondary}>Cancel</button>
+              <button type="submit" disabled={editSubmitting} style={btnPrimary}>{editSubmitting ? 'Saving…' : 'Save Changes'}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
-              {/* Divider */}
-              <div style={{ borderTop: '1px solid #f3f4f6', marginBottom: '20px' }} />
-
-              {/* Section: Login Credentials */}
-              <div style={{ marginBottom: '20px' }}>
-                <p style={{ margin: '0 0 4px', fontSize: '0.8125rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Portal Login Credentials (Optional)
-                </p>
-                <p style={{ margin: '0 0 14px', fontSize: '0.8125rem', color: '#9ca3af' }}>
-                  This API currently creates only the facility record. Staff credentials are not sent on create.
-                </p>
-                <div style={{ display: 'grid', gap: '14px' }}>
-                  <div>
-                    <label style={labelStyle}>Login Email</label>
-                    <input
-                      name="staffEmail" type="email" value={form.staffEmail} onChange={handleInput}
-                      placeholder="staff@facility.com"
-                      style={inputStyle}
-                      onFocus={(e) => (e.target.style.borderColor = '#2563eb')}
-                      onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Password</label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        name="staffPassword" type={showPassword ? 'text' : 'password'}
-                        value={form.staffPassword} onChange={handleInput}
-                        placeholder="Minimum 8 characters"
-                        style={{ ...inputStyle, paddingRight: '40px' }}
-                        onFocus={(e) => (e.target.style.borderColor = '#2563eb')}
-                        onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((s) => !s)}
-                        style={{
-                          position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-                          background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0,
-                        }}
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Staff Role</label>
-                    <select
-                      name="staffRole" value={form.staffRole} onChange={handleInput}
-                      style={{ ...inputStyle, cursor: 'pointer' }}
-                      onFocus={(e) => (e.target.style.borderColor = '#2563eb')}
-                      onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                    >
-                      <option value="staff">Staff</option>
-                      <option value="provider_admin">Provider Admin</option>
-                    </select>
-                  </div>
+      {/* ── Reset Password Modal ─────────────────────────────────────────────── */}
+      {resetProvider && (
+        <Modal title="Reset Portal Password" subtitle={`Set a new login password for ${resetProvider.name}`} onClose={() => setResetProvider(null)}>
+          <form onSubmit={handleReset} style={{ padding: '24px' }}>
+            <div style={{ marginBottom: '8px', padding: '12px 14px', borderRadius: '8px', background: '#fffbeb', border: '1px solid #fde68a', fontSize: '0.8125rem', color: '#92400e' }}>
+              This will immediately invalidate any existing session for this provider's portal account.
+            </div>
+            <div style={{ marginTop: '16px', marginBottom: '20px' }}>
+              <Field label="New Password">
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => { setNewPassword(e.target.value); setResetError('') }}
+                    placeholder="Minimum 8 characters"
+                    style={{ ...inputStyle, paddingRight: '40px' }}
+                    autoFocus
+                  />
+                  <button type="button" onClick={() => setShowNewPassword(s => !s)} style={eyeBtn}>
+                    {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
-              </div>
-
-              {/* Feedback */}
-              {formError && (
-                <div style={{
-                  marginBottom: '16px', padding: '10px 14px', borderRadius: '8px',
-                  background: '#fef2f2', border: '1px solid #fecaca',
-                  color: '#dc2626', fontSize: '0.875rem',
-                }}>
-                  {formError}
-                </div>
-              )}
-              {formSuccess && (
-                <div style={{
-                  marginBottom: '16px', padding: '10px 14px', borderRadius: '8px',
-                  background: '#f0fdf4', border: '1px solid #bbf7d0',
-                  color: '#16a34a', fontSize: '0.875rem', fontWeight: 500,
-                }}>
-                  {formSuccess}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  style={{
-                    padding: '10px 20px', borderRadius: '8px',
-                    border: '1.5px solid #e2e8f0', background: '#fff',
-                    color: '#374151', fontWeight: 500, fontSize: '0.875rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  style={{
-                    padding: '10px 24px', borderRadius: '8px', border: 'none',
-                    background: submitting ? '#93c5fd' : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                    color: '#fff', fontWeight: 600, fontSize: '0.875rem',
-                    cursor: submitting ? 'wait' : 'pointer',
-                  }}
-                >
-                  {submitting ? 'Creating…' : 'Create Provider'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+                {newPassword && newPassword.length < 8 && (
+                  <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#ef4444' }}>At least 8 characters required</p>
+                )}
+              </Field>
+            </div>
+            {resetError && <div style={errorBox}>{resetError}</div>}
+            {resetSuccess && <div style={successBox}>{resetSuccess}</div>}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setResetProvider(null)} style={btnSecondary}>Cancel</button>
+              <button type="submit" disabled={resetSubmitting || newPassword.length < 8} style={{ ...btnPrimary, background: resetSubmitting ? '#93c5fd' : 'linear-gradient(135deg,#d97706,#b45309)' }}>
+                {resetSubmitting ? 'Resetting…' : 'Reset Password'}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   )
 }
 
-const labelStyle = {
-  display: 'block',
-  fontSize: '0.8125rem',
-  fontWeight: 500,
-  color: '#374151',
-  marginBottom: '6px',
+// ── Shared sub-components ────────────────────────────────────────────────────
+
+function Modal({ title, subtitle, onClose, children }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
+      <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#111827' }}>{title}</h3>
+            {subtitle && <p style={{ margin: '2px 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>{subtitle}</p>}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: '4px' }}><X size={20} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
 }
 
+function SectionLabel({ children }) {
+  return <p style={{ margin: '0 0 14px', fontSize: '0.8125rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{children}</p>
+}
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>{label}</label>
+      {children}
+    </div>
+  )
+}
+
+// ── Styles ───────────────────────────────────────────────────────────────────
+
 const inputStyle = {
-  width: '100%',
-  padding: '9px 12px',
-  borderRadius: '8px',
-  border: '1.5px solid #e2e8f0',
-  fontSize: '0.875rem',
-  outline: 'none',
-  background: '#fff',
-  boxSizing: 'border-box',
-  transition: 'border-color 0.15s',
+  width: '100%', padding: '9px 12px', borderRadius: '8px',
+  border: '1.5px solid #e2e8f0', fontSize: '0.875rem',
+  outline: 'none', background: '#fff', boxSizing: 'border-box',
+}
+
+const btnPrimary = {
+  display: 'inline-flex', alignItems: 'center', gap: '7px',
+  padding: '9px 20px', borderRadius: '8px', border: 'none',
+  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+  color: '#fff', fontWeight: 600, fontSize: '0.875rem',
+  cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
+}
+
+const btnSecondary = {
+  display: 'inline-flex', alignItems: 'center', gap: '6px',
+  padding: '9px 16px', borderRadius: '8px', border: '1.5px solid #e2e8f0',
+  background: '#fff', color: '#374151', fontWeight: 500, fontSize: '0.875rem',
+  cursor: 'pointer',
+}
+
+const actionBtn = (bg, color) => ({
+  width: '30px', height: '30px', borderRadius: '6px', border: 'none',
+  background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center',
+  cursor: 'pointer', flexShrink: 0,
+})
+
+const eyeBtn = {
+  position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+  background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0,
+}
+
+const errorBanner = {
+  marginBottom: '20px', padding: '12px 16px', borderRadius: '8px',
+  background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '0.875rem',
+}
+
+const errorBox = {
+  marginBottom: '16px', padding: '10px 14px', borderRadius: '8px',
+  background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '0.875rem',
+}
+
+const successBox = {
+  marginBottom: '16px', padding: '10px 14px', borderRadius: '8px',
+  background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', fontSize: '0.875rem', fontWeight: 500,
 }
