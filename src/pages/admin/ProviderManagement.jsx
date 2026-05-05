@@ -154,9 +154,11 @@ export default function ProviderManagement() {
     setResetSubmitting(true)
     try {
       const id = resetProvider.id || resetProvider._id
-      await adminService.resetProviderPassword(id, newPassword)
-      setResetSuccess('Password reset successfully!')
-      setTimeout(() => { setResetProvider(null); setResetSuccess('') }, 1800)
+      const result = await adminService.resetProviderPassword(id, newPassword)
+      setResetSuccess(result?.created
+        ? `Portal account created! The provider can now log in with their facility email and this password.`
+        : 'Password reset successfully!')
+      setTimeout(() => { setResetProvider(null); setResetSuccess('') }, 2500)
     } catch (err) {
       setResetError(err.message || 'Failed to reset password')
     } finally {
@@ -356,7 +358,8 @@ export default function ProviderManagement() {
         <Modal title="Reset Portal Password" subtitle={`Set a new login password for ${resetProvider.name}`} onClose={() => setResetProvider(null)}>
           <form onSubmit={handleReset} style={{ padding: '24px' }}>
             <div style={{ marginBottom: '8px', padding: '12px 14px', borderRadius: '8px', background: '#fffbeb', border: '1px solid #fde68a', fontSize: '0.8125rem', color: '#92400e' }}>
-              This will immediately invalidate any existing session for this provider's portal account.
+              If this provider has no portal account yet, one will be created using their facility email.
+              Otherwise their existing session will be invalidated and the password replaced.
             </div>
             <div style={{ marginTop: '16px', marginBottom: '20px' }}>
               <Field label="New Password">
