@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { getRiskConfig } from '../data/riskConfig'
 
 const API_ROOT = ((import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')) + '/api'
 
@@ -6,7 +7,7 @@ const fmt = (n) => n != null ? `₦${Number(n).toLocaleString('en-NG', { minimum
 
 // Local reducing-balance calculation used when P2Vest API is unavailable
 function calcLocal(amount, tenure) {
-  const monthlyRate = 0.04 // 4% per month (indicative)
+  const monthlyRate = getRiskConfig().interestRate
   const r = monthlyRate
   const n = tenure
   const installment = r === 0 ? amount / n : (amount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
@@ -175,7 +176,7 @@ export default function LoanCalculator({ initialAmount = '', initialTenure = '',
           )}
 
           <p style={{ margin: '8px 0 0', fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center' }}>
-            {result._isEstimate ? '⚠️ Indicative estimate at 4%/month — final rate subject to credit assessment.' : 'Estimates are provisional and subject to credit assessment. Actual rates may vary.'}
+            {result._isEstimate ? `⚠️ Indicative estimate at ${(getRiskConfig().interestRate * 100).toFixed(0)}%/month — final rate subject to credit assessment.` : 'Estimates are provisional and subject to credit assessment. Actual rates may vary.'}
           </p>
         </>
       )}
