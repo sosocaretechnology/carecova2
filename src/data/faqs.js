@@ -45,7 +45,7 @@ export const faqs = [
     id: 'interest-rate',
     category: 'repayment',
     question: 'What is the interest rate?',
-    answer: 'We charge a transparent monthly interest rate of 2.5%. This is clearly displayed in your loan calculator and repayment schedule. There are no hidden fees. The total amount you\'ll repay is calculated upfront and shown before you accept the loan.',
+    answer: 'We charge a transparent monthly interest rate of 6%. This is clearly displayed in your loan calculator and repayment schedule. There are no hidden fees. The total amount you\'ll repay is calculated upfront and shown before you accept the loan.',
   },
   {
     id: 'early-payment',

@@ -34,11 +34,11 @@ export const DEFAULT_RISK_CONFIG = {
     // 71–100 = Tier C (High risk)
 
     // Lending interest (company revenue)
-    interestRate: 0.05,                      // per month (5%)
-    lendingInterestRatePerMonth: 0.05,
+    interestRate: 0.06,                      // per month (6%)
+    lendingInterestRatePerMonth: 0.06,
     compoundingEnabled: true,
     gracePeriodDays: 0,
-    compoundMonthlyRate: 0.05,
+    compoundMonthlyRate: 0.06,
     partialPaymentReducesCompoundBase: true,
 
     // Provider commission (hospital/clinic side)

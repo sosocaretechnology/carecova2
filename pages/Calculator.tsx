@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getRiskConfig } from '../src/data/riskConfig';
 
 const Calculator: React.FC = () => {
   const [amount, setAmount] = useState<number>(250000);
   const [months, setMonths] = useState<number>(6);
 
-  // Simplified interest calculation for the estimator
-  const interestRate = 0.025; // 2.5% monthly estimate
+  const config = getRiskConfig();
+  const interestRate = config.interestRate;
   const totalRepayment = amount * (1 + (interestRate * months));
   const monthlyInstallment = totalRepayment / months;
 
@@ -74,7 +75,7 @@ const Calculator: React.FC = () => {
               </div>
               <div className="flex justify-between text-sm border-b border-blue-500 pb-2">
                 <span className="text-blue-200">Monthly Interest Rate</span>
-                <span className="font-bold">2.5%</span>
+                <span className="font-bold">{(interestRate * 100).toFixed(0)}%</span>
               </div>
             </div>
 
