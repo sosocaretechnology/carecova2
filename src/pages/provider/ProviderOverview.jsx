@@ -3,20 +3,16 @@ import { Users, CreditCard, DollarSign, TrendingUp, AlertCircle, Link2, Copy, Ch
 import { providerAuthService } from '../../services/providerAuthService'
 import { useProviderAuth } from '../../hooks/useProviderAuth'
 import { useSessionExpired } from '../../components/provider/ProviderLayout'
+import IconBadge from '../../components/IconBadge'
 
-function StatCard({ icon, label, value, sub, color }) {
+function StatCard({ icon, label, value, sub }) {
   return (
     <div style={{
       background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb',
       padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: '16px',
       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
     }}>
-      <div style={{
-        width: '44px', height: '44px', borderRadius: '10px', flexShrink: 0,
-        background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {icon}
-      </div>
+      <div style={{ flexShrink: 0 }}>{icon}</div>
       <div>
         <div style={{ fontSize: '0.8125rem', color: '#6b7280', fontWeight: 500, marginBottom: '4px' }}>{label}</div>
         <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>{value}</div>
@@ -137,32 +133,28 @@ export default function ProviderOverview() {
           {/* Stats Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '28px' }}>
             <StatCard
-              icon={<Users size={20} color="#2563eb" />}
+              icon={<IconBadge color="blue" size="md"><Users size={20} /></IconBadge>}
               label="Total Patients"
               value={stats?.totalPatients ?? stats?.patientCount ?? '—'}
               sub="Registered at your facility"
-              color="#2563eb"
             />
             <StatCard
-              icon={<CreditCard size={20} color="#7c3aed" />}
+              icon={<IconBadge color="violet" size="md"><CreditCard size={20} /></IconBadge>}
               label="Loan Applications"
               value={stats?.totalLoans ?? stats?.loanCount ?? '—'}
               sub={`${stats?.activeLoans ?? 0} active`}
-              color="#7c3aed"
             />
             <StatCard
-              icon={<DollarSign size={20} color="#059669" />}
+              icon={<IconBadge color="green" size="md"><DollarSign size={20} /></IconBadge>}
               label="Total Disbursed"
               value={formatCurrency(stats?.totalDisbursed ?? stats?.disbursedAmount)}
               sub="Across all patients"
-              color="#059669"
             />
             <StatCard
-              icon={<TrendingUp size={20} color="#d97706" />}
+              icon={<IconBadge color="amber" size="md"><TrendingUp size={20} /></IconBadge>}
               label="Repayment Rate"
               value={stats?.repaymentRate != null ? `${stats.repaymentRate}%` : '—'}
               sub="On-time repayments"
-              color="#d97706"
             />
           </div>
 

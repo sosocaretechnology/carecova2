@@ -8,6 +8,7 @@ import {
   Megaphone,
   Bell
 } from 'lucide-react'
+import IconBadge from './IconBadge'
 
 export default function NotificationCenter({ userId, onClose, onUnreadChange }) {
   const [notifications, setNotifications] = useState([])
@@ -53,15 +54,15 @@ export default function NotificationCenter({ userId, onClose, onUnreadChange }) 
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'approval':
-        return <CheckCircle size={20} className="text-success" />
+        return <IconBadge color="green" size="sm"><CheckCircle size={16} /></IconBadge>
       case 'payment':
-        return <Banknote size={20} className="text-primary" />
+        return <IconBadge color="blue" size="sm"><Banknote size={16} /></IconBadge>
       case 'reminder':
-        return <Clock size={20} className="text-warning" />
+        return <IconBadge color="amber" size="sm"><Clock size={16} /></IconBadge>
       case 'policy':
-        return <Megaphone size={20} className="text-info" />
+        return <IconBadge color="violet" size="sm"><Megaphone size={16} /></IconBadge>
       default:
-        return <Bell size={20} className="text-muted" />
+        return <IconBadge color="slate" size="sm"><Bell size={16} /></IconBadge>
     }
   }
 

@@ -8,6 +8,16 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, ''
 const API_ROOT = API_BASE_URL ? `${API_BASE_URL}/api` : ''
 const USE_BACKEND = !!API_BASE_URL
 const BACKEND_ID_REGEX = /^[a-f0-9]{24}$/i
+const CUSTOMER_SESSION_KEY = 'carecova_customer_session'
+
+function getCustomerToken() {
+  try {
+    const stored = localStorage.getItem(CUSTOMER_SESSION_KEY)
+    if (!stored) return null
+    const session = JSON.parse(stored)
+    return session?.token || null
+  } catch { return null }
+}
 
 const TENOR_TO_MONTHS = { '1': 1, '2': 2, '3-4': 4, '6': 6 }
 
@@ -20,7 +30,7 @@ function looksLikeBackendId(value) {
 const getLoans = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    let loans = stored ? JSON.parse(stored) : initializeLoans()
+    let loans = stored ? JSON.parse(stored) : []
     // Ensure demo overdue loan exists for customer care/sales follow-up simulation
     if (!loans.some((l) => l.id === 'LN-100011')) {
       const demo = mockApplications.find((m) => m.id === 'LN-100011')
@@ -241,10 +251,16 @@ function buildApiPayload(data) {
   return cleanObject(payload)
 }
 
-async function request(path, options = {}) {
+async function request(path, options = {}, useCustomerAuth = false) {
+  const authHeaders = {}
+  if (useCustomerAuth) {
+    const token = getCustomerToken()
+    if (token) authHeaders['Authorization'] = `Bearer ${token}`
+  }
   const response = await fetch(`${API_ROOT}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...(options.headers || {}),
     },
     ...options,
@@ -439,6 +455,15 @@ export const loanService = {
     if (!trimmed || trimmed === 'undefined') throw new Error('Application not found')
 
     if (USE_BACKEND && looksLikeBackendId(trimmed)) {
+      // Try authenticated portal endpoint first; fall back to public (sanitized) endpoint.
+      // Both return only customer-safe fields — no BVN, NIN, or Mono secrets.
+      const token = getCustomerToken()
+      if (token) {
+        try {
+          const remote = await request(`/loan-applications/customer/my-loans/${trimmed}`, {}, true)
+          return normalizeLoan(remote)
+        } catch { /* fall through to public endpoint */ }
+      }
       const remote = await request(`/loan-applications/${trimmed}`)
       return normalizeLoan(remote)
     }
@@ -491,6 +516,16 @@ export const loanService = {
 
   getLoansByCustomerId: async (customerId, customerPhone) => {
     if (USE_BACKEND) {
+      // Use the authenticated my-loans endpoint if a session token is available
+      // (customer portal use case). Falls back to the phone-lookup endpoint.
+      const token = getCustomerToken()
+      if (token) {
+        try {
+          const list = await request('/loan-applications/customer/my-loans', {}, true)
+          const items = Array.isArray(list) ? list : (list?.items || list?.data || [])
+          return items.map(normalizeLoan)
+        } catch { /* fall through to phone lookup */ }
+      }
       const params = new URLSearchParams()
       if (customerPhone) params.set('phone', customerPhone)
       if (!params.toString()) return []

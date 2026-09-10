@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle, Sparkles, RefreshCw } from 'lucide-react'
+import IconBadge from '../../IconBadge'
 
 const RISK_COLOR = {
   low: '#10b981',
@@ -42,7 +43,9 @@ export default function GeminiInsightsTab({ loan, onRefresh, refreshing }) {
   if (!insights) {
     return (
       <div className="detail-card" style={{ textAlign: 'center', padding: '40px 24px' }}>
-        <Sparkles size={32} style={{ color: '#6b7280', margin: '0 auto 12px' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+          <IconBadge color="slate" size="lg"><Sparkles size={24} /></IconBadge>
+        </div>
         <p className="font-medium text-muted">AI analysis not yet available</p>
         <p className="text-xs text-muted mt-1">
           Run the Informed Decision first. AI analysis generates automatically in the background.
@@ -83,7 +86,7 @@ export default function GeminiInsightsTab({ loan, onRefresh, refreshing }) {
       {narrative && (
         <div className="detail-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <Sparkles size={18} style={{ color: '#6366f1' }} />
+            <IconBadge color="indigo" size="xs"><Sparkles size={14} /></IconBadge>
             <h3 style={{ margin: 0 }}>AI Credit Narrative</h3>
           </div>
 

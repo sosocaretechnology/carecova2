@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sparkles, AlertTriangle, CheckCircle, FileText, RefreshCw } from 'lucide-react'
 import { adminService } from '../../../services/adminService'
+import IconBadge from '../../IconBadge'
 
 const RISK_COLOR = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' }
 const SEVERITY_COLOR = { low: '#6b7280', medium: '#f59e0b', high: '#ef4444' }
@@ -42,7 +43,7 @@ export default function AiPreScreenCard({ loan, onUpdated }) {
     <div className="detail-card">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={18} style={{ color: '#6366f1' }} />
+          <IconBadge color="indigo" size="xs"><Sparkles size={14} /></IconBadge>
           <h3 style={{ margin: 0 }}>AI Pre-Screen</h3>
           {preScreen && <RiskBadge level={preScreen.initialRisk} />}
         </div>

@@ -36,7 +36,9 @@ export const validateStep = (step, formData) => {
       if (nameError) errors.fullName = nameError
       const phoneError = validatePhone(formData.phone)
       if (phoneError) errors.phone = phoneError
-      if (formData.email) {
+      if (!formData.email || !formData.email.trim()) {
+        errors.email = 'Email is required'
+      } else {
         const emailError = validateEmail(formData.email)
         if (emailError) errors.email = emailError
       }

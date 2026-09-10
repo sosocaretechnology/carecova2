@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MessageSquare, Clock, FileText, AlertTriangle } from 'lucide-react'
+import IconBadge from '../../IconBadge'
 
 export default function SupportDashboardView({ kpis, queues }) {
     const navigate = useNavigate()
@@ -9,25 +10,33 @@ export default function SupportDashboardView({ kpis, queues }) {
         <div className="support-dashboard">
             <section className="admin-kpi-grid">
                 <div className="admin-kpi-card info">
-                    <div className="kpi-icon"><MessageSquare size={24} /></div>
+                    <div className="kpi-icon">
+                        <IconBadge color="sky" size="md"><MessageSquare size={20} /></IconBadge>
+                    </div>
                     <div className="kpi-title">Open Tickets</div>
                     <div className="kpi-value">12</div>
                     <div className="kpi-subtext">Awaiting response</div>
                 </div>
                 <div className="admin-kpi-card warning">
-                    <div className="kpi-icon"><Clock size={24} /></div>
+                    <div className="kpi-icon">
+                        <IconBadge color="amber" size="md"><Clock size={20} /></IconBadge>
+                    </div>
                     <div className="kpi-title">Incomplete Apps</div>
                     <div className="kpi-value">{kpis.pending}</div>
                     <div className="kpi-subtext">Missing documentation</div>
                 </div>
                 <div className="admin-kpi-card primary">
-                    <div className="kpi-icon"><FileText size={24} /></div>
+                    <div className="kpi-icon">
+                        <IconBadge color="blue" size="md"><FileText size={20} /></IconBadge>
+                    </div>
                     <div className="kpi-title">Total Applications</div>
                     <div className="kpi-value">{kpis.total}</div>
                     <div className="kpi-subtext">View all history</div>
                 </div>
                 <div className="admin-kpi-card danger">
-                    <div className="kpi-icon"><AlertTriangle size={24} /></div>
+                    <div className="kpi-icon">
+                        <IconBadge color="red" size="md"><AlertTriangle size={20} /></IconBadge>
+                    </div>
                     <div className="kpi-title">Overdue Follow-ups</div>
                     <div className="kpi-value">4</div>
                     <div className="kpi-subtext">High priority</div>

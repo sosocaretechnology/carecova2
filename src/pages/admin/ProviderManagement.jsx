@@ -76,9 +76,11 @@ export default function ProviderManagement() {
     if (!addForm.name.trim()) return setAddError('Facility name is required')
     if (!addForm.email.trim()) return setAddError('Facility email is required')
     if (!addForm.phone.trim()) return setAddError('Phone number is required')
+    if (!addForm.password?.trim()) return setAddError('Initial password is required')
+    if (addForm.password.length < 8) return setAddError('Password must be at least 8 characters')
     setAddSubmitting(true)
     try {
-      await adminService.createProvider({
+      const created = await adminService.createProvider({
         name: addForm.name.trim(),
         type: addForm.type,
         email: addForm.email.trim(),
@@ -88,10 +90,15 @@ export default function ProviderManagement() {
         ...(addForm.accountNumber?.trim() ? { accountNumber: addForm.accountNumber.trim() } : {}),
         ...(addForm.bankCode?.trim() ? { bankCode: addForm.bankCode.trim() } : {}),
       })
-      setAddSuccess(`Provider "${addForm.name}" created successfully!`)
+      // Create the portal login account with the password entered in the form
+      const providerId = created?.id || created?._id
+      if (providerId) {
+        await adminService.resetProviderPassword(providerId, addForm.password.trim())
+      }
+      setAddSuccess(`Provider "${addForm.name}" created. They can now log in with their facility email and the password you set.`)
       setAddForm(EMPTY_FORM)
       await load()
-      setTimeout(() => { setShowAddModal(false); setAddSuccess('') }, 2000)
+      setTimeout(() => { setShowAddModal(false); setAddSuccess('') }, 3000)
     } catch (err) {
       setAddError(err.message || 'Failed to create provider')
     } finally {

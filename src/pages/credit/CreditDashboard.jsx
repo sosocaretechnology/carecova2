@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
 import { Clock, CheckCircle, XCircle, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react'
 import StatusBadge from '../../components/StatusBadge'
+import IconBadge from '../../components/IconBadge'
 
 export default function CreditDashboard() {
     const [kpis, setKpis] = useState(null)
@@ -28,8 +29,8 @@ export default function CreditDashboard() {
             {/* KPI Cards */}
             <div className="admin-kpi-grid">
                 <div className="kpi-card">
-                    <div className="kpi-icon" style={{ background: '#fff7ed' }}>
-                        <Clock size={22} style={{ color: '#f97316' }} />
+                    <div className="kpi-icon">
+                        <IconBadge color="orange" size="md"><Clock size={20} /></IconBadge>
                     </div>
                     <div className="kpi-content">
                         <p className="kpi-label">Pending Disbursements</p>
@@ -39,8 +40,8 @@ export default function CreditDashboard() {
                 </div>
 
                 <div className="kpi-card">
-                    <div className="kpi-icon" style={{ background: '#f0fdf4' }}>
-                        <CheckCircle size={22} style={{ color: '#22c55e' }} />
+                    <div className="kpi-icon">
+                        <IconBadge color="green" size="md"><CheckCircle size={20} /></IconBadge>
                     </div>
                     <div className="kpi-content">
                         <p className="kpi-label">Disbursed Today</p>
@@ -50,8 +51,8 @@ export default function CreditDashboard() {
                 </div>
 
                 <div className="kpi-card">
-                    <div className="kpi-icon" style={{ background: '#fef2f2' }}>
-                        <XCircle size={22} style={{ color: '#ef4444' }} />
+                    <div className="kpi-icon">
+                        <IconBadge color="red" size="md"><XCircle size={20} /></IconBadge>
                     </div>
                     <div className="kpi-content">
                         <p className="kpi-label">Failed / Returned</p>
@@ -61,8 +62,8 @@ export default function CreditDashboard() {
                 </div>
 
                 <div className="kpi-card">
-                    <div className="kpi-icon" style={{ background: '#eff6ff' }}>
-                        <TrendingUp size={22} style={{ color: '#3b82f6' }} />
+                    <div className="kpi-icon">
+                        <IconBadge color="blue" size="md"><TrendingUp size={20} /></IconBadge>
                     </div>
                     <div className="kpi-content">
                         <p className="kpi-label">Total in Queue</p>

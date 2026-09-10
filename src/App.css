@@ -8306,3 +8306,62 @@
     position: static;
   }
 }
+
+/* ─── Icon Badge — flat on-color icon treatment ─────────────────────────────
+   Wraps any Lucide icon in a solid-colored rounded square with white icon.
+   Usage: <span class="icon-badge icon-badge--green icon-badge--sm">…</span>
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: #fff;
+  line-height: 0;
+}
+
+/* Sizes */
+.icon-badge--xs  { width: 24px; height: 24px; border-radius: 6px; }
+.icon-badge--sm  { width: 32px; height: 32px; border-radius: 8px; }
+.icon-badge--md  { width: 40px; height: 40px; border-radius: 10px; }
+.icon-badge--lg  { width: 48px; height: 48px; border-radius: 12px; }
+
+/* Colour palette */
+.icon-badge--green   { background: #10b981; }
+.icon-badge--emerald { background: #059669; }
+.icon-badge--teal    { background: #14b8a6; }
+.icon-badge--cyan    { background: #06b6d4; }
+.icon-badge--sky     { background: #0ea5e9; }
+.icon-badge--blue    { background: #3b82f6; }
+.icon-badge--indigo  { background: #6366f1; }
+.icon-badge--violet  { background: #8b5cf6; }
+.icon-badge--purple  { background: #a855f7; }
+.icon-badge--pink    { background: #ec4899; }
+.icon-badge--rose    { background: #f43f5e; }
+.icon-badge--red     { background: #ef4444; }
+.icon-badge--orange  { background: #f97316; }
+.icon-badge--amber   { background: #f59e0b; }
+.icon-badge--lime    { background: #84cc16; }
+.icon-badge--slate   { background: #64748b; }
+.icon-badge--gray    { background: #6b7280; }
+
+/* Sidebar nav: give the .admin-nav-icon wrapper a tighter flex alignment
+   so the badge sits correctly inside the nav item row */
+.admin-nav-item .admin-nav-icon,
+.admin-logout-btn .admin-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  font-size: inherit;
+}
+
+/* KPI icon helper */
+.kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}

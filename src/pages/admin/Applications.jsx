@@ -15,6 +15,11 @@ export default function Applications() {
     const [loans, setLoans] = useState([])
     const [claimingId, setClaimingId] = useState(null)
     const [searchTerm, setSearchTerm] = useState('')
+    const [showTrash, setShowTrash] = useState(false)
+    const [trash, setTrash] = useState([])
+    const [trashLoading, setTrashLoading] = useState(false)
+    const [restoringId, setRestoringId] = useState(null)
+    const isSuperAdmin = session?.role === 'super_admin'
     const [filters, setFilters] = useState({
         status: (session?.role === 'admin' || session?.role === 'super_admin') ? 'pending_admin_review' : 'all',
         sector: 'all',
@@ -41,9 +46,40 @@ export default function Applications() {
         }
     }
 
+    const loadTrash = async () => {
+        setTrashLoading(true)
+        try {
+            const data = await adminService.getTrashApplications()
+            setTrash(Array.isArray(data) ? data : [])
+        } catch (err) {
+            console.error('Error loading trash:', err)
+        } finally {
+            setTrashLoading(false)
+        }
+    }
+
     useEffect(() => {
         loadLoans()
     }, [])
+
+    const handleToggleTrash = () => {
+        const next = !showTrash
+        setShowTrash(next)
+        if (next && trash.length === 0) loadTrash()
+    }
+
+    const handleRestore = async (loanId) => {
+        setRestoringId(loanId)
+        try {
+            await adminService.restoreApplication(loanId)
+            setTrash(prev => prev.filter(l => l.id !== loanId))
+            loadLoans()
+        } catch (err) {
+            console.error('Restore failed:', err)
+        } finally {
+            setRestoringId(null)
+        }
+    }
 
     const filteredLoans = useMemo(() => {
         return loans.filter(loan => {
@@ -124,9 +160,82 @@ export default function Applications() {
     return (
         <div className="admin-page">
             <div className="admin-page-header">
-                <h1>Applications Workbench</h1>
-                <p>Review, filter, and manage loan applications</p>
+                <div>
+                    <h1>Applications Workbench</h1>
+                    <p>Review, filter, and manage loan applications</p>
+                </div>
+                {isSuperAdmin && (
+                    <button
+                        className={`button ${showTrash ? 'button--danger' : 'button--secondary'} button--compact`}
+                        onClick={handleToggleTrash}
+                    >
+                        🗑 {showTrash ? 'Hide Trash' : `Trash${trash.length > 0 ? ` (${trash.length})` : ''}`}
+                    </button>
+                )}
             </div>
+
+            {showTrash && (
+                <div className="admin-table-container mb-6">
+                    <div className="p-4 border-bottom" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <h2 className="text-sm font-bold m-0">Trash — Pending Deletion</h2>
+                            <p className="text-xs text-muted mt-1">Applications are permanently deleted 7 days after removal. Restore before then to recover.</p>
+                        </div>
+                        <button className="button button--ghost button--compact" onClick={loadTrash}>↻ Refresh</button>
+                    </div>
+                    {trashLoading ? (
+                        <div className="p-6 text-center text-muted text-sm">Loading…</div>
+                    ) : trash.length === 0 ? (
+                        <div className="p-6 text-center text-muted text-sm">Trash is empty.</div>
+                    ) : (
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Applicant</th>
+                                    <th>Status</th>
+                                    <th>Deleted by</th>
+                                    <th>Permanent deletion</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {trash.map(loan => {
+                                    const daysLeft = loan.deleteScheduledFor
+                                        ? Math.ceil((new Date(loan.deleteScheduledFor) - Date.now()) / 86400000)
+                                        : 7
+                                    return (
+                                        <tr key={loan.id} style={{ opacity: 0.8 }}>
+                                            <td>
+                                                <div className="font-medium">{loan.fullName || loan.patientName || '—'}</div>
+                                                <div className="text-xs text-muted">{loan.id}</div>
+                                            </td>
+                                            <td><StatusBadge status={loan.status} /></td>
+                                            <td className="text-sm">{loan.deletedBy || '—'}</td>
+                                            <td>
+                                                <span style={{ color: daysLeft <= 2 ? '#ef4444' : '#f97316', fontWeight: 600, fontSize: '0.8125rem' }}>
+                                                    {daysLeft <= 0 ? 'Today' : `${daysLeft} day${daysLeft !== 1 ? 's' : ''}`}
+                                                </span>
+                                                <div className="text-xs text-muted">
+                                                    {loan.deleteScheduledFor ? new Date(loan.deleteScheduledFor).toLocaleDateString() : ''}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="button button--secondary button--compact"
+                                                    onClick={() => handleRestore(loan.id)}
+                                                    disabled={restoringId === loan.id}
+                                                >
+                                                    {restoringId === loan.id ? 'Restoring…' : '↩ Restore'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            )}
 
             <div className="admin-toolbar">
                 <div className="admin-search-wrapper flex-1">

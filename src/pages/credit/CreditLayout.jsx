@@ -1,8 +1,9 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { adminService } from '../../services/adminService'
-import { LayoutDashboard, Send, LogOut } from 'lucide-react'
+import { LayoutDashboard, CreditCard, DollarSign, Send, Bell, LogOut } from 'lucide-react'
 import NotificationBell from '../../components/NotificationBell'
+import IconBadge from '../../components/IconBadge'
 
 export default function CreditLayout() {
     const { session } = useAuth()
@@ -14,11 +15,11 @@ export default function CreditLayout() {
     }
 
     const navItems = [
-        { name: 'Dashboard', path: '/credit/dashboard', icon: <LayoutDashboard size={18} /> },
-        { name: 'Active Loans', path: '/credit/loans', icon: <LayoutDashboard size={18} /> },
-        { name: 'Repayments', path: '/credit/repayments', icon: <LayoutDashboard size={18} /> },
-        { name: 'Disbursement Queue', path: '/credit/disbursements', icon: <Send size={18} /> },
-        { name: 'Notifications', path: '/credit/notifications', icon: <Send size={18} /> },
+        { name: 'Dashboard',          path: '/credit/dashboard',     icon: LayoutDashboard, color: 'green'   },
+        { name: 'Active Loans',       path: '/credit/loans',         icon: CreditCard,      color: 'violet'  },
+        { name: 'Repayments',         path: '/credit/repayments',    icon: DollarSign,      color: 'emerald' },
+        { name: 'Disbursement Queue', path: '/credit/disbursements', icon: Send,            color: 'sky'     },
+        { name: 'Notifications',      path: '/credit/notifications', icon: Bell,            color: 'amber'   },
     ]
 
     return (
@@ -31,23 +32,34 @@ export default function CreditLayout() {
                     </div>
                 </div>
                 <nav className="admin-nav">
-                    {navItems.map(item => (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
-                        >
-                            <span className="admin-nav-icon">{item.icon}</span>
-                            <span className="admin-nav-text">{item.name}</span>
-                        </NavLink>
-                    ))}
+                    {navItems.map(item => {
+                        const Icon = item.icon
+                        return (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                className={({ isActive }) => `admin-nav-item ${isActive ? 'active' : ''}`}
+                            >
+                                <span className="admin-nav-icon">
+                                    <IconBadge color={item.color} size="sm">
+                                        <Icon size={16} />
+                                    </IconBadge>
+                                </span>
+                                <span className="admin-nav-text">{item.name}</span>
+                            </NavLink>
+                        )
+                    })}
                 </nav>
                 <div className="admin-sidebar-footer">
                     <div style={{ padding: '4px 16px 8px', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                         Logged in as <strong>{session?.name}</strong>
                     </div>
                     <button className="admin-logout-btn" onClick={handleLogout}>
-                        <span className="admin-nav-icon"><LogOut size={18} /></span>
+                        <span className="admin-nav-icon">
+                            <IconBadge color="red" size="sm">
+                                <LogOut size={16} />
+                            </IconBadge>
+                        </span>
                         <span className="admin-nav-text">Sign Out</span>
                     </button>
                 </div>

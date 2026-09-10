@@ -1,4 +1,5 @@
 import { CreditCard, Wallet, Landmark } from 'lucide-react'
+import IconBadge from './IconBadge'
 
 export default function PaymentMethodSelector({ selectedMethod, onSelect, methods = [] }) {
   const defaultMethods = [
@@ -6,7 +7,7 @@ export default function PaymentMethodSelector({ selectedMethod, onSelect, method
       id: 'wallet',
       name: 'Pay with Wallet',
       description: 'OPay, Palmpay, and other mobile wallets',
-      icon: <Wallet size={24} />,
+      icon: <IconBadge color="green" size="md"><Wallet size={20} /></IconBadge>,
       recommended: true,
       processingTime: 'Instant',
     },
@@ -14,7 +15,7 @@ export default function PaymentMethodSelector({ selectedMethod, onSelect, method
       id: 'bank-transfer',
       name: 'Bank Transfer',
       description: 'Direct bank transfer',
-      icon: <Landmark size={24} />,
+      icon: <IconBadge color="blue" size="md"><Landmark size={20} /></IconBadge>,
       recommended: false,
       processingTime: '1-2 business days',
     },
@@ -22,7 +23,7 @@ export default function PaymentMethodSelector({ selectedMethod, onSelect, method
       id: 'card',
       name: 'Card Payment',
       description: 'Debit or credit card',
-      icon: <CreditCard size={24} />,
+      icon: <IconBadge color="violet" size="md"><CreditCard size={20} /></IconBadge>,
       recommended: false,
       processingTime: 'Instant',
     },

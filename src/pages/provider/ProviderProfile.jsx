@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Building2, Save, AlertCircle, CheckCircle } from 'lucide-react'
 import { providerAuthService } from '../../services/providerAuthService'
+import IconBadge from '../../components/IconBadge'
 
 const PROVIDER_TYPES = [
   { value: 'hospital', label: 'Hospital' },
@@ -153,12 +154,7 @@ export default function ProviderProfile() {
           padding: '20px 24px', borderBottom: '1px solid #f3f4f6',
           display: 'flex', alignItems: 'center', gap: '14px',
         }}>
-          <div style={{
-            width: '52px', height: '52px', borderRadius: '12px', background: '#eff6ff',
-            border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Building2 size={24} color="#2563eb" />
-          </div>
+          <IconBadge color="blue" size="lg"><Building2 size={24} /></IconBadge>
           <div>
             <div style={{ fontSize: '1rem', fontWeight: 700, color: '#111827' }}>
               {profile?.name || profile?.facilityName || '—'}

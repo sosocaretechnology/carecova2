@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TrendingUp, Users, CheckCircle, Clock } from 'lucide-react'
+import IconBadge from '../../IconBadge'
 
 export default function SalesDashboardView({ kpis, queues }) {
     const navigate = useNavigate()
@@ -9,25 +10,33 @@ export default function SalesDashboardView({ kpis, queues }) {
         <div className="sales-dashboard">
             <section className="admin-kpi-grid">
                 <div className="admin-kpi-card primary">
-                    <div className="kpi-icon"><Users size={24} /></div>
+                    <div className="kpi-icon">
+                        <IconBadge color="blue" size="md"><Users size={20} /></IconBadge>
+                    </div>
                     <div className="kpi-title">Your Portfolio</div>
                     <div className="kpi-value">{kpis.total}</div>
                     <div className="kpi-subtext">Assigned applicants</div>
                 </div>
                 <div className="admin-kpi-card success">
-                    <div className="kpi-icon"><CheckCircle size={24} /></div>
+                    <div className="kpi-icon">
+                        <IconBadge color="green" size="md"><CheckCircle size={20} /></IconBadge>
+                    </div>
                     <div className="kpi-title">Stage 1 Approved</div>
                     <div className="kpi-value">{kpis.stage1Approved}</div>
                     <div className="kpi-subtext">Sent for final review</div>
                 </div>
                 <div className="admin-kpi-card info">
-                    <div className="kpi-icon"><TrendingUp size={24} /></div>
+                    <div className="kpi-icon">
+                        <IconBadge color="teal" size="md"><TrendingUp size={20} /></IconBadge>
+                    </div>
                     <div className="kpi-title">Available Commission</div>
                     <div className="kpi-value">₦{(kpis.commissionAvailable ?? kpis.commissionEarned ?? 0).toLocaleString()}</div>
                     <div className="kpi-subtext">Withdrawable today</div>
                 </div>
                 <div className="admin-kpi-card warning">
-                    <div className="kpi-icon"><Clock size={24} /></div>
+                    <div className="kpi-icon">
+                        <IconBadge color="amber" size="md"><Clock size={20} /></IconBadge>
+                    </div>
                     <div className="kpi-title">Locked Commission</div>
                     <div className="kpi-value">₦{(kpis.commissionLocked ?? kpis.commissionPending ?? 0).toLocaleString()}</div>
                     <div className="kpi-subtext">Pending disbursement & repayments</div>

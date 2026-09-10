@@ -8,6 +8,7 @@ import {
     CheckCircle, Clock, AlertCircle, ChevronLeft,
     TrendingDown, DollarSign, Activity, X
 } from 'lucide-react'
+import IconBadge from '../../components/IconBadge'
 
 function pct(paid, total) {
     if (!total) return 0
@@ -116,8 +117,8 @@ export default function LoanDetail() {
             {/* KPI Cards */}
             <div className="admin-kpi-grid mb-6">
                 <div className="kpi-card">
-                    <div className="kpi-icon" style={{ background: '#eff6ff' }}>
-                        <DollarSign size={20} style={{ color: '#3b82f6' }} />
+                    <div className="kpi-icon">
+                        <IconBadge color="blue" size="md"><DollarSign size={20} /></IconBadge>
                     </div>
                     <div className="kpi-content">
                         <p className="kpi-label">Loan Principal</p>
@@ -127,8 +128,8 @@ export default function LoanDetail() {
                 </div>
 
                 <div className="kpi-card">
-                    <div className="kpi-icon" style={{ background: '#f0fdf4' }}>
-                        <CheckCircle size={20} style={{ color: '#22c55e' }} />
+                    <div className="kpi-icon">
+                        <IconBadge color="green" size="md"><CheckCircle size={20} /></IconBadge>
                     </div>
                     <div className="kpi-content">
                         <p className="kpi-label">Total Paid</p>
@@ -138,8 +139,8 @@ export default function LoanDetail() {
                 </div>
 
                 <div className="kpi-card">
-                    <div className="kpi-icon" style={{ background: '#fef2f2' }}>
-                        <TrendingDown size={20} style={{ color: '#ef4444' }} />
+                    <div className="kpi-icon">
+                        <IconBadge color="red" size="md"><TrendingDown size={20} /></IconBadge>
                     </div>
                     <div className="kpi-content">
                         <p className="kpi-label">Outstanding</p>
@@ -149,8 +150,8 @@ export default function LoanDetail() {
                 </div>
 
                 <div className="kpi-card">
-                    <div className="kpi-icon" style={{ background: loan.dpd > 0 ? '#fef9c3' : '#f0fdf4' }}>
-                        <Activity size={20} style={{ color: loan.dpd > 0 ? '#ca8a04' : '#22c55e' }} />
+                    <div className="kpi-icon">
+                        <IconBadge color={loan.dpd > 0 ? 'amber' : 'green'} size="md"><Activity size={20} /></IconBadge>
                     </div>
                     <div className="kpi-content">
                         <p className="kpi-label">Days Past Due</p>
