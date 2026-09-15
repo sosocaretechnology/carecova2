@@ -102,7 +102,7 @@ export default function Calculator() {
                   </div>
                   <div className="calculator-result-item">
                     <span>Monthly Interest Rate</span>
-                    <span className="calculator-result-value">2.5%</span>
+                    <span className="calculator-result-value">{(interestRate * 100).toFixed(0)}%</span>
                   </div>
                 </div>
 
