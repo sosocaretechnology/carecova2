@@ -111,24 +111,40 @@ export const validateStep = (step, formData) => {
     }
 
     case 4: {
-      // Guarantor is required by our financing partner (P2Vest)
-      if (!formData.coBorrowerName || !formData.coBorrowerName.trim()) {
-        errors.coBorrowerName = 'Guarantor name is required'
+      // Guarantor is required
+      if (!formData.guarantorName || !formData.guarantorName.trim()) {
+        errors.guarantorName = 'Guarantor name is required'
       }
-      const cPhoneError = validatePhone(formData.coBorrowerPhone)
-      if (cPhoneError) errors.coBorrowerPhone = cPhoneError
-      if (!formData.coBorrowerEmail || !formData.coBorrowerEmail.trim()) {
-        errors.coBorrowerEmail = 'Guarantor email is required'
+      const gPhoneError = validatePhone(formData.guarantorPhone)
+      if (gPhoneError) errors.guarantorPhone = gPhoneError
+      if (!formData.guarantorEmail || !formData.guarantorEmail.trim()) {
+        errors.guarantorEmail = 'Guarantor email is required'
       } else {
-        const cEmailError = validateEmail(formData.coBorrowerEmail)
-        if (cEmailError) errors.coBorrowerEmail = cEmailError
+        const gEmailError = validateEmail(formData.guarantorEmail)
+        if (gEmailError) errors.guarantorEmail = gEmailError
       }
-      const cBvn = String(formData.coBorrowerBvn || '').trim()
-      if (!cBvn) errors.coBorrowerBvn = 'Guarantor BVN is required'
-      else if (!/^\d{11}$/.test(cBvn)) errors.coBorrowerBvn = 'BVN must be exactly 11 digits'
-      if (!formData.coBorrowerRelationship || !formData.coBorrowerRelationship.trim()) {
-        errors.coBorrowerRelationship = 'Relationship to guarantor is required'
+      const gBvn = String(formData.guarantorBvn || '').trim()
+      if (!gBvn) errors.guarantorBvn = 'Guarantor BVN is required'
+      else if (!/^\d{11}$/.test(gBvn)) errors.guarantorBvn = 'BVN must be exactly 11 digits'
+      if (!formData.guarantorRelationship || !formData.guarantorRelationship.trim()) {
+        errors.guarantorRelationship = 'Relationship to guarantor is required'
       }
+      // Validate each co-borrower if any
+      ;(formData.coBorrowers || []).forEach((cb, i) => {
+        if (!cb.name || !cb.name.trim()) errors[`coBorrower_${i}_name`] = 'Name is required'
+        const cbPhone = validatePhone(cb.phone)
+        if (cbPhone) errors[`coBorrower_${i}_phone`] = cbPhone
+        if (!cb.email || !cb.email.trim()) {
+          errors[`coBorrower_${i}_email`] = 'Email is required'
+        } else {
+          const cbEmail = validateEmail(cb.email)
+          if (cbEmail) errors[`coBorrower_${i}_email`] = cbEmail
+        }
+        const cbBvn = String(cb.bvn || '').trim()
+        if (!cbBvn) errors[`coBorrower_${i}_bvn`] = 'BVN is required'
+        else if (!/^\d{11}$/.test(cbBvn)) errors[`coBorrower_${i}_bvn`] = 'BVN must be exactly 11 digits'
+        if (!cb.relationship || !cb.relationship.trim()) errors[`coBorrower_${i}_relationship`] = 'Relationship is required'
+      })
       break
     }
 

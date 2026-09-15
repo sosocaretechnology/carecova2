@@ -264,39 +264,72 @@ export default function ApplicantSnapshot({ loan, onUpdated }) {
                 </div>
             </div>
 
-            {loan.coBorrower && (
+            {(loan.guarantorName || loan.coBorrower) && (
                 <div className="detail-card" style={{ borderLeft: '4px solid #3b82f6' }}>
                     <h2>Guarantor</h2>
                     <div className="info-grid">
                         <div className="info-group">
                             <div className="info-label">Name</div>
-                            <div className="info-value">{loan.coBorrower.name}</div>
+                            <div className="info-value">{loan.guarantorName || loan.coBorrower?.name || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">Phone</div>
-                            <div className="info-value">{loan.coBorrower.phone}</div>
+                            <div className="info-value">{loan.guarantorPhone || loan.coBorrower?.phone || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">Email</div>
-                            <div className="info-value">{loan.coBorrower.email || '—'}</div>
+                            <div className="info-value">{loan.guarantorEmail || loan.coBorrower?.email || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">BVN</div>
-                            <div className="info-value">{loan.coBorrower.bvn || '—'}</div>
+                            <div className="info-value">{loan.guarantorBvn || loan.coBorrower?.bvn || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">Relationship</div>
-                            <div className="info-value">{loan.coBorrower.relationship}</div>
+                            <div className="info-value">{loan.guarantorRelationship || loan.coBorrower?.relationship || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">Sector</div>
-                            <div className="info-value capitalize">{loan.coBorrower.employmentSector || '—'}</div>
+                            <div className="info-value capitalize">{loan.guarantorEmploymentSector || loan.coBorrower?.employmentSector || '—'}</div>
                         </div>
                         <div className="info-group col-span-2">
                             <div className="info-label">Income</div>
-                            <div className="info-value">₦{loan.coBorrower.monthlyIncome ? loan.coBorrower.monthlyIncome.toLocaleString() : '—'}</div>
+                            <div className="info-value">₦{(loan.guarantorMonthlyIncome || loan.coBorrower?.monthlyIncome) ? Number(loan.guarantorMonthlyIncome || loan.coBorrower?.monthlyIncome).toLocaleString() : '—'}</div>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {(loan.coBorrowers || []).length > 0 && (
+                <div className="detail-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
+                    <h2>Co-Borrowers ({loan.coBorrowers.length})</h2>
+                    {loan.coBorrowers.map((cb, i) => (
+                        <div key={i} style={{ marginBottom: i < loan.coBorrowers.length - 1 ? '1.25rem' : 0, paddingBottom: i < loan.coBorrowers.length - 1 ? '1.25rem' : 0, borderBottom: i < loan.coBorrowers.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                            <p style={{ fontWeight: 700, fontSize: '0.8rem', color: '#8b5cf6', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Co-Borrower {i + 1}</p>
+                            <div className="info-grid">
+                                <div className="info-group">
+                                    <div className="info-label">Name</div>
+                                    <div className="info-value">{cb.name || '—'}</div>
+                                </div>
+                                <div className="info-group">
+                                    <div className="info-label">Phone</div>
+                                    <div className="info-value">{cb.phone || '—'}</div>
+                                </div>
+                                <div className="info-group">
+                                    <div className="info-label">Email</div>
+                                    <div className="info-value">{cb.email || '—'}</div>
+                                </div>
+                                <div className="info-group">
+                                    <div className="info-label">BVN</div>
+                                    <div className="info-value">{cb.bvn || '—'}</div>
+                                </div>
+                                <div className="info-group col-span-2">
+                                    <div className="info-label">Relationship</div>
+                                    <div className="info-value">{cb.relationship || '—'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
         </div>

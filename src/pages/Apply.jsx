@@ -190,16 +190,18 @@ export default function Apply() {
     activeLoansMonthlyRepayment: '',
     lenderType: '',
 
-    // Guarantor (required by financier; maps to guarantor* payload fields)
-    addCoBorrower: true,
-    coBorrowerName: '',
-    coBorrowerPhone: '',
-    coBorrowerEmail: '',
-    coBorrowerBvn: '',
-    coBorrowerRelationship: '',
-    coBorrowerEmploymentSector: '',
-    coBorrowerEmployerName: '',
-    coBorrowerMonthlyIncome: '',
+    // Guarantor (required by financier)
+    guarantorName: '',
+    guarantorPhone: '',
+    guarantorEmail: '',
+    guarantorBvn: '',
+    guarantorRelationship: '',
+    guarantorEmploymentSector: '',
+    guarantorEmployerName: '',
+    guarantorMonthlyIncome: '',
+
+    // Co-borrowers (separate from guarantor)
+    coBorrowers: [],
 
     // Personal
     dateOfBirth: '',
@@ -298,7 +300,7 @@ export default function Apply() {
     const preferredContact = formData.preferredContact || 'call'
     const hospitalPreference = formData.hospitalName ? 'have_hospital' : 'any_near_me'
     const employmentType = formData.employmentType || formData.employmentSector
-    const addGuarantor = formData.addGuarantor ?? formData.addCoBorrower
+    const addGuarantor = true
     const homeAddress = (formData.homeAddress || '').trim() || (formData.city ? `${formData.city} area` : '') || formData.lga || ''
     return {
       ...formData,
@@ -307,20 +309,23 @@ export default function Apply() {
       employmentType,
       addGuarantor,
       homeAddress,
-      guarantorName: formData.guarantorName ?? formData.coBorrowerName,
-      guarantorPhone: formData.guarantorPhone ?? formData.coBorrowerPhone,
-      guarantorEmail: formData.guarantorEmail ?? formData.coBorrowerEmail,
-      guarantorBvn: formData.guarantorBvn ?? formData.coBorrowerBvn,
-      guarantorRelationship: formData.guarantorRelationship ?? formData.coBorrowerRelationship,
+      guarantorName: formData.guarantorName,
+      guarantorPhone: formData.guarantorPhone,
+      guarantorEmail: formData.guarantorEmail,
+      guarantorBvn: formData.guarantorBvn,
+      guarantorRelationship: formData.guarantorRelationship,
       guarantorAddress: formData.guarantorAddress,
-      guarantorEmploymentType: formData.guarantorEmploymentType ?? formData.coBorrowerEmploymentSector,
+      guarantorEmploymentType: formData.guarantorEmploymentSector,
       // Guarantor object matching the financier (P2Vest) payload shape
-      guarantor: formData.addCoBorrower === true || formData.addCoBorrower === 'yes' ? {
-        fullName: formData.coBorrowerName,
-        phone: formData.coBorrowerPhone,
-        email: formData.coBorrowerEmail,
-        bvn: formData.coBorrowerBvn,
-      } : null,
+      guarantor: {
+        fullName: formData.guarantorName,
+        phone: formData.guarantorPhone,
+        email: formData.guarantorEmail,
+        bvn: formData.guarantorBvn,
+      },
+      // Co-borrowers (separate from guarantor)
+      coBorrowers: formData.coBorrowers || [],
+      coBorrower: null,
       // Grouping payload structure as requested
       location: {
         state: formData.state,
@@ -1094,23 +1099,66 @@ export default function Apply() {
         )
       }
 
-      case 4:
+      case 4: {
+        const coBorrowerCount = formData.coBorrowers?.length ?? 0
+
+        const handleCoBorrowerCountChange = (count) => {
+          const current = formData.coBorrowers || []
+          const newList = Array.from({ length: count }, (_, i) => current[i] || { name: '', phone: '', email: '', bvn: '', relationship: '' })
+          handleChange('coBorrowers', newList)
+        }
+
+        const handleCoBorrowerField = (index, field, value) => {
+          const updated = (formData.coBorrowers || []).map((cb, i) => i === index ? { ...cb, [field]: value } : cb)
+          handleChange('coBorrowers', updated)
+        }
+
         return (
           <div className="step-content">
             <h2>Guarantor (Required)</h2>
-            <p className="step-description">A guarantor is required by our financing partner. Their full name, phone, email, and 11-digit BVN are shared with the financier for the credit review.</p>
+            <p className="step-description">A guarantor is required by our financing partner. Their details are shared with the financier for credit review.</p>
             <div className="form-grid">
-              <Input label="Guarantor full name" type="text" placeholder="Full name" value={formData.coBorrowerName} onChange={(e) => handleChange('coBorrowerName', e.target.value)} error={errors.coBorrowerName} required />
-              <Input label="Guarantor phone" type="tel" placeholder="0801 234 5678" value={formData.coBorrowerPhone} onChange={(e) => handleChange('coBorrowerPhone', e.target.value)} error={errors.coBorrowerPhone} required />
-              <Input label="Guarantor email" type="email" placeholder="name@example.com" value={formData.coBorrowerEmail} onChange={(e) => handleChange('coBorrowerEmail', e.target.value)} error={errors.coBorrowerEmail} required />
-              <Input label="Guarantor BVN" type="text" inputMode="numeric" maxLength={11} placeholder="11 digits" value={formData.coBorrowerBvn} onChange={(e) => handleChange('coBorrowerBvn', e.target.value.replace(/\D/g, '').slice(0, 11))} error={errors.coBorrowerBvn} required />
-              <Input label="Relationship" type="text" placeholder="e.g. Spouse, Sibling" value={formData.coBorrowerRelationship} onChange={(e) => handleChange('coBorrowerRelationship', e.target.value)} error={errors.coBorrowerRelationship} required />
-              <Select label="Employment sector (optional)" options={EMPLOYMENT_SECTOR_OPTIONS} value={formData.coBorrowerEmploymentSector} onChange={(e) => handleChange('coBorrowerEmploymentSector', e.target.value)} />
-              <Input label="Employer Name (optional)" type="text" value={formData.coBorrowerEmployerName} onChange={(e) => handleChange('coBorrowerEmployerName', e.target.value)} />
-              <MoneyInput label="Monthly income (optional)" placeholder="₦ 0.00" value={formData.coBorrowerMonthlyIncome} onChange={(v) => handleChange('coBorrowerMonthlyIncome', v)} />
+              <Input label="Full name" type="text" placeholder="Full name" value={formData.guarantorName} onChange={(e) => handleChange('guarantorName', e.target.value)} error={errors.guarantorName} required />
+              <Input label="Phone" type="tel" placeholder="0801 234 5678" value={formData.guarantorPhone} onChange={(e) => handleChange('guarantorPhone', e.target.value)} error={errors.guarantorPhone} required />
+              <Input label="Email" type="email" placeholder="name@example.com" value={formData.guarantorEmail} onChange={(e) => handleChange('guarantorEmail', e.target.value)} error={errors.guarantorEmail} required />
+              <Input label="BVN" type="text" inputMode="numeric" maxLength={11} placeholder="11 digits" value={formData.guarantorBvn} onChange={(e) => handleChange('guarantorBvn', e.target.value.replace(/\D/g, '').slice(0, 11))} error={errors.guarantorBvn} required />
+              <Input label="Relationship to applicant" type="text" placeholder="e.g. Spouse, Sibling" value={formData.guarantorRelationship} onChange={(e) => handleChange('guarantorRelationship', e.target.value)} error={errors.guarantorRelationship} required />
+              <Select label="Employment sector (optional)" options={EMPLOYMENT_SECTOR_OPTIONS} value={formData.guarantorEmploymentSector} onChange={(e) => handleChange('guarantorEmploymentSector', e.target.value)} />
+              <Input label="Employer name (optional)" type="text" value={formData.guarantorEmployerName} onChange={(e) => handleChange('guarantorEmployerName', e.target.value)} />
+              <MoneyInput label="Monthly income (optional)" placeholder="₦ 0.00" value={formData.guarantorMonthlyIncome} onChange={(v) => handleChange('guarantorMonthlyIncome', v)} />
+            </div>
+
+            <div className="form-section-label" style={{ gridColumn: '1 / -1', marginTop: '2rem', borderTop: '1px solid #ddd', paddingTop: '1.5rem' }}>
+              <h2 style={{ marginBottom: '0.25rem' }}>Co-Borrowers (Optional)</h2>
+              <p className="step-description" style={{ marginBottom: '1rem' }}>Co-borrowers share responsibility for this loan. Each will receive an email notification and a Mono account link request.</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                <label className="input-label" style={{ margin: 0 }}>Number of co-borrowers</label>
+                <select
+                  className="input"
+                  style={{ width: '120px' }}
+                  value={coBorrowerCount}
+                  onChange={(e) => handleCoBorrowerCountChange(Number(e.target.value))}
+                >
+                  {[0, 1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+
+              {(formData.coBorrowers || []).map((cb, index) => (
+                <div key={index} style={{ background: '#f8faff', border: '1.5px solid #e0e7ff', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem' }}>
+                  <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e3a5f', marginBottom: '1rem' }}>Co-Borrower {index + 1}</p>
+                  <div className="form-grid">
+                    <Input label="Full name" type="text" placeholder="Full name" value={cb.name} onChange={(e) => handleCoBorrowerField(index, 'name', e.target.value)} error={errors[`coBorrower_${index}_name`]} required />
+                    <Input label="Phone" type="tel" placeholder="0801 234 5678" value={cb.phone} onChange={(e) => handleCoBorrowerField(index, 'phone', e.target.value)} error={errors[`coBorrower_${index}_phone`]} required />
+                    <Input label="Email" type="email" placeholder="name@example.com" value={cb.email} onChange={(e) => handleCoBorrowerField(index, 'email', e.target.value)} error={errors[`coBorrower_${index}_email`]} required />
+                    <Input label="BVN" type="text" inputMode="numeric" maxLength={11} placeholder="11 digits" value={cb.bvn} onChange={(e) => handleCoBorrowerField(index, 'bvn', e.target.value.replace(/\D/g, '').slice(0, 11))} error={errors[`coBorrower_${index}_bvn`]} required />
+                    <Input label="Relationship to applicant" type="text" placeholder="e.g. Spouse, Business partner" value={cb.relationship} onChange={(e) => handleCoBorrowerField(index, 'relationship', e.target.value)} error={errors[`coBorrower_${index}_relationship`]} required />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )
+      }
 
       case 5: {
         const principal = parseFloat(formData.requestedAmount) || 0;
@@ -1155,14 +1203,27 @@ export default function Apply() {
                   <div className="review-item"><strong>Est. monthly repayment:</strong> ₦{Math.round(total_repayable / formData.preferredDuration).toLocaleString()}</div>
                 )}
               </div>
-              {(formData.addCoBorrower === true || formData.addCoBorrower === 'yes') && (
+              <div className="review-card">
+                <h3>Guarantor</h3>
+                <div className="review-item"><strong>Name:</strong> {formData.guarantorName || '—'}</div>
+                <div className="review-item"><strong>Phone:</strong> {formData.guarantorPhone || '—'}</div>
+                <div className="review-item"><strong>Email:</strong> {formData.guarantorEmail || '—'}</div>
+                <div className="review-item"><strong>BVN:</strong> {formData.guarantorBvn || '—'}</div>
+                <div className="review-item"><strong>Relationship:</strong> {formData.guarantorRelationship || '—'}</div>
+              </div>
+              {(formData.coBorrowers || []).length > 0 && (
                 <div className="review-card">
-                  <h3>Guarantor</h3>
-                  <div className="review-item"><strong>Name:</strong> {formData.coBorrowerName}</div>
-                  <div className="review-item"><strong>Phone:</strong> {formData.coBorrowerPhone}</div>
-                  <div className="review-item"><strong>Email:</strong> {formData.coBorrowerEmail}</div>
-                  <div className="review-item"><strong>BVN:</strong> {formData.coBorrowerBvn}</div>
-                  <div className="review-item"><strong>Relationship:</strong> {formData.coBorrowerRelationship}</div>
+                  <h3>Co-Borrowers ({formData.coBorrowers.length})</h3>
+                  {formData.coBorrowers.map((cb, i) => (
+                    <div key={i} style={{ marginBottom: i < formData.coBorrowers.length - 1 ? '0.75rem' : 0, paddingBottom: i < formData.coBorrowers.length - 1 ? '0.75rem' : 0, borderBottom: i < formData.coBorrowers.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                      <p style={{ fontWeight: 700, fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>Co-Borrower {i + 1}</p>
+                      <div className="review-item"><strong>Name:</strong> {cb.name}</div>
+                      <div className="review-item"><strong>Phone:</strong> {cb.phone}</div>
+                      <div className="review-item"><strong>Email:</strong> {cb.email}</div>
+                      <div className="review-item"><strong>BVN:</strong> {cb.bvn}</div>
+                      <div className="review-item"><strong>Relationship:</strong> {cb.relationship}</div>
+                    </div>
+                  ))}
                 </div>
               )}
               <div className="review-card consent-section">
