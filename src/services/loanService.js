@@ -413,11 +413,12 @@ export const loanService = {
             addGuarantor: applicationData.addGuarantor,
             guarantorName: applicationData.guarantorName,
             guarantorPhone: applicationData.guarantorPhone,
-            guarantorEmail: applicationData.guarantorEmail ?? applicationData.coBorrowerEmail,
-            guarantorBvn: applicationData.guarantorBvn ?? applicationData.coBorrowerBvn,
+            guarantorEmail: applicationData.guarantorEmail,
+            guarantorBvn: applicationData.guarantorBvn,
             guarantorRelationship: applicationData.guarantorRelationship,
             guarantorAddress: applicationData.guarantorAddress,
             guarantorEmploymentType: applicationData.guarantorEmploymentType,
+            coBorrowers: applicationData.coBorrowers || [],
             applicantPhoto: applicationData.applicantPhoto || null,
             riskScore: risk.riskScore,
             riskTier: risk.riskTier,
@@ -447,6 +448,26 @@ export const loanService = {
           reject(error)
         }
       }, 500)
+    })
+  },
+
+  notifyCoBorrowers: async (loanId, coBorrowers) => {
+    if (!coBorrowers || coBorrowers.length === 0) return
+    if (USE_BACKEND && looksLikeBackendId(String(loanId))) {
+      try {
+        await fetch(`${API_ROOT}/loan-applications/${loanId}/co-borrowers/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ coBorrowers }),
+        })
+      } catch (err) {
+        console.warn('[CareCova] Co-borrower notification failed:', err.message)
+      }
+      return
+    }
+    // Local mode: log so developers can see what would be sent
+    coBorrowers.forEach((cb) => {
+      console.info(`[CareCova] Would email co-borrower ${cb.name} <${cb.email}> about loan ${loanId}`)
     })
   },
 

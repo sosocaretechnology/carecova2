@@ -446,6 +446,29 @@ export const adminService = {
     })
   },
 
+  initiateCoBorrowerMonoConnect: async (loanId, coBorrower) => {
+    requireBackendFeature('Co-borrower Mono connect')
+    const trimmed = assertBackendLoanId(loanId, 'Co-borrower Mono connect')
+    return adminRequest(`/admin/loan-applications/${trimmed}/mono/connect/co-borrower`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: coBorrower.name,
+        email: coBorrower.email,
+        phone: coBorrower.phone,
+        bvn: coBorrower.bvn,
+      }),
+    })
+  },
+
+  notifyCoBorrowersByAdmin: async (loanId, coBorrowers) => {
+    requireBackendFeature('Co-borrower notifications')
+    const trimmed = assertBackendLoanId(loanId, 'Co-borrower notifications')
+    return adminRequest(`/admin/loan-applications/${trimmed}/co-borrowers/notify`, {
+      method: 'POST',
+      body: JSON.stringify({ coBorrowers }),
+    })
+  },
+
   getMonoInformedDecisionForLoan: async (loanId, payload = {}) => {
     requireBackendFeature('Mono informed decision')
     const trimmed = assertBackendLoanId(loanId, 'Mono informed decision')

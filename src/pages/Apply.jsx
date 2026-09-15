@@ -441,11 +441,16 @@ export default function Apply() {
     setLoading(true)
 
     try {
-      const result = await loanService.submitApplication(buildPayload())
+      const payload = buildPayload()
+      const result = await loanService.submitApplication(payload)
       if (draftIdState) await applicationService.deleteDraft(draftIdState)
       applicationService.clearLastDraft()
       setLoanId(result.id)
       setApplicationCode(result.applicationCode || null)
+      // Notify co-borrowers by email (fire-and-forget — doesn't block submission)
+      if (payload.coBorrowers?.length > 0) {
+        loanService.notifyCoBorrowers(result.id, payload.coBorrowers).catch(() => {})
+      }
       setSubmitted(true)
     } catch (error) {
       setErrors({ submit: error.message })

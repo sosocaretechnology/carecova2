@@ -3,6 +3,52 @@ import StatusBadge from '../../StatusBadge'
 import { useRiskBadge } from '../../../hooks/useAffordabilityCheck'
 import { adminService } from '../../../services/adminService'
 
+function CoBorrowerActions({ loanId, coBorrower, index }) {
+    const [monoStatus, setMonoStatus] = useState(null)
+    const [emailStatus, setEmailStatus] = useState(null)
+
+    const sendMonoLink = async () => {
+        setMonoStatus('sending')
+        try {
+            await adminService.initiateCoBorrowerMonoConnect(loanId, coBorrower)
+            setMonoStatus('sent')
+        } catch (err) {
+            setMonoStatus('error')
+            console.error(err)
+        }
+    }
+
+    const sendEmail = async () => {
+        setEmailStatus('sending')
+        try {
+            await adminService.notifyCoBorrowersByAdmin(loanId, [coBorrower])
+            setEmailStatus('sent')
+        } catch (err) {
+            setEmailStatus('error')
+            console.error(err)
+        }
+    }
+
+    return (
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+            <button
+                onClick={sendEmail}
+                disabled={emailStatus === 'sending' || emailStatus === 'sent'}
+                style={{ padding: '6px 14px', borderRadius: '8px', border: '1.5px solid #8b5cf6', background: emailStatus === 'sent' ? '#f5f3ff' : '#fff', color: '#8b5cf6', fontSize: '0.75rem', fontWeight: 700, cursor: emailStatus === 'sent' ? 'default' : 'pointer' }}
+            >
+                {emailStatus === 'sending' ? 'Sending…' : emailStatus === 'sent' ? '✓ Email Sent' : emailStatus === 'error' ? 'Retry Email' : 'Send Notification Email'}
+            </button>
+            <button
+                onClick={sendMonoLink}
+                disabled={monoStatus === 'sending' || monoStatus === 'sent'}
+                style={{ padding: '6px 14px', borderRadius: '8px', border: '1.5px solid #0ea5e9', background: monoStatus === 'sent' ? '#f0f9ff' : '#fff', color: '#0ea5e9', fontSize: '0.75rem', fontWeight: 700, cursor: monoStatus === 'sent' ? 'default' : 'pointer' }}
+            >
+                {monoStatus === 'sending' ? 'Sending…' : monoStatus === 'sent' ? '✓ Mono Link Sent' : monoStatus === 'error' ? 'Retry Mono Link' : 'Send Mono Link'}
+            </button>
+        </div>
+    )
+}
+
 export default function ApplicantSnapshot({ loan, onUpdated }) {
     const getDocumentStatus = (docKey) => {
         if (!loan.documents) return 'missing'
@@ -328,6 +374,7 @@ export default function ApplicantSnapshot({ loan, onUpdated }) {
                                     <div className="info-value">{cb.relationship || '—'}</div>
                                 </div>
                             </div>
+                            <CoBorrowerActions loanId={loan.id} coBorrower={cb} index={i} />
                         </div>
                     ))}
                 </div>
