@@ -104,6 +104,8 @@ async function backendCheck(loanId) {
     method: 'POST',
     headers,
   })
+  // 404 means the backend endpoint hasn't been deployed yet — fall through to direct call
+  if (res.status === 404) return null
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err?.message || `Backend first-central check failed (${res.status})`)
@@ -121,9 +123,11 @@ export const firstCentralService = {
    */
   runCreditCheck: async (loanId, bvn) => {
     if (USE_BACKEND) {
-      return backendCheck(loanId)
+      const backendResult = await backendCheck(loanId)
+      // If backend returned a result, use it; if 404 (endpoint not yet deployed), fall through to direct UAT call
+      if (backendResult) return backendResult
     }
-    // Local UAT path: login → match → iScore report
+    // Direct UAT path: login → match → iScore report
     try {
       const token = await getToken()
       const match = await matchConsumer(token, bvn)
