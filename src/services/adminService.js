@@ -1451,121 +1451,53 @@ export const adminService = {
     })
   },
 
-  // User Management
+  // User Management — backend only
   getUsersList: async () => {
-    if (USE_BACKEND) {
-      const session = getStoredSession()
-      if (session?.accessToken) {
-        try {
-          const data = await adminRequest('/admin/staff')
-          const list = Array.isArray(data) ? data : data?.staff ?? data?.data ?? data?.items ?? []
-          return list.map(normalizeStaffFromApi)
-        } catch (err) {
-          if (!looksLikeMissingRouteError(err)) throw err
-        }
-      }
-    }
-    return Object.values(getUsers())
+    const data = await adminRequest('/admin/staff')
+    const list = Array.isArray(data) ? data : data?.staff ?? data?.data ?? data?.items ?? []
+    return list.map(normalizeStaffFromApi)
   },
 
   addUser: async (userData) => {
-    if (USE_BACKEND) {
-      const session = getStoredSession()
-      if (session?.accessToken) {
-        try {
-          const payload = {
-            username: userData.username,
-            password: userData.password,
-            displayName: userData.name,
-            role: toBackendRole(userData.role),
-            ...(userData.email ? { email: userData.email } : {}),
-          }
-          const created = await adminRequest('/admin/staff', {
-            method: 'POST',
-            body: JSON.stringify(payload),
-          })
-          auditService.record('add_user', { adminName: session.name, message: `Added user ${userData.username} (${userData.role})` })
-          return normalizeStaffFromApi(created?.staff ?? created)
-        } catch (err) {
-          if (!looksLikeMissingRouteError(err)) throw err
-        }
-      }
+    const session = getStoredSession()
+    const payload = {
+      username: userData.username,
+      password: userData.password,
+      displayName: userData.name,
+      role: toBackendRole(userData.role),
+      ...(userData.email ? { email: userData.email } : {}),
     }
-    const users = getUsers()
-    if (users[userData.username]) throw new Error('Username already exists')
-    users[userData.username] = { ...userData, status: 'active' }
-    saveUsers(users)
-    auditService.record('add_user', { adminName: 'admin', message: `Added user ${userData.username} (${userData.role})` })
-    return users[userData.username]
+    const created = await adminRequest('/admin/staff', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+    auditService.record('add_user', { adminName: session?.name, message: `Added user ${userData.username} (${userData.role})` })
+    return normalizeStaffFromApi(created?.staff ?? created)
   },
 
   updateUserStatus: async (username, status, userId) => {
-    if (USE_BACKEND && userId) {
-      const session = getStoredSession()
-      if (session?.accessToken) {
-        try {
-          await adminRequest(`/admin/staff/${userId}/status`, {
-            method: 'PATCH',
-            body: JSON.stringify({ status }),
-          })
-          auditService.record('update_user_status', { adminName: session.name, message: `Set user ${username} to ${status}` })
-          return { username, status }
-        } catch (err) {
-          if (!looksLikeMissingRouteError(err)) throw err
-        }
-      }
-    }
-    const users = getUsers()
-    if (!users[username]) throw new Error('User not found')
-    if (username === 'admin') throw new Error('Cannot change super admin status')
-    users[username].status = status
-    saveUsers(users)
-    auditService.record('update_user_status', { adminName: 'admin', message: `Set user ${username} to ${status}` })
-    return users[username]
+    const session = getStoredSession()
+    await adminRequest(`/admin/staff/${userId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+    auditService.record('update_user_status', { adminName: session?.name, message: `Set user ${username} to ${status}` })
+    return { username, status }
   },
 
   deleteUser: async (username, userId) => {
-    if (USE_BACKEND && userId) {
-      const session = getStoredSession()
-      if (session?.accessToken) {
-        try {
-          await adminRequest(`/admin/staff/${userId}`, { method: 'DELETE' })
-          auditService.record('delete_user', { adminName: session.name, message: `Deleted user ${username}` })
-          return
-        } catch (err) {
-          if (!looksLikeMissingRouteError(err)) throw err
-        }
-      }
-    }
-    const users = getUsers()
-    if (!users[username]) throw new Error('User not found')
-    if (username === 'admin') throw new Error('Cannot delete super admin')
-    delete users[username]
-    saveUsers(users)
-    auditService.record('delete_user', { adminName: 'admin', message: `Deleted user ${username}` })
+    const session = getStoredSession()
+    await adminRequest(`/admin/staff/${userId}`, { method: 'DELETE' })
+    auditService.record('delete_user', { adminName: session?.name, message: `Deleted user ${username}` })
   },
 
   resetUserPassword: async (username, newPassword, userId) => {
-    if (USE_BACKEND && userId) {
-      const session = getStoredSession()
-      if (session?.accessToken) {
-        try {
-          await adminRequest(`/admin/staff/${userId}/reset-password`, {
-            method: 'POST',
-            body: JSON.stringify({ newPassword }),
-          })
-          auditService.record('reset_password', { adminName: session.name, message: `Reset password for ${username}` })
-          return
-        } catch (err) {
-          if (!looksLikeMissingRouteError(err)) throw err
-        }
-      }
-    }
-    const users = getUsers()
-    if (!users[username]) throw new Error('User not found')
-    users[username].password = newPassword
-    saveUsers(users)
-    auditService.record('reset_password', { adminName: 'admin', message: `Reset password for ${username}` })
+    const session = getStoredSession()
+    await adminRequest(`/admin/staff/${userId}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ newPassword }),
+    })
+    auditService.record('reset_password', { adminName: session?.name, message: `Reset password for ${username}` })
   },
 
   // Repayment & Wallet

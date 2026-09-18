@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '../../services/adminService'
-import { Plus, Shield, ShieldAlert, UserX, UserCheck, Trash2, KeyRound, Server, HardDrive } from 'lucide-react'
+import { Plus, Shield, ShieldAlert, UserX, UserCheck, Trash2, KeyRound } from 'lucide-react'
 
 const ROLE_LABELS = {
   admin: 'Super Admin',
@@ -17,7 +17,7 @@ const EMPTY_USER = { username: '', name: '', email: '', password: '', role: 'sal
 export default function UserManagement() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [source, setSource] = useState('local') // 'backend' | 'local'
+  const [loadError, setLoadError] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [newUser, setNewUser] = useState(EMPTY_USER)
   const [addError, setAddError] = useState('')
@@ -36,13 +36,12 @@ export default function UserManagement() {
 
   async function loadUsers() {
     setLoading(true)
+    setLoadError('')
     try {
       const data = await adminService.getUsersList()
       setUsers(data)
-      // If any user has an `id` field it came from the backend
-      setSource(data.some(u => u.id) ? 'backend' : 'local')
     } catch (err) {
-      console.error('Failed to load users:', err)
+      setLoadError(err.message)
     } finally {
       setLoading(false)
     }
@@ -112,16 +111,14 @@ export default function UserManagement() {
       <div className="admin-page-header flex-between align-center">
         <div>
           <h1>User Management</h1>
-          <p style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
-            {source === 'backend'
-              ? <><Server size={13} /> Synced with backend</>
-              : <><HardDrive size={13} /> Local only — backend staff endpoint not yet available</>}
-          </p>
+          <p style={{ marginTop: '4px', fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>Admin user accounts and role-based permissions.</p>
         </div>
         <button className="button button--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => { setShowAddModal(true); setAddError('') }}>
           <Plus size={16} /> Add User
         </button>
       </div>
+
+      {loadError && <div className="alert-box alert-error" style={{ margin: '16px 0' }}>{loadError}</div>}
 
       <div className="admin-table-container" style={{ marginTop: '24px' }}>
         <table className="admin-table">
