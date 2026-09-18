@@ -24,7 +24,7 @@ const TOKEN_TTL_MS = 4.5 * 60 * 60 * 1000 // 4.5 hours (refresh before expiry)
 function getAdminToken() {
   try {
     const s = localStorage.getItem('carecova_admin_session')
-    return s ? JSON.parse(s)?.token : null
+    return s ? JSON.parse(s)?.accessToken : null
   } catch { return null }
 }
 
