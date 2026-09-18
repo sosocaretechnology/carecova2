@@ -17,6 +17,7 @@ import AiChatPanel from '../../components/admin/ApplicationDetail/AiChatPanel'
 import TransactionAnalysisCard from '../../components/admin/ApplicationDetail/TransactionAnalysisCard'
 import MonoAssessmentCard from '../../components/admin/ApplicationDetail/MonoAssessmentCard'
 import ProviderSubmissionCard from '../../components/admin/ApplicationDetail/ProviderSubmissionCard'
+import FirstCentralCard from '../../components/admin/ApplicationDetail/FirstCentralCard'
 import ReviewSidebar, { getSectionStates } from '../../components/admin/ApplicationDetail/ReviewSidebar'
 import InlineLoader from '../../components/ui/InlineLoader'
 import Modal from '../../components/ui/Modal'
@@ -361,7 +362,7 @@ export default function ApplicationDetail() {
                             <SectionHeader
                                 id="credit"
                                 title="Credit Analysis"
-                                subtitle="Bank statement analysis · Mono income & creditworthiness"
+                                subtitle="Bank statement analysis · Mono income & creditworthiness · FirstCentral bureau"
                                 state={sectionStates.credit}
                             />
                             <div className="detail-credit-grid">
@@ -380,6 +381,12 @@ export default function ApplicationDetail() {
                                         if (merged) setLoan(merged)
                                         else loadLoanDetails({ silent: true })
                                     }}
+                                />
+                            </div>
+                            <div style={{ marginTop: '20px' }}>
+                                <FirstCentralCard
+                                    loan={loan}
+                                    onUpdated={() => loadLoanDetails({ silent: true })}
                                 />
                             </div>
                         </section>
