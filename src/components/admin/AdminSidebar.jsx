@@ -31,7 +31,7 @@ export default function AdminSidebar({ onLogout, open, onClose }) {
         { name: 'Rules & Config',    path: '/admin/rules',          icon: Settings,        color: 'slate',   roles: ['admin'] },
         { name: 'Audit Logs',        path: '/admin/audit',          icon: FileText,        color: 'indigo',  roles: ['admin'] },
         { name: 'User Management',   path: '/admin/users',          icon: UserCheck,       color: 'rose',    roles: ['admin'] },
-        { name: 'Providers',         path: '/admin/providers',      icon: Building2,       color: 'teal',    roles: ['admin'] },
+        { name: 'Providers',         path: '/admin/providers',      icon: Building2,       color: 'teal',    roles: ['admin', 'sales'] },
         { name: 'Recovery',          path: '/admin/recovery',       icon: AlertTriangle,   color: 'orange',  roles: ['admin', 'support', 'sales'] },
         { name: 'Disbursement Queue',path: '/admin/disbursements',  icon: Send,            color: 'sky',     roles: ['admin'] },
         { name: 'Financing',         path: '/admin/financing',      icon: Banknote,        color: 'amber',   roles: ['financier'] },

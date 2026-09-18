@@ -189,11 +189,13 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: clip;
   font-family: var(--font-sans);
   font-size: var(--text-body);
   font-weight: var(--weight-normal);

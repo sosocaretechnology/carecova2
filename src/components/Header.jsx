@@ -51,6 +51,14 @@ export default function Header() {
           <Link to="/apply" onClick={closeMenu}>Apply</Link>
           <Link to="/track" onClick={closeMenu}>Track</Link>
           <Link to="/faq" onClick={closeMenu}>FAQ</Link>
+          <div className="mobile-nav-actions">
+            {customerLoggedIn ? (
+              <Link to="/portal" className="mobile-nav-account" onClick={closeMenu}>My Account</Link>
+            ) : (
+              <Link to="/login" className="mobile-nav-account" onClick={closeMenu}>Sign In</Link>
+            )}
+            <Link to="/apply" className="mobile-nav-cta" onClick={closeMenu}>Apply Now</Link>
+          </div>
         </nav>
 
         <div className="header-actions">
