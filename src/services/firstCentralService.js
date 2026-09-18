@@ -11,9 +11,10 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, ''
 const API_ROOT = API_BASE_URL ? `${API_BASE_URL}/api` : ''
 const USE_BACKEND = !!API_BASE_URL
 
-const FC_UAT_BASE = 'https://uat.firstcentralcreditbureau.com/firstcentralrestv2'
-const FC_UAT_USERNAME = 'demo'
-const FC_UAT_PASSWORD = 'demo@123'
+// Reads from .env.local — falls back to public UAT test credentials if not set
+const FC_UAT_BASE = import.meta.env.VITE_FC_BASE_URL || 'https://uat.firstcentralcreditbureau.com/firstcentralrestv2'
+const FC_UAT_USERNAME = import.meta.env.VITE_FC_USERNAME || 'demo'
+const FC_UAT_PASSWORD = import.meta.env.VITE_FC_PASSWORD || 'demo@123'
 
 // Token cache — FirstCentral tokens are valid for 5 hours
 let _cachedToken = null
