@@ -1453,7 +1453,7 @@ export const adminService = {
 
   // User Management — backend only
   getUsersList: async () => {
-    const data = await adminRequest('/admin/staff')
+    const data = await adminRequest('/admins/staff')
     const list = Array.isArray(data) ? data : data?.staff ?? data?.data ?? data?.items ?? []
     return list.map(normalizeStaffFromApi)
   },
@@ -1467,7 +1467,7 @@ export const adminService = {
       role: toBackendRole(userData.role),
       ...(userData.email ? { email: userData.email } : {}),
     }
-    const created = await adminRequest('/admin/staff', {
+    const created = await adminRequest('/admins/staff', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
@@ -1477,7 +1477,7 @@ export const adminService = {
 
   updateUserStatus: async (username, status, userId) => {
     const session = getStoredSession()
-    await adminRequest(`/admin/staff/${userId}/status`, {
+    await adminRequest(`/admins/staff/${userId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     })
@@ -1487,13 +1487,13 @@ export const adminService = {
 
   deleteUser: async (username, userId) => {
     const session = getStoredSession()
-    await adminRequest(`/admin/staff/${userId}`, { method: 'DELETE' })
+    await adminRequest(`/admins/staff/${userId}`, { method: 'DELETE' })
     auditService.record('delete_user', { adminName: session?.name, message: `Deleted user ${username}` })
   },
 
   resetUserPassword: async (username, newPassword, userId) => {
     const session = getStoredSession()
-    await adminRequest(`/admin/staff/${userId}/reset-password`, {
+    await adminRequest(`/admins/staff/${userId}/reset-password`, {
       method: 'POST',
       body: JSON.stringify({ newPassword }),
     })
