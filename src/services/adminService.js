@@ -2132,6 +2132,15 @@ export const adminService = {
     requireBackendFeature('Trash applications')
     return adminRequest('/admin/loan-applications/trash')
   },
+
+  notifyApplicant: async (loanId, type, message) => {
+    requireBackendFeature('Notify applicant')
+    const trimmed = assertBackendLoanId(loanId, 'Notify applicant')
+    return adminRequest(`/admin/loan-applications/${encodeURIComponent(trimmed)}/notify-applicant`, {
+      method: 'POST',
+      body: JSON.stringify({ type, ...(message ? { message } : {}) }),
+    })
+  },
 }
 
 // Helpers to reduce repetition

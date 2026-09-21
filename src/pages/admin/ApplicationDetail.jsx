@@ -22,6 +22,7 @@ import ReviewSidebar, { getSectionStates } from '../../components/admin/Applicat
 import InlineLoader from '../../components/ui/InlineLoader'
 import Modal from '../../components/ui/Modal'
 import RequestDocumentsModal from '../../components/admin/ApplicationDetail/RequestDocumentsModal'
+import NotifyApplicantModal from '../../components/admin/ApplicationDetail/NotifyApplicantModal'
 
 const fmt = (n) => n != null ? `₦${Number(n).toLocaleString()}` : '—'
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
@@ -70,6 +71,7 @@ export default function ApplicationDetail() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [deleteResult, setDeleteResult] = useState(null)
+    const [showNotifyModal, setShowNotifyModal] = useState(false)
 
     const isSuperAdmin = session?.role === 'super_admin'
 
@@ -643,6 +645,27 @@ export default function ApplicationDetail() {
                             </div>
                         )}
 
+                        {/* Notify Applicant */}
+                        <div className="detail-card" style={{ borderLeft: '4px solid #7c3aed' }}>
+                            <div style={{ marginBottom: '8px' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Applicant Notification</span>
+                                <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#6b7280' }}>
+                                    Send a status update email directly to the applicant.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowNotifyModal(true)}
+                                style={{
+                                    width: '100%', padding: '9px 14px', borderRadius: '8px',
+                                    border: 'none', background: '#7c3aed', color: '#fff',
+                                    fontWeight: 700, fontSize: '0.8125rem', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                }}
+                            >
+                                ✉ Notify Applicant
+                            </button>
+                        </div>
+
                         {/* Decision panel */}
                         <DecisionPanel
                             loan={loan}
@@ -669,6 +692,13 @@ export default function ApplicationDetail() {
         >
             <p className="text-sm text-muted">{feedbackModal.message}</p>
         </Modal>
+
+        {showNotifyModal && (
+            <NotifyApplicantModal
+                loan={loan}
+                onClose={() => setShowNotifyModal(false)}
+            />
+        )}
 
         {showRequestDocs && (
             <RequestDocumentsModal
