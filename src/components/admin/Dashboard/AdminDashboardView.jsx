@@ -2,7 +2,6 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, TrendingUp, DollarSign, AlertCircle } from 'lucide-react'
 import StatusBadge from '../../StatusBadge'
-import WebAnalyticsCard from './WebAnalyticsCard'
 
 export default function AdminDashboardView({ kpis, queues, insights }) {
     const navigate = useNavigate()
@@ -131,7 +130,6 @@ export default function AdminDashboardView({ kpis, queues, insights }) {
                 </div>
             </div>
 
-            <WebAnalyticsCard />
         </div>
     )
 }

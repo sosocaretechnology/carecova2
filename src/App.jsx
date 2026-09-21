@@ -38,6 +38,7 @@ import OrganizationWallets from './pages/admin/OrganizationWallets'
 import ProviderManagement from './pages/admin/ProviderManagement'
 import FinancingQueue from './pages/admin/FinancingQueue'
 import FinancierApplicationDetail from './pages/admin/FinancierApplicationDetail'
+import Analytics from './pages/admin/Analytics'
 // Credit Officer Portal
 import CreditLayout from './pages/credit/CreditLayout'
 import CreditDashboard from './pages/credit/CreditDashboard'
@@ -264,6 +265,14 @@ function App() {
             element={
               <RequireRoles allowedRoles={['admin', 'credit_officer']}>
                 <DisbursementCaseFile />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="analytics"
+            element={
+              <RequireRoles allowedRoles={['admin']}>
+                <Analytics />
               </RequireRoles>
             }
           />

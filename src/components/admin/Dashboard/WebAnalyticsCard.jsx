@@ -60,19 +60,14 @@ export default function WebAnalyticsCard() {
           color: 'var(--color-text-muted)',
           lineHeight: '1.6',
         }}>
-          <strong style={{ color: 'var(--color-text)' }}>Set up PostHog to see visitor data here.</strong>
-          <ol style={{ marginTop: '8px', paddingLeft: '20px' }}>
-            <li>Create a free account at <strong>app.posthog.com</strong></li>
-            <li>Copy your <strong>Project API Key</strong> → <code>VITE_POSTHOG_KEY</code> in <code>.env</code></li>
-            <li>Copy your <strong>Project ID</strong> + <strong>Personal API Key</strong> → <code>.env.local</code> as <code>VITE_POSTHOG_PROJECT_ID</code> and <code>VITE_POSTHOG_PERSONAL_KEY</code></li>
-            <li>Restart the dev server</li>
-          </ol>
+          <strong style={{ color: 'var(--color-text)' }}>Google Analytics not configured.</strong>
+          <p style={{ marginTop: '6px' }}>Make sure <code>VITE_GA_MEASUREMENT_ID</code>, <code>GA4_PROPERTY_ID</code>, and <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> are set, then deploy to Vercel.</p>
         </div>
       )}
 
       {error === 'fetch_failed' && (
         <p style={{ fontSize: '13px', color: 'var(--color-error)', padding: '8px 0' }}>
-          Could not load analytics — check your PostHog API keys in <code>.env.local</code>.
+          Could not load analytics — the Vercel function may not be deployed yet, or check the GA4 credentials in Vercel environment variables.
         </p>
       )}
 

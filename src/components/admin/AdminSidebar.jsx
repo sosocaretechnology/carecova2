@@ -16,6 +16,7 @@ import {
     Building2,
     Banknote,
     Wallet,
+    BarChart2,
 } from 'lucide-react';
 
 export default function AdminSidebar({ onLogout, open, onClose }) {
@@ -34,6 +35,7 @@ export default function AdminSidebar({ onLogout, open, onClose }) {
         { name: 'Providers',         path: '/admin/providers',      icon: Building2,       color: 'teal',    roles: ['admin', 'sales'] },
         { name: 'Recovery',          path: '/admin/recovery',       icon: AlertTriangle,   color: 'orange',  roles: ['admin', 'support', 'sales'] },
         { name: 'Disbursement Queue',path: '/admin/disbursements',  icon: Send,            color: 'sky',     roles: ['admin'] },
+        { name: 'Analytics',         path: '/admin/analytics',      icon: BarChart2,       color: 'violet',  roles: ['admin'] },
         { name: 'Financing',         path: '/admin/financing',      icon: Banknote,        color: 'amber',   roles: ['financier'] },
     ]
 
