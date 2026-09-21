@@ -87,7 +87,10 @@ function getStoredSession() {
 }
 
 function saveSession(session) {
-  if (session) localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session))
+  if (session) {
+    localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(session))
+    window.dispatchEvent(new Event('carecova:session-updated'))
+  }
 }
 
 function clearSession() {
@@ -404,6 +407,23 @@ export const adminService = {
       refreshToken: s.refreshToken,
     }
   },
+
+  initializeSession: async () => {
+    return adminService.getSession()
+  },
+
+  subscribeToAuthEvents: (callback) => {
+    const onCleared = () => callback({ type: 'logged_out' })
+    const onUpdated = () => callback({ type: 'session_updated', session: adminService.getSession() })
+    window.addEventListener('carecova:session-cleared', onCleared)
+    window.addEventListener('carecova:session-updated', onUpdated)
+    return () => {
+      window.removeEventListener('carecova:session-cleared', onCleared)
+      window.removeEventListener('carecova:session-updated', onUpdated)
+    }
+  },
+
+  refreshSession: refreshAccessToken,
 
   isAuthenticated: () => adminService.getSession() !== null,
 
@@ -1453,8 +1473,8 @@ export const adminService = {
 
   // User Management — backend only
   getUsersList: async () => {
-    const data = await adminRequest('/admins/staff')
-    const list = Array.isArray(data) ? data : data?.staff ?? data?.data ?? data?.items ?? []
+    const data = await adminRequest('/admins')
+    const list = Array.isArray(data) ? data : data?.admins ?? data?.data ?? data?.items ?? []
     return list.map(normalizeStaffFromApi)
   },
 
@@ -1467,19 +1487,19 @@ export const adminService = {
       role: toBackendRole(userData.role),
       ...(userData.email ? { email: userData.email } : {}),
     }
-    const created = await adminRequest('/admins/staff', {
+    const created = await adminRequest('/admins', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
     auditService.record('add_user', { adminName: session?.name, message: `Added user ${userData.username} (${userData.role})` })
-    return normalizeStaffFromApi(created?.staff ?? created)
+    return normalizeStaffFromApi(created?.admin ?? created)
   },
 
   updateUserStatus: async (username, status, userId) => {
     const session = getStoredSession()
-    await adminRequest(`/admins/staff/${userId}/status`, {
+    await adminRequest(`/admins/${userId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ isActive: status === 'active' }),
     })
     auditService.record('update_user_status', { adminName: session?.name, message: `Set user ${username} to ${status}` })
     return { username, status }
@@ -1487,14 +1507,14 @@ export const adminService = {
 
   deleteUser: async (username, userId) => {
     const session = getStoredSession()
-    await adminRequest(`/admins/staff/${userId}`, { method: 'DELETE' })
+    await adminRequest(`/admins/${userId}`, { method: 'DELETE' })
     auditService.record('delete_user', { adminName: session?.name, message: `Deleted user ${username}` })
   },
 
   resetUserPassword: async (username, newPassword, userId) => {
     const session = getStoredSession()
-    await adminRequest(`/admins/staff/${userId}/reset-password`, {
-      method: 'POST',
+    await adminRequest(`/admins/${userId}`, {
+      method: 'PATCH',
       body: JSON.stringify({ newPassword }),
     })
     auditService.record('reset_password', { adminName: session?.name, message: `Reset password for ${username}` })

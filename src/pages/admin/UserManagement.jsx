@@ -76,7 +76,7 @@ export default function UserManagement() {
   const handleResetPassword = async (e) => {
     e.preventDefault()
     setResetError('')
-    if (newPassword.length < 6) { setResetError('Password must be at least 6 characters'); return }
+    if (newPassword.length < 8) { setResetError('Password must be at least 8 characters'); return }
     if (newPassword !== confirmPassword) { setResetError('Passwords do not match'); return }
     setResetLoading(true)
     try {
@@ -210,7 +210,7 @@ export default function UserManagement() {
                 </div>
                 <div className="input-group">
                   <label className="input-label">Password *</label>
-                  <input className="input" type="password" required minLength={6} value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} />
+                  <input className="input" type="password" required minLength={8} value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} />
                 </div>
                 <div className="input-group">
                   <label className="input-label">Role *</label>
@@ -247,7 +247,7 @@ export default function UserManagement() {
                 {resetError && <div className="alert-box alert-error" style={{ marginBottom: '12px' }}>{resetError}</div>}
                 <div className="input-group">
                   <label className="input-label">New Password *</label>
-                  <input className="input" type="password" required minLength={6} value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                  <input className="input" type="password" required minLength={8} value={newPassword} onChange={e => setNewPassword(e.target.value)} />
                 </div>
                 <div className="input-group">
                   <label className="input-label">Confirm Password *</label>

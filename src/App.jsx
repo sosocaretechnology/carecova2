@@ -54,6 +54,7 @@ import ProviderRegisterPatient from './pages/provider/ProviderRegisterPatient'
 import { useAuth } from './hooks/useAuth'
 import { useCustomerAuth } from './hooks/useCustomerAuth'
 import { useFinancierAuth } from './hooks/useFinancierAuth'
+import { usePageTracking } from './hooks/usePageTracking'
 import RequireRoles from './components/auth/RequireRoles'
 import ProtectedFinancierRoute from './pages/ProtectedFinancierRoute'
 import UploadDocuments from './pages/UploadDocuments'
@@ -89,9 +90,15 @@ function ProtectedCustomerRoute({ children }) {
 }
 
 
+function PageTracker() {
+  usePageTracking()
+  return null
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <PageTracker />
       <NotificationProvider>
       <Routes>
         <Route path="/" element={<Home />} />
