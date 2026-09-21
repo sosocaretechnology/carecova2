@@ -111,7 +111,10 @@ async function backendCheck(loanId) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err?.message || `Backend first-central check failed (${res.status})`)
   }
-  return res.json()
+  const data = await res.json()
+  // Backend returns { error: '...' } with HTTP 200 when credentials not configured
+  if (data?.error) throw new Error(data.error)
+  return data
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
