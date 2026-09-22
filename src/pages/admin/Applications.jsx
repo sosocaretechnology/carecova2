@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { adminService } from '../../services/adminService'
+import { customerService } from '../../services/customerService'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
 import StatusBadge from '../../components/StatusBadge'
 import { APPLICATION_STATUS, getStageLabel } from '../../utils/statusModel'
@@ -331,7 +332,9 @@ export default function Applications() {
                             <th>Affordability</th>
                             <th>Risk Assessment</th>
                             <th>Stage</th>
+                            <th>Assigned</th>
                             <th>Date</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -418,6 +421,17 @@ export default function Applications() {
                                     </td>
                                     <td className="text-muted text-sm">
                                         {new Date(loan.submittedAt).toLocaleDateString()}
+                                    </td>
+                                    <td>
+                                        {loan.phone && (
+                                            <button
+                                                title="View Patient 360"
+                                                onClick={e => { e.stopPropagation(); navigate(`/admin/customers/${encodeURIComponent(customerService.normalisePhone(loan.phone))}`) }}
+                                                style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: 5, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                            >
+                                                360
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))

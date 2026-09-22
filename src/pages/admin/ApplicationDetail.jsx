@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
 import StatusBadge from '../../components/StatusBadge'
 import { getStageLabel } from '../../utils/statusModel'
+import { customerService } from '../../services/customerService'
 
 import ApplicantSnapshot from '../../components/admin/ApplicationDetail/ApplicantSnapshot'
 import VerificationRisk from '../../components/admin/ApplicationDetail/VerificationRisk'
@@ -260,12 +261,24 @@ export default function ApplicationDetail() {
 
             {/* ── Page header ── */}
             <div style={{ marginBottom: '24px' }}>
-                <button
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', color: '#2563eb', fontWeight: 600, padding: '0', marginBottom: '12px', display: 'inline-block' }}
-                    onClick={() => navigate('/admin/applications')}
-                >
-                    ← Back to Applications
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <button
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', color: '#2563eb', fontWeight: 600, padding: '0' }}
+                        onClick={() => navigate('/admin/applications')}
+                    >
+                        ← Back to Applications
+                    </button>
+                    {loan.phone && (
+                        <button
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.8125rem', fontWeight: 600, padding: '5px 12px', borderRadius: '7px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#2563eb', cursor: 'pointer' }}
+                            onClick={() => navigate(`/admin/customers/${encodeURIComponent(customerService.normalisePhone(loan.phone))}`)}
+                            title="Open Customer 360 profile"
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                            View Patient 360
+                        </button>
+                    )}
+                </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' }}>
                     <div>

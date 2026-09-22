@@ -17,6 +17,7 @@ import {
     Banknote,
     Wallet,
     BarChart2,
+    Users,
 } from 'lucide-react';
 
 export default function AdminSidebar({ onLogout, open, onClose }) {
@@ -25,6 +26,7 @@ export default function AdminSidebar({ onLogout, open, onClose }) {
 
     const allItems = [
         { name: 'Dashboard',         path: '/admin/dashboard',      icon: LayoutDashboard, color: 'green',   roles: ['admin', 'sales', 'support'] },
+        { name: 'Customers',         path: '/admin/customers',      icon: Users,           color: 'teal',    roles: ['admin', 'credit_officer', 'support'] },
         { name: 'Applications',      path: '/admin/applications',   icon: ClipboardList,   color: 'blue',    roles: ['admin', 'sales', 'support'] },
         { name: 'Active Loans',      path: '/admin/loans',          icon: CreditCard,      color: 'violet',  roles: ['admin', 'sales', 'support'] },
         { name: 'Repayments',        path: '/admin/repayments',     icon: DollarSign,      color: 'emerald', roles: ['admin', 'support'] },

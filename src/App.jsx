@@ -39,6 +39,8 @@ import ProviderManagement from './pages/admin/ProviderManagement'
 import FinancingQueue from './pages/admin/FinancingQueue'
 import FinancierApplicationDetail from './pages/admin/FinancierApplicationDetail'
 import Analytics from './pages/admin/Analytics'
+import Customers from './pages/admin/Customers'
+import CustomerDetail from './pages/admin/CustomerDetail'
 // Credit Officer Portal
 import CreditLayout from './pages/credit/CreditLayout'
 import CreditDashboard from './pages/credit/CreditDashboard'
@@ -273,6 +275,22 @@ function App() {
             element={
               <RequireRoles allowedRoles={['admin']}>
                 <Analytics />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="customers"
+            element={
+              <RequireRoles allowedRoles={['admin', 'credit_officer', 'support']}>
+                <Customers />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="customers/:customerId"
+            element={
+              <RequireRoles allowedRoles={['admin', 'credit_officer', 'support']}>
+                <CustomerDetail />
               </RequireRoles>
             }
           />
