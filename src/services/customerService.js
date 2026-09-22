@@ -178,6 +178,9 @@ function buildProfileFromLoans(loans) {
   }
 }
 
+// ── circuit-breaker: skip the /admin/customers endpoint once it's confirmed absent ──
+let _customersEndpointAvailable = true
+
 // ── exported service ─────────────────────────────────────────────────────────
 
 export const customerService = {
@@ -187,14 +190,13 @@ export const customerService = {
    * Tries GET /admin/customers first; falls back to aggregating from loans.
    */
   async getCustomers() {
-    // 1. Try dedicated backend endpoint
-    if (USE_BACKEND && getStoredSession()?.accessToken) {
+    // 1. Try dedicated backend endpoint (skipped after first 404/failure)
+    if (_customersEndpointAvailable && USE_BACKEND && getStoredSession()?.accessToken) {
       try {
         const data = await adminRequest('/admin/customers')
         if (Array.isArray(data) && data.length > 0) return data
-        // If empty array came back legitimately, still fall through to loans
       } catch (_) {
-        // Endpoint not implemented yet — fall through
+        _customersEndpointAvailable = false
       }
     }
 
@@ -223,8 +225,8 @@ export const customerService = {
   async getCustomerById(phoneId) {
     const phone = normalisePhone(phoneId)
 
-    // 1. Try dedicated backend endpoint
-    if (USE_BACKEND && getStoredSession()?.accessToken) {
+    // 1. Try dedicated backend endpoint (skipped after first 404/failure)
+    if (_customersEndpointAvailable && USE_BACKEND && getStoredSession()?.accessToken) {
       try {
         const data = await adminRequest(`/admin/customers/${encodeURIComponent(phone)}`)
         if (data) {
@@ -233,7 +235,7 @@ export const customerService = {
           return { ...buildProfileFromLoans(customerLoans), ...data }
         }
       } catch (_) {
-        // Not implemented yet
+        _customersEndpointAvailable = false
       }
     }
 
