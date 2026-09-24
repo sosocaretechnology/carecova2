@@ -1,16 +1,20 @@
 import logo from '../../assets/logo.png'
 
-export default function InlineLoader({ label, subtitle }) {
+/**
+ * Section-level loader — sits inline within content, does not block the page.
+ */
+export default function InlineLoader({ label = 'Loading…', subtitle }) {
   return (
-    <div className="inline-loader">
-      <div className="inline-loader-logo-wrap">
-        <img src={logo} alt="CareCova" className="inline-loader-logo" />
-      </div>
-      <div className="inline-loader-text">
-        <div className="inline-loader-label">{label}</div>
-        {subtitle && <div className="inline-loader-subtitle">{subtitle}</div>}
+    <div className="cc-inline-loader">
+      <img src={logo} alt="CareCova" className="cc-inline-loader-logo" />
+      <div>
+        <div className="cc-inline-loader-text">{label}</div>
+        {subtitle && (
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+            {subtitle}
+          </div>
+        )}
       </div>
     </div>
   )
 }
-

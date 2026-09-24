@@ -64,6 +64,7 @@ import UploadDocuments from './pages/UploadDocuments'
 import FinancialVerificationPage from './pages/FinancialVerification/FinancialVerificationPage'
 import { NotificationProvider } from './context/NotificationContext'
 import './App.css'
+import './styles/admin-shell.css'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading, session } = useAuth()

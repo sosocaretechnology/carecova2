@@ -1,60 +1,92 @@
 /* ==========================================================================
-   CareCova Design System — Premium Healthcare Fintech
-   Primary: deep emerald. Supporting: sage/mint, off-white, gold accents.
-   8px grid, 12–16px radius, soft shadows, clear typography hierarchy.
+   CareCova Design System v2
+   Healthcare-fintech. Emerald brand. 8px grid. Mobile-first.
    ========================================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-  /* Brand — vibrant deep emerald (primary green elevated) */
+  /* ============================================================
+     BRAND — deep emerald (healthcare + trust)
+  ============================================================ */
   --color-primary: #10b981;
   --color-primary-hover: #059669;
-  --color-primary-muted: #d1fae5;
   --color-primary-dark: #047857;
+  --color-primary-muted: #d1fae5;
   --color-primary-subtle: rgba(16, 185, 129, 0.08);
+  --color-primary-light: #059669; /* legacy alias */
 
-  /* Accent — subtle gold highlights */
+  /* ============================================================
+     SEMANTIC — success, warning, danger, info
+  ============================================================ */
+  --color-success: #059669;
+  --color-success-bg: #d1fae5;
+  --color-success-border: #a7f3d0;
+  --color-success-text: #065f46;
+
+  --color-warning: #d97706;
+  --color-warning-bg: #fef3c7;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #92400e;
+
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-danger-border: #fecaca;
+  --color-danger-text: #991b1b;
+
+  --color-error: #dc2626;     /* alias for --color-danger */
+  --color-error-bg: #fee2e2;
+  --color-error-subtle: rgba(220, 38, 38, 0.08);
+
+  --color-info: #2563eb;
+  --color-info-bg: #dbeafe;
+  --color-info-border: #bfdbfe;
+  --color-info-text: #1e40af;
+
+  /* ============================================================
+     ACCENT — gold/amber highlights
+  ============================================================ */
   --color-accent: #b45309;
   --color-accent-hover: #d97706;
   --color-accent-muted: #fef3c7;
   --color-accent-subtle: rgba(180, 83, 9, 0.08);
 
-  /* Neutrals — warm off-white base, no pure white */
-  --color-bg: #fafaf9;
+  /* ============================================================
+     SURFACES & BACKGROUNDS
+  ============================================================ */
+  --color-bg: #f8fafc;
   --color-bg-elevated: #ffffff;
-  --color-bg-sage: #ecfdf5;
-  --color-bg-mint: #f0fdf4;
-  --color-bg-warm: #f5f5f4;
+  --color-bg-sage: #f0fdf4;
+  --color-bg-mint: #ecfdf5;
+  --color-bg-warm: #f8fafc;
+  --color-bg-light: #f8fafc;       /* legacy alias */
+  --color-bg-accent: #f0fdf4;      /* legacy alias */
 
-  /* Text hierarchy */
-  --color-text: #1c1917;
-  --color-text-secondary: #44403c;
-  --color-text-muted: #78716c;
-  --color-text-label: #a8a29e;
+  /* ============================================================
+     TEXT HIERARCHY
+  ============================================================ */
+  --color-text: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
+  --color-text-label: #94a3b8;
   --color-text-inverse: #ffffff;
+  --color-text-light: #334155;     /* legacy alias */
 
-  /* Borders — soft, no hard edges */
-  --color-border: #e7e5e4;
-  --color-border-light: #f5f5f4;
-  --color-border-focus: rgba(16, 185, 129, 0.35);
+  /* ============================================================
+     BORDERS
+  ============================================================ */
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-border-focus: rgba(16, 185, 129, 0.4);
 
-  /* Semantic */
-  --color-success: #10b981;
-  --color-success-bg: #d1fae5;
-  --color-error: #b91c1c;
-  --color-error-bg: #fee2e2;
-  --color-warning: #b45309;
-  --color-warning-bg: #fef3c7;
-  --color-info: #1d4ed8;
-  --color-info-bg: #dbeafe;
+  /* ============================================================
+     LEGACY ALIASES (keep for App.css compatibility)
+  ============================================================ */
+  --color-secondary: #0f172a;
 
-  /* Legacy aliases for existing App.css */
-  --color-secondary: #1c1917;
-  --color-text-light: var(--color-text-secondary);
-  --color-bg-light: var(--color-bg);
-  --color-bg-accent: var(--color-bg-sage);
-  --color-primary-light: #059669;
-
-  /* 8px spacing grid */
+  /* ============================================================
+     SPACING — 8px base grid
+  ============================================================ */
   --space-1: 8px;
   --space-2: 16px;
   --space-3: 24px;
@@ -64,8 +96,9 @@
   --space-8: 64px;
   --space-10: 80px;
   --space-12: 96px;
+
   /* Legacy aliases */
-  --spacing-xs: 8px;
+  --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
@@ -73,108 +106,86 @@
   --spacing-2xl: 48px;
   --spacing-3xl: 64px;
 
-  /* Radius — consistent 12–16px */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
+  /* ============================================================
+     BORDER RADIUS
+  ============================================================ */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
   --radius-full: 9999px;
   --radius: var(--radius-md);
 
-  /* Soft layered shadows (no heavy borders) */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.03);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04);
-  --shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.1), 0 12px 24px rgba(0, 0, 0, 0.05);
+  /* ============================================================
+     SHADOWS
+  ============================================================ */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.10), 0 8px 16px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.12), 0 12px 24px rgba(0, 0, 0, 0.05);
   --shadow-focus: 0 0 0 3px var(--color-border-focus);
   --shadow-primary: 0 4px 14px rgba(16, 185, 129, 0.25);
   --shadow-gold: 0 4px 14px rgba(180, 83, 9, 0.15);
 
-  /* Typography scale - Fluid Clamp */
+  /* ============================================================
+     TYPOGRAPHY
+  ============================================================ */
   --font-display: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, 'Consolas', monospace;
+
   --text-display: clamp(2.5rem, 5vw + 1rem, 4.5rem);
   --text-h1: clamp(2rem, 4vw + 1rem, 3.5rem);
   --text-h2: clamp(1.5rem, 3vw + 0.5rem, 2.5rem);
   --text-h3: clamp(1.25rem, 2vw + 0.5rem, 1.75rem);
+  --text-h4: 1.125rem;
   --text-body: 1rem;
   --text-body-sm: 0.9375rem;
   --text-caption: 0.875rem;
   --text-label: 0.8125rem;
   --text-xs: 0.75rem;
+
   --weight-extrabold: 800;
   --weight-bold: 700;
   --weight-semibold: 600;
   --weight-medium: 500;
   --weight-normal: 400;
+
   --leading-tight: 1.2;
   --leading-snug: 1.375;
   --leading-normal: 1.5;
   --leading-relaxed: 1.625;
+
   --tracking-tight: -0.02em;
   --tracking-normal: 0;
   --tracking-wide: 0.04em;
   --tracking-wider: 0.1em;
 
-  /* Transitions — minimal, calm */
+  /* ============================================================
+     TRANSITIONS
+  ============================================================ */
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
+
+  /* ============================================================
+     LAYOUT
+  ============================================================ */
+  --sidebar-width: 256px;
+  --sidebar-collapsed-width: 64px;
+  --topbar-height: 60px;
+  --content-max-width: 1400px;
 }
 
-/* ==================== Glassmorphism & Depth Utilities ==================== */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: var(--shadow-sm);
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: var(--shadow-md);
-  border-radius: var(--radius-xl);
-  transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
-}
-
-.glass-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-/* ==================== Mesh Gradients ==================== */
-.mesh-bg-primary {
-  background-color: var(--color-bg-sage);
-  background-image:
-    radial-gradient(at 40% 20%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(209, 250, 229, 0.5) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-    radial-gradient(at 80% 50%, rgba(209, 250, 229, 0.5) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-    radial-gradient(at 80% 100%, rgba(209, 250, 229, 0.5) 0px, transparent 50%),
-    radial-gradient(at 0% 0%, rgba(255, 255, 255, 1) 0px, transparent 50%);
-}
-
-.mesh-bg-hero {
-  background-color: var(--color-bg);
-  background-image:
-    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(209, 250, 229, 0.4) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(250, 250, 249, 1) 0px, transparent 50%);
-}
-
-/* ==================== Reset ==================== */
+/* ==================== Global Reset ==================== */
 *,
 *::before,
 *::after {
@@ -224,13 +235,17 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
+  gap: 6px;
+  padding: 10px 20px;
   border-radius: var(--radius-md);
   font-weight: var(--weight-medium);
   font-size: var(--text-body-sm);
-  transition: all var(--duration-normal) var(--ease-spring);
+  line-height: 1;
+  transition: all var(--duration-normal) var(--ease-out);
   cursor: pointer;
   border: none;
+  white-space: nowrap;
+  text-decoration: none;
 }
 
 .button:active {
@@ -251,6 +266,7 @@ img {
 .button--secondary {
   background-color: var(--color-bg-sage);
   color: var(--color-primary-dark);
+  border: 1px solid var(--color-primary-muted);
 }
 
 .button--secondary:hover {
@@ -260,22 +276,50 @@ img {
 .button--ghost {
   background-color: transparent;
   color: var(--color-text-secondary);
+  border: 1px solid transparent;
 }
 
 .button--ghost:hover {
   background-color: var(--color-bg-warm);
+  border-color: var(--color-border);
+}
+
+.button--danger {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.button--danger:hover {
+  background-color: var(--color-danger-text);
 }
 
 .button--light {
   background-color: white;
   color: var(--color-primary-dark);
+  border: 1px solid var(--color-border);
+}
+
+.button--sm {
+  padding: 6px 14px;
+  font-size: var(--text-label);
+}
+
+.button--lg {
+  padding: 14px 28px;
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+}
+
+.button--icon {
+  padding: 8px;
+  border-radius: var(--radius-md);
 }
 
 /* ==================== Input Utilities ==================== */
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 6px;
   margin-bottom: var(--space-3);
 }
 
@@ -287,20 +331,25 @@ img {
 
 .input {
   width: 100%;
-  padding: 0.875rem 1rem;
-  font-size: var(--text-body);
+  padding: 10px 14px;
+  font-size: var(--text-body-sm);
+  font-family: var(--font-sans);
   color: var(--color-text);
-  background-color: #f1f5f9;
-  border: 1px solid transparent;
+  background-color: white;
+  border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: all var(--duration-normal) var(--ease-out);
+  transition: all var(--duration-fast) var(--ease-out);
+  outline: none;
 }
 
 .input:focus {
-  outline: none;
-  background-color: white;
   border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
+  background-color: white;
+}
+
+.input::placeholder {
+  color: var(--color-text-label);
 }
 
 .input--error {
@@ -309,7 +358,7 @@ img {
 }
 
 .input--error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
 }
 
 .input-error {
@@ -317,7 +366,7 @@ img {
   font-size: var(--text-caption);
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 4px;
 }
 
 /* ==================== Typography Utilities ==================== */
@@ -370,63 +419,72 @@ img {
   color: var(--color-text-label);
 }
 
+/* ==================== Layout Utilities ==================== */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-sm);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-xl);
+  transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.glass-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.mesh-bg-primary {
+  background-color: var(--color-bg-sage);
+  background-image:
+    radial-gradient(at 40% 20%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(209, 250, 229, 0.5) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, rgba(255, 255, 255, 1) 0px, transparent 50%);
+}
+
+.mesh-bg-hero {
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(209, 250, 229, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.04) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(248, 250, 252, 1) 0px, transparent 50%);
+}
+
 /* ==================== Animation Keyframes ==================== */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 @keyframes spin {
@@ -435,54 +493,40 @@ img {
 }
 
 @keyframes stepFade {
-  from {
-    opacity: 0;
-    transform: translateX(12px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-
-  100% {
-    background-position: 200% 0;
-  }
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 @keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.6;
-  }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
 }
 
 @keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(-16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
 
+/* ==================== Skeleton Loading ==================== */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ==================== Reduced Motion ==================== */
+@media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {

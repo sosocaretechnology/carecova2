@@ -109,8 +109,7 @@ export default function ApplicationDetail() {
     }
 
     useEffect(() => {
-        const timer = setTimeout(() => { loadLoanDetails() }, 300)
-        return () => clearTimeout(timer)
+        loadLoanDetails()
     }, [id])
 
     useEffect(() => {

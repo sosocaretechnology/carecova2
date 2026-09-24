@@ -6,8 +6,34 @@ import { customerService } from '../../services/customerService'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
 import StatusBadge from '../../components/StatusBadge'
 import { APPLICATION_STATUS, getStageLabel } from '../../utils/statusModel'
-import { Search } from 'lucide-react'
+import { Search, Download, RotateCcw, Trash2, ChevronRight, AlertTriangle } from 'lucide-react'
 import FullScreenLoader from '../../components/ui/FullScreenLoader'
+
+function relativeDate(dateStr) {
+    if (!dateStr) return '—'
+    const d = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now - d
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays}d ago`
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`
+    return d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function getRiskLevel(loan) {
+    if (loan.riskFlags.some(f => f.severity === 'high')) return 'high'
+    if (loan.riskFlags.some(f => f.severity === 'medium')) return 'medium'
+    return 'low'
+}
+
+function RiskBadge({ level }) {
+    const labels = { high: 'High', medium: 'Medium', low: 'Low' }
+    return (
+        <span className={`risk-badge risk-badge-${level}`}>{labels[level]}</span>
+    )
+}
 
 export default function Applications() {
     const navigate = useNavigate()
@@ -84,17 +110,14 @@ export default function Applications() {
 
     const filteredLoans = useMemo(() => {
         return loans.filter(loan => {
-            // Portfolio / Assignment Filter
             if (session?.role === 'sales') {
                 if (filters.assignment === 'my_portfolio' && loan.assignedTo !== session.username) return false
                 if (filters.assignment === 'unassigned' && loan.assignedTo != null) return false
             }
 
-            // Search
             const searchStr = `${loan.fullName} ${loan.patientName} ${loan.id} ${loan.email} ${loan.phone}`.toLowerCase()
             if (searchTerm && !searchStr.includes(searchTerm.toLowerCase())) return false
 
-            // Status filter
             if (filters.status !== 'all') {
                 if (filters.status === 'pending_admin_review') {
                     if (loan.status !== APPLICATION_STATUS.PENDING_ADMIN_REVIEW) return false
@@ -103,8 +126,6 @@ export default function Applications() {
                 }
             }
 
-            // ... (rest of filtering logic remains same)
-
             if (filters.sector !== 'all') {
                 if (filters.sector === 'government' && loan.employmentSector !== 'government') return false
                 if (filters.sector === 'private' && loan.employmentSector !== 'private') return false
@@ -112,7 +133,6 @@ export default function Applications() {
             }
 
             if (filters.risk !== 'all') {
-                // High risk implies score > 35 or has high severity flags
                 const hasHighRisk = loan.riskScore > 35 || loan.riskFlags.some(f => f.severity === 'high')
                 const hasMediumRisk = !hasHighRisk && (loan.riskScore > 15 || loan.riskFlags.some(f => f.severity === 'medium'))
                 if (filters.risk === 'high' && !hasHighRisk) return false
@@ -145,7 +165,6 @@ export default function Applications() {
             l.requestedAmount, l.monthlyIncome, l.status,
             new Date(l.submittedAt).toLocaleDateString()
         ].join(','))
-
         const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...csvData].join("\n")
         const encodedUri = encodeURI(csvContent)
         const link = document.createElement("a")
@@ -159,35 +178,50 @@ export default function Applications() {
     if (loading) return <FullScreenLoader label="Loading applications…" />
 
     return (
-        <div className="admin-page">
-            <div className="admin-page-header">
+        <div className="admin-page applications-page">
+            <div className="admin-page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
                 <div>
-                    <h1>Applications Workbench</h1>
-                    <p>Review, filter, and manage loan applications</p>
+                    <h1>Applications</h1>
+                    <p>Review, filter, and manage all credit applications</p>
                 </div>
-                {isSuperAdmin && (
-                    <button
-                        className={`button ${showTrash ? 'button--danger' : 'button--secondary'} button--compact`}
-                        onClick={handleToggleTrash}
-                    >
-                        🗑 {showTrash ? 'Hide Trash' : `Trash${trash.length > 0 ? ` (${trash.length})` : ''}`}
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    {isSuperAdmin && (
+                        <button
+                            className={`button button--sm ${showTrash ? 'button--danger' : 'button--ghost'}`}
+                            onClick={handleToggleTrash}
+                            title="View deleted applications"
+                        >
+                            <Trash2 size={15} />
+                            {showTrash ? 'Hide Trash' : `Trash${trash.length > 0 ? ` (${trash.length})` : ''}`}
+                        </button>
+                    )}
+                    <button type="button" className="button button--sm button--secondary" onClick={exportCSV}>
+                        <Download size={15} />
+                        Export CSV
                     </button>
-                )}
+                </div>
             </div>
 
+            {/* ── Trash panel ── */}
             {showTrash && (
-                <div className="admin-table-container mb-6">
-                    <div className="p-4 border-bottom" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="admin-table-container" style={{ marginBottom: 24 }}>
+                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fef2f2' }}>
                         <div>
-                            <h2 className="text-sm font-bold m-0">Trash — Pending Deletion</h2>
-                            <p className="text-xs text-muted mt-1">Applications are permanently deleted 7 days after removal. Restore before then to recover.</p>
+                            <div style={{ fontWeight: 700, fontSize: 'var(--text-body-sm)', color: 'var(--color-danger)' }}>
+                                Trash — Pending Deletion
+                            </div>
+                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 2 }}>
+                                Applications are permanently deleted 7 days after removal.
+                            </div>
                         </div>
-                        <button className="button button--ghost button--compact" onClick={loadTrash}>↻ Refresh</button>
+                        <button className="button button--ghost button--sm" onClick={loadTrash}>
+                            <RotateCcw size={14} /> Refresh
+                        </button>
                     </div>
                     {trashLoading ? (
-                        <div className="p-6 text-center text-muted text-sm">Loading…</div>
+                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--text-body-sm)' }}>Loading…</div>
                     ) : trash.length === 0 ? (
-                        <div className="p-6 text-center text-muted text-sm">Trash is empty.</div>
+                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--text-body-sm)' }}>Trash is empty.</div>
                     ) : (
                         <table className="admin-table">
                             <thead>
@@ -207,26 +241,24 @@ export default function Applications() {
                                     return (
                                         <tr key={loan.id} style={{ opacity: 0.8 }}>
                                             <td>
-                                                <div className="font-medium">{loan.fullName || loan.patientName || '—'}</div>
-                                                <div className="text-xs text-muted">{loan.id}</div>
+                                                <div style={{ fontWeight: 600 }}>{loan.fullName || loan.patientName || '—'}</div>
+                                                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{loan.id}</div>
                                             </td>
                                             <td><StatusBadge status={loan.status} /></td>
-                                            <td className="text-sm">{loan.deletedBy || '—'}</td>
+                                            <td style={{ fontSize: 'var(--text-body-sm)' }}>{loan.deletedBy || '—'}</td>
                                             <td>
-                                                <span style={{ color: daysLeft <= 2 ? '#ef4444' : '#f97316', fontWeight: 600, fontSize: '0.8125rem' }}>
+                                                <span style={{ color: daysLeft <= 2 ? 'var(--color-danger)' : 'var(--color-warning)', fontWeight: 600, fontSize: 'var(--text-label)' }}>
                                                     {daysLeft <= 0 ? 'Today' : `${daysLeft} day${daysLeft !== 1 ? 's' : ''}`}
                                                 </span>
-                                                <div className="text-xs text-muted">
-                                                    {loan.deleteScheduledFor ? new Date(loan.deleteScheduledFor).toLocaleDateString() : ''}
-                                                </div>
                                             </td>
                                             <td>
                                                 <button
-                                                    className="button button--secondary button--compact"
+                                                    className="button button--secondary button--sm"
                                                     onClick={() => handleRestore(loan.id)}
                                                     disabled={restoringId === loan.id}
                                                 >
-                                                    {restoringId === loan.id ? 'Restoring…' : '↩ Restore'}
+                                                    <RotateCcw size={13} />
+                                                    {restoringId === loan.id ? 'Restoring…' : 'Restore'}
                                                 </button>
                                             </td>
                                         </tr>
@@ -238,15 +270,17 @@ export default function Applications() {
                 </div>
             )}
 
+            {/* ── Toolbar ── */}
             <div className="admin-toolbar">
-                <div className="admin-search-wrapper flex-1">
-                    <Search className="search-icon" size={18} />
+                <div className="admin-search-wrapper" style={{ flex: 1, minWidth: 200 }}>
+                    <Search className="search-icon" size={16} />
                     <input
                         type="text"
-                        placeholder="Search by name, ID, phone..."
+                        placeholder="Search by name, ID, phone…"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="admin-search-input"
+                        aria-label="Search applications"
                     />
                 </div>
 
@@ -255,7 +289,8 @@ export default function Applications() {
                         <select
                             value={filters.assignment}
                             onChange={(e) => handleFilterChange('assignment', e.target.value)}
-                            className="admin-select highlight"
+                            className="admin-select"
+                            aria-label="Assignment filter"
                         >
                             <option value="my_portfolio">My Portfolio</option>
                             <option value="unassigned">Open Requests</option>
@@ -267,10 +302,11 @@ export default function Applications() {
                         value={filters.status}
                         onChange={(e) => handleFilterChange('status', e.target.value)}
                         className="admin-select"
+                        aria-label="Status filter"
                     >
                         <option value="all">All Statuses</option>
                         {(session?.role === 'admin' || session?.role === 'super_admin') && (
-                            <option value="pending_admin_review">Pending Admin Review</option>
+                            <option value="pending_admin_review">Pending Review</option>
                         )}
                         <option value={APPLICATION_STATUS.PENDING}>Pending</option>
                         <option value={APPLICATION_STATUS.SUBMITTED}>Submitted</option>
@@ -286,19 +322,21 @@ export default function Applications() {
                         value={filters.sector}
                         onChange={(e) => handleFilterChange('sector', e.target.value)}
                         className="admin-select"
+                        aria-label="Sector filter"
                     >
                         <option value="all">All Sectors</option>
                         <option value="government">Government</option>
                         <option value="private">Private</option>
-                        <option value="self-employed">Self-employed/Business</option>
+                        <option value="self-employed">Self-employed / Business</option>
                     </select>
 
                     <select
                         value={filters.risk}
                         onChange={(e) => handleFilterChange('risk', e.target.value)}
                         className="admin-select"
+                        aria-label="Risk filter"
                     >
-                        <option value="all">All Risk Levels</option>
+                        <option value="all">All Risk</option>
                         <option value="high">High Risk</option>
                         <option value="medium">Medium Risk</option>
                         <option value="low">Low Risk</option>
@@ -308,139 +346,230 @@ export default function Applications() {
                         value={filters.dateRange}
                         onChange={(e) => handleFilterChange('dateRange', e.target.value)}
                         className="admin-select"
+                        aria-label="Date range filter"
                     >
                         <option value="all">All Time</option>
                         <option value="today">Today</option>
                         <option value="week">Past 7 Days</option>
                         <option value="month">Past 30 Days</option>
                     </select>
-
-                    <button type="button" className="button button--secondary" onClick={exportCSV}>
-                        📥 Export CSV
-                    </button>
                 </div>
             </div>
 
+            {/* ── Desktop table (hidden on mobile) ── */}
             <div className="admin-table-container">
-                <table className="admin-table">
-                    <thead>
-                        <tr>
-                            <th>ID & Applicant</th>
-                            <th>Sector</th>
-                            <th>Requested (₦)</th>
-                            <th>Finances (₦)</th>
-                            <th>Affordability</th>
-                            <th>Risk Assessment</th>
-                            <th>Stage</th>
-                            <th>Assigned</th>
-                            <th>Date</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredLoans.length === 0 ? (
+                <div className="admin-table-wrapper">
+                    <table className="admin-table has-sticky-col">
+                        <thead>
                             <tr>
-                                <td colSpan="9" className="empty-table">No applications matched your filters.</td>
+                                <th>Applicant</th>
+                                <th>Sector</th>
+                                <th>Amount (₦)</th>
+                                <th>Finances (₦)</th>
+                                <th>Affordability</th>
+                                <th>Risk</th>
+                                <th>Status</th>
+                                <th>Assigned</th>
+                                <th>Date</th>
+                                <th></th>
                             </tr>
-                        ) : (
-                            filteredLoans.map(loan => (
-                                <tr
-                                    key={loan.id}
-                                    onClick={(e) => {
-                                        if (e.target.closest('button')) return
-                                        navigate(`/admin/applications/${loan.id}`)
-                                    }}
-                                    className="clickable-row"
-                                >
-                                    <td>
-                                            <div className="font-medium">{loan.fullName || loan.patientName}</div>
-                                            <div className="text-muted text-xs font-mono">
-                                              {loan.applicationCode ? <span style={{ color: '#1d4ed8', fontWeight: 600 }}>{loan.applicationCode}</span> : loan.id}
-                                            </div>
-                                    </td>
-                                    <td>
-                                        <div className="capitalize">{loan.employmentSector || loan.employmentType || '—'}</div>
-                                    </td>
-                                    <td className="font-medium">
-                                        {(loan.requestedAmount || loan.estimatedCost)?.toLocaleString()}
-                                    </td>
-                                    <td>
-                                        <div className="text-xs">Inc: {loan.affordability.monthlyIncome?.toLocaleString() || '—'}</div>
-                                        <div className="text-xs text-muted">Exp: {loan.affordability.monthlyExpenses?.toLocaleString() || '—'}</div>
-                                    </td>
-                                    <td>
-                                        <span className={`affordability-tag ${loan.affordability.affordabilityTag.toLowerCase().replace(' ', '-')}`}>
-                                            {loan.affordability.affordabilityTag}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {loan.riskFlags.some(f => f.severity === 'high') ? (
-                                            <span className="risk-badge risk-badge-high">High</span>
-                                        ) : loan.riskFlags.some(f => f.severity === 'medium') ? (
-                                            <span className="risk-badge risk-badge-medium">Medium</span>
-                                        ) : (
-                                            <span className="risk-badge risk-badge-low">Low</span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <div className="stage-cell">
-                                            <StatusBadge status={loan.status} financingStatus={loan.financing_status} />
-                                            <span className="stage-pill">{getStageLabel(loan)}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {loan.assignedTo ? (
-                                            <span className="text-sm font-medium">{loan.assignedTo === session.username ? 'Me' : loan.assignedTo}</span>
-                                        ) : (
-                                            session?.role === 'sales' ? (
-                                                <button
-                                                    type="button"
-                                                    className="button button--secondary button--compact"
-                                                    disabled={claimingId === loan.id}
-                                                    data-action="claim"
-                                                    onClick={async (e) => {
-                                                        e.stopPropagation()
-                                                        e.preventDefault()
-                                                        setClaimingId(loan.id)
-                                                        try {
-                                                            await adminService.assignToMe(loan.id)
-                                                            await loadLoans()
-                                                        } catch (err) {
-                                                            alert(err.message || 'Could not claim application')
-                                                        } finally {
-                                                            setClaimingId(null)
-                                                        }
-                                                    }}
-                                                >
-                                                    {claimingId === loan.id ? 'Claiming…' : 'Claim'}
-                                                </button>
-                                            ) : (
-                                                <span className="text-muted text-xs italic">Unassigned</span>
-                                            )
-                                        )}
-                                    </td>
-                                    <td className="text-muted text-sm">
-                                        {new Date(loan.submittedAt).toLocaleDateString()}
-                                    </td>
-                                    <td>
-                                        {loan.phone && (
-                                            <button
-                                                title="View Patient 360"
-                                                onClick={e => { e.stopPropagation(); navigate(`/admin/customers/${encodeURIComponent(customerService.normalisePhone(loan.phone))}`) }}
-                                                style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: 5, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#2563eb', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                                            >
-                                                360
-                                            </button>
-                                        )}
+                        </thead>
+                        <tbody>
+                            {filteredLoans.length === 0 ? (
+                                <tr>
+                                    <td colSpan="10" style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                        <AlertTriangle size={32} style={{ margin: '0 auto 10px', opacity: 0.3 }} />
+                                        <div style={{ fontWeight: 600 }}>No applications matched your filters</div>
+                                        <div style={{ fontSize: 'var(--text-xs)', marginTop: 4 }}>Try adjusting your search or filter criteria</div>
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : (
+                                filteredLoans.map(loan => {
+                                    const riskLevel = getRiskLevel(loan)
+                                    return (
+                                        <tr
+                                            key={loan.id}
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={(e) => {
+                                                if (e.target.closest('button')) return
+                                                navigate(`/admin/applications/${loan.id}`)
+                                            }}
+                                        >
+                                            <td style={{ minWidth: 180 }}>
+                                                <div style={{ fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.3 }}>
+                                                    {loan.fullName || loan.patientName}
+                                                </div>
+                                                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                                                    {loan.applicationCode
+                                                        ? <span style={{ color: 'var(--color-info)' }}>{loan.applicationCode}</span>
+                                                        : loan.id
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td className="capitalize" style={{ fontSize: 'var(--text-body-sm)' }}>
+                                                {loan.employmentSector || loan.employmentType || '—'}
+                                            </td>
+                                            <td style={{ fontWeight: 600, color: 'var(--color-text)' }}>
+                                                {(loan.requestedAmount || loan.estimatedCost)?.toLocaleString() || '—'}
+                                            </td>
+                                            <td>
+                                                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                                                    Inc: {loan.affordability.monthlyIncome?.toLocaleString() || '—'}
+                                                </div>
+                                                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                                                    Exp: {loan.affordability.monthlyExpenses?.toLocaleString() || '—'}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={`affordability-tag affordability-tag--${loan.affordability.affordabilityTag?.toLowerCase().replace(/\s/g, '_')}`}>
+                                                    {loan.affordability.affordabilityTag}
+                                                </span>
+                                            </td>
+                                            <td><RiskBadge level={riskLevel} /></td>
+                                            <td>
+                                                <StatusBadge status={loan.status} financingStatus={loan.financing_status} />
+                                            </td>
+                                            <td style={{ fontSize: 'var(--text-body-sm)' }}>
+                                                {loan.assignedTo ? (
+                                                    <span style={{ fontWeight: 500 }}>
+                                                        {loan.assignedTo === session?.username ? 'Me' : loan.assignedTo}
+                                                    </span>
+                                                ) : (
+                                                    session?.role === 'sales' ? (
+                                                        <button
+                                                            type="button"
+                                                            className="button button--secondary button--sm"
+                                                            disabled={claimingId === loan.id}
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation()
+                                                                setClaimingId(loan.id)
+                                                                try {
+                                                                    await adminService.assignToMe(loan.id)
+                                                                    await loadLoans()
+                                                                } catch (err) {
+                                                                    alert(err.message || 'Could not claim application')
+                                                                } finally {
+                                                                    setClaimingId(null)
+                                                                }
+                                                            }}
+                                                        >
+                                                            {claimingId === loan.id ? 'Claiming…' : 'Claim'}
+                                                        </button>
+                                                    ) : (
+                                                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-label)', fontStyle: 'italic' }}>
+                                                            Unassigned
+                                                        </span>
+                                                    )
+                                                )}
+                                            </td>
+                                            <td style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+                                                <span title={new Date(loan.submittedAt).toLocaleString()}>
+                                                    {relativeDate(loan.submittedAt)}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {loan.phone && (
+                                                    <button
+                                                        aria-label="View Customer 360 profile"
+                                                        className="cc-btn-360"
+                                                        onClick={e => {
+                                                            e.stopPropagation()
+                                                            navigate(`/admin/customers/${encodeURIComponent(customerService.normalisePhone(loan.phone))}`)
+                                                        }}
+                                                    >
+                                                        360
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
 
-                <div className="table-footer">
-                    Showing {filteredLoans.length} of {loans.length} total applications
+                <div className="admin-table-footer">
+                    <span>Showing {filteredLoans.length} of {loans.length} applications</span>
+                </div>
+            </div>
+
+            {/* ── Mobile cards (shown ≤768px via CSS) ── */}
+            <div className="cc-app-cards">
+                {filteredLoans.length === 0 ? (
+                    <div className="cc-empty-state">
+                        <AlertTriangle size={36} className="cc-empty-state-icon" />
+                        <div className="cc-empty-state-title">No applications found</div>
+                        <div className="cc-empty-state-desc">Try adjusting your search or filter criteria</div>
+                    </div>
+                ) : (
+                    filteredLoans.map(loan => {
+                        const riskLevel = getRiskLevel(loan)
+                        return (
+                            <div
+                                key={loan.id}
+                                className="cc-app-card"
+                                onClick={() => navigate(`/admin/applications/${loan.id}`)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={e => e.key === 'Enter' && navigate(`/admin/applications/${loan.id}`)}
+                                aria-label={`Open application for ${loan.fullName || loan.patientName}`}
+                            >
+                                <div className="cc-app-card-header">
+                                    <div>
+                                        <div className="cc-app-card-name">{loan.fullName || loan.patientName}</div>
+                                        <div className="cc-app-card-id">
+                                            {loan.applicationCode || loan.id}
+                                        </div>
+                                    </div>
+                                    <div className="cc-app-card-badges">
+                                        <RiskBadge level={riskLevel} />
+                                        <StatusBadge status={loan.status} />
+                                    </div>
+                                </div>
+
+                                <div className="cc-app-card-body">
+                                    <div className="cc-app-card-field">
+                                        <div className="cc-app-card-field-label">Amount</div>
+                                        <div className="cc-app-card-field-value">
+                                            ₦{(loan.requestedAmount || loan.estimatedCost)?.toLocaleString() || '—'}
+                                        </div>
+                                    </div>
+                                    <div className="cc-app-card-field">
+                                        <div className="cc-app-card-field-label">Affordability</div>
+                                        <div className="cc-app-card-field-value">
+                                            <span className={`affordability-tag affordability-tag--${loan.affordability.affordabilityTag?.toLowerCase().replace(/\s/g, '_')}`}>
+                                                {loan.affordability.affordabilityTag}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="cc-app-card-field">
+                                        <div className="cc-app-card-field-label">Sector</div>
+                                        <div className="cc-app-card-field-value capitalize">
+                                            {loan.employmentSector || loan.employmentType || '—'}
+                                        </div>
+                                    </div>
+                                    <div className="cc-app-card-field">
+                                        <div className="cc-app-card-field-label">Submitted</div>
+                                        <div className="cc-app-card-field-value">{relativeDate(loan.submittedAt)}</div>
+                                    </div>
+                                </div>
+
+                                <div className="cc-app-card-footer">
+                                    <span className="cc-app-card-assigned">
+                                        {loan.assignedTo
+                                            ? `Assigned: ${loan.assignedTo === session?.username ? 'Me' : loan.assignedTo}`
+                                            : 'Unassigned'
+                                        }
+                                    </span>
+                                    <ChevronRight size={16} style={{ color: 'var(--color-text-label)' }} />
+                                </div>
+                            </div>
+                        )
+                    })
+                )}
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', textAlign: 'center', padding: '8px 0' }}>
+                    Showing {filteredLoans.length} of {loans.length} applications
                 </div>
             </div>
         </div>
