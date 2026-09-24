@@ -538,6 +538,14 @@ export const adminService = {
     })
   },
 
+  verifyNinForLoan: async (loanId) => {
+    requireBackendFeature('NIN verification')
+    const trimmed = assertBackendLoanId(loanId, 'NIN verification')
+    return adminRequest(`/admin/loan-applications/${trimmed}/dojah/verify-nin`, {
+      method: 'POST',
+    })
+  },
+
   fetchMonoStatementForLoan: async (loanId) => {
     requireBackendFeature('Mono statement fetch')
     const trimmed = assertBackendLoanId(loanId, 'Mono statement fetch')
