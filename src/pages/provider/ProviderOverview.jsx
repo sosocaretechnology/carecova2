@@ -1,15 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Users, CreditCard, DollarSign, TrendingUp, AlertCircle, Link2, Copy, CheckCheck } from 'lucide-react'
+import { Users, CreditCard, AlertCircle, Link2, Copy, CheckCheck } from 'lucide-react'
 import { providerAuthService } from '../../services/providerAuthService'
 import { useProviderAuth } from '../../hooks/useProviderAuth'
 import { useSessionExpired } from '../../components/provider/ProviderLayout'
 import IconBadge from '../../components/IconBadge'
 import FullScreenLoader from '../../components/ui/FullScreenLoader'
-
-function formatCurrency(amount) {
-  if (amount == null) return '—'
-  return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(amount)
-}
 
 const STATUS_ROWS = [
   { key: 'pendingLoans', label: 'Pending Review', color: 'var(--color-warning)', bg: 'var(--color-warning-bg)' },
@@ -101,50 +96,21 @@ export default function ProviderOverview() {
           <div className="kpi-value">{stats?.totalLoans ?? stats?.loanCount ?? '—'}</div>
           <div className="kpi-subtext">{stats?.activeLoans ?? 0} active</div>
         </div>
-        <div className="admin-kpi-card success">
-          <IconBadge color="green" size="md"><DollarSign size={20} /></IconBadge>
-          <div className="kpi-title" style={{ marginTop: 12 }}>Total Disbursed</div>
-          <div className="kpi-value">{formatCurrency(stats?.totalDisbursed ?? stats?.disbursedAmount)}</div>
-          <div className="kpi-subtext">Across all patients</div>
-        </div>
-        <div className="admin-kpi-card warning">
-          <IconBadge color="amber" size="md"><TrendingUp size={20} /></IconBadge>
-          <div className="kpi-title" style={{ marginTop: 12 }}>Repayment Rate</div>
-          <div className="kpi-value">{stats?.repaymentRate != null ? `${stats.repaymentRate}%` : '—'}</div>
-          <div className="kpi-subtext">On-time repayments</div>
-        </div>
       </div>
 
-      <div className="cc-breakdown-grid">
-        <div className="cc-breakdown-card">
-          <h3>Application Status</h3>
-          {STATUS_ROWS.map((row) => (
-            <div key={row.key} className="cc-breakdown-row">
-              <span className="cc-breakdown-label">{row.label}</span>
-              <span style={{
-                padding: '2px 10px', borderRadius: 12, fontSize: 'var(--text-xs)', fontWeight: 600,
-                background: row.bg, color: row.color,
-              }}>
-                {stats?.[row.key] ?? 0}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="cc-breakdown-card">
-          <h3>Repayment Summary</h3>
-          {[
-            { label: 'Total Collected', value: formatCurrency(stats?.totalRepaid) },
-            { label: 'Outstanding Balance', value: formatCurrency(stats?.outstandingBalance) },
-            { label: 'Pending Loans', value: stats?.pendingLoans ?? 0 },
-            { label: 'Completed Loans', value: stats?.completedLoans ?? 0 },
-          ].map((row) => (
-            <div key={row.label} className="cc-breakdown-row">
-              <span className="cc-breakdown-label">{row.label}</span>
-              <span className="cc-breakdown-value">{row.value ?? '—'}</span>
-            </div>
-          ))}
-        </div>
+      <div className="cc-breakdown-card">
+        <h3>Application Status</h3>
+        {STATUS_ROWS.map((row) => (
+          <div key={row.key} className="cc-breakdown-row">
+            <span className="cc-breakdown-label">{row.label}</span>
+            <span style={{
+              padding: '2px 10px', borderRadius: 12, fontSize: 'var(--text-xs)', fontWeight: 600,
+              background: row.bg, color: row.color,
+            }}>
+              {stats?.[row.key] ?? 0}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   )
