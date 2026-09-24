@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getRiskConfig, saveRiskConfig } from '../../data/riskConfig'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 export default function RulesConfig() {
     const [config, setConfig] = useState(null)
@@ -25,7 +26,7 @@ export default function RulesConfig() {
         alert('Business rules updated successfully. They will apply immediately to the risk engine.')
     }
 
-    if (!config) return <div className="admin-loading">Loading rules...</div>
+    if (!config) return <FullScreenLoader label="Loading rules…" />
 
     return (
         <div className="admin-page">

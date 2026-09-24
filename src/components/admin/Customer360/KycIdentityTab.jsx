@@ -64,8 +64,8 @@ export default function KycIdentityTab({ customer }) {
   const vs = customer.verificationStatus || {}
 
   const identityStatus   = vs.identity === 'verified' ? 'verified' : (vs.identity || 'not_run')
-  const creditStatus     = vs.credit   === 'verified' ? 'verified' : (vs.credit   || 'not_run')
-  const bankingStatus    = vs.banking  === 'verified' ? 'verified' : (vs.banking  || 'not_run')
+  const creditStatus     = vs.credit   === 'verified' ? 'verified' : (vs.credit   || (customer.latestLoan?.firstCentralResult ? 'verified' : 'not_run'))
+  const bankingStatus    = vs.banking  === 'verified' ? 'verified' : (vs.banking  || (customer.hasMonoConnection || customer.monoAccountId ? 'verified' : 'not_run'))
   const payrollStatus    = vs.payroll  === 'verified' ? 'verified' : (vs.payroll  || 'not_run')
 
   const fc = customer.latestLoan?.firstCentralResult

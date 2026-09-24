@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
 import { useProviderAuth } from '../../hooks/useProviderAuth'
+import logo from '../../assets/logo.png'
 
 export default function ProviderLogin() {
   const navigate = useNavigate()
@@ -33,11 +34,17 @@ export default function ProviderLogin() {
     <div className="admin-login-page">
       <div className="login-container">
         <div className="login-header">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
+            <img src={logo} alt="CareCova" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.375rem', color: 'var(--color-primary-dark)', letterSpacing: '-0.02em' }}>
+              CareCova
+            </span>
+          </div>
           <h1>Provider Portal</h1>
           <p>Sign in to manage your facility profile and patients</p>
         </div>
         <form onSubmit={handleSubmit} className="login-form">
-          {error ? <div className="error-message">{error}</div> : null}
+          {error && <div className="alert-box alert-error" style={{ marginBottom: 16 }}>{error}</div>}
           <Input
             label="Email"
             type="email"

@@ -6,6 +6,7 @@ import { trackingService } from '../../services/trackingService'
 import { paymentService } from '../../services/paymentService'
 import RepaymentDashboard from '../../components/RepaymentDashboard'
 import StatusBadge from '../../components/StatusBadge'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 const asNaira = (nairaValue, koboValue) => {
   if (typeof nairaValue === 'number' && Number.isFinite(nairaValue)) return nairaValue
@@ -77,9 +78,7 @@ export default function CustomerLoanDetail() {
     return () => { cancelled = true }
   }, [USE_BACKEND, loan?.id])
 
-  if (loading) {
-    return <div className="customer-portal-loading">Loading credit details...</div>
-  }
+  if (loading) return <FullScreenLoader label="Loading credit details…" />
 
   if (forbidden || !loan) {
     return (

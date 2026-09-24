@@ -371,28 +371,23 @@ export default function ProviderRegisterPatient() {
 
   if (success) {
     return (
-      <div style={{ maxWidth: '520px', margin: '0 auto', textAlign: 'center', padding: '48px 24px' }}>
-        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-          <CheckCircle size={32} color="#059669" />
+      <div className="cc-register-success">
+        <div className="cc-register-success-icon">
+          <CheckCircle size={32} />
         </div>
-        <h2 style={{ margin: '0 0 8px', fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>Patient Registered!</h2>
-        <p style={{ margin: '0 0 4px', fontSize: '0.9375rem', color: '#6b7280' }}>
-          The loan application has been submitted to the CareCova sales queue.
+        <h2>Patient Registered!</h2>
+        <p>The loan application has been submitted to the CareCova sales queue.</p>
+        <p className="app-id">
+          Application ID: <strong style={{ color: 'var(--color-text-secondary)' }}>{success.applicationId}</strong>
         </p>
-        <p style={{ margin: '0 0 28px', fontSize: '0.8125rem', color: '#9ca3af' }}>
-          Application ID: <strong style={{ color: '#374151' }}>{success.applicationId}</strong>
-        </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+        <div className="cc-register-success-actions">
           <button
             onClick={() => { setForm(EMPTY); setStep(1); setSuccess(null); setDobDay(''); setDobMonth(''); setDobYear('') }}
-            style={{ padding: '10px 20px', borderRadius: '8px', border: '1.5px solid #e2e8f0', background: '#fff', color: '#374151', fontWeight: 500, fontSize: '0.875rem', cursor: 'pointer' }}
+            className="button button--secondary"
           >
             Register Another
           </button>
-          <button
-            onClick={() => navigate('/provider/patients')}
-            style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
-          >
+          <button onClick={() => navigate('/provider/patients')} className="button button--primary">
             View Patients
           </button>
         </div>
@@ -447,15 +442,15 @@ export default function ProviderRegisterPatient() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ maxWidth: '720px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>Register New Patient</h2>
-        <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#6b7280' }}>
-          Submit a healthcare financing application on behalf of your patient
-        </p>
+    <div className="admin-page" style={{ maxWidth: 720 }}>
+      <div className="admin-page-header" style={{ marginBottom: 24 }}>
+        <div>
+          <h1>Register New Patient</h1>
+          <p>Submit a healthcare financing application on behalf of your patient</p>
+        </div>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '28px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+      <div className="cc-step-form-card">
         <StepBar />
 
         <form onSubmit={handleSubmit}>
@@ -1012,31 +1007,29 @@ export default function ProviderRegisterPatient() {
               ))}
 
               {submitError && (
-                <div style={{ padding: '12px 16px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <AlertCircle size={16} /> {submitError}
+                <div className="alert-box alert-error">
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} /> {submitError}
                 </div>
               )}
             </div>
           )}
 
           {/* ── Navigation ─────────────────────────────────────────────────── */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '28px', paddingTop: '20px', borderTop: '1px solid #f3f4f6' }}>
-            <button type="button" onClick={step === 1 ? () => navigate('/provider/patients') : back}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', borderRadius: '8px', border: '1.5px solid #e2e8f0', background: '#fff', color: '#374151', fontWeight: 500, fontSize: '0.875rem', cursor: 'pointer' }}
+          <div className="cc-step-nav">
+            <button
+              type="button"
+              onClick={step === 1 ? () => navigate('/provider/patients') : back}
+              className="button button--secondary"
             >
               <ChevronLeft size={16} /> {step === 1 ? 'Cancel' : 'Back'}
             </button>
 
             {step < 5 ? (
-              <button type="button" onClick={next}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 24px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
-              >
+              <button type="button" onClick={next} className="button button--primary">
                 Continue <ChevronRight size={16} />
               </button>
             ) : (
-              <button type="submit" disabled={submitting}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 28px', borderRadius: '8px', border: 'none', background: submitting ? '#93c5fd' : 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: submitting ? 'wait' : 'pointer' }}
-              >
+              <button type="submit" disabled={submitting} className="button button--primary">
                 <UserPlus size={16} />
                 {submitting ? 'Submitting…' : 'Register Patient'}
               </button>
