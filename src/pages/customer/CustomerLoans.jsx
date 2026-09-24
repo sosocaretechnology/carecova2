@@ -4,6 +4,7 @@ import { useCustomerAuth } from '../../hooks/useCustomerAuth'
 import { loanService } from '../../services/loanService'
 import { trackingService } from '../../services/trackingService'
 import StatusBadge from '../../components/StatusBadge'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 const formatNaira = (value) => `₦${Math.round(Number(value || 0)).toLocaleString()}`
 
@@ -38,9 +39,7 @@ export default function CustomerLoans() {
     return () => { cancelled = true }
   }, [customer?.phone])
 
-  if (loading) {
-    return <div className="customer-portal-loading">Loading your credits...</div>
-  }
+  if (loading) return <FullScreenLoader label="Loading your credits…" />
 
   return (
     <div className="customer-loans-page">

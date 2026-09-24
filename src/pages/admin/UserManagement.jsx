@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '../../services/adminService'
 import { Plus, Shield, ShieldAlert, UserX, UserCheck, Trash2, KeyRound } from 'lucide-react'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 const ROLE_LABELS = {
   admin: 'Super Admin',
@@ -104,7 +105,7 @@ export default function UserManagement() {
     }
   }
 
-  if (loading) return <div className="admin-loading">Loading users...</div>
+  if (loading) return <FullScreenLoader label="Loading users…" />
 
   return (
     <div className="admin-page">
@@ -121,7 +122,8 @@ export default function UserManagement() {
       {loadError && <div className="alert-box alert-error" style={{ margin: '16px 0' }}>{loadError}</div>}
 
       <div className="admin-table-container" style={{ marginTop: '24px' }}>
-        <table className="admin-table">
+        <div className="admin-table-wrapper">
+        <table className="admin-table has-sticky-col">
           <thead>
             <tr>
               <th>Name</th>
@@ -183,6 +185,7 @@ export default function UserManagement() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* ── Add User Modal ── */}

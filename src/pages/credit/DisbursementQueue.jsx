@@ -4,6 +4,7 @@ import { adminService } from '../../services/adminService'
 import StatusBadge from '../../components/StatusBadge'
 import { getStageLabel } from '../../utils/statusModel'
 import { Search, Filter, Clock, ArrowRight } from 'lucide-react'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 function timeInQueue(submittedAt) {
     if (!submittedAt) return '—'
@@ -39,7 +40,7 @@ export default function DisbursementQueue() {
         return matchSearch && matchMethod
     })
 
-    if (loading) return <div className="admin-loading">Loading disbursement queue...</div>
+    if (loading) return <FullScreenLoader label="Loading disbursement queue…" />
 
     return (
         <div className="admin-page">
@@ -80,7 +81,8 @@ export default function DisbursementQueue() {
             </div>
 
             <div className="admin-table-container">
-                <table className="admin-table">
+              <div className="admin-table-wrapper">
+                <table className="admin-table has-sticky-col">
                     <thead>
                         <tr>
                             <th>Applicant</th>
@@ -141,6 +143,7 @@ export default function DisbursementQueue() {
                         )}
                     </tbody>
                 </table>
+              </div>
             </div>
         </div>
     )

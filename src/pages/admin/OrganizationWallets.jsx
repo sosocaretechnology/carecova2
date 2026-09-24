@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { adminService } from '../../services/adminService'
 import logoUrl from '../../assets/logo.png'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 const fmtCurrency = (value, currency = 'NGN') => {
   const amount = Number(value || 0)
@@ -357,7 +358,7 @@ export default function OrganizationWallets() {
   }
 
   if (loading && !overview) {
-    return <div className="admin-loading">Loading wallets...</div>
+    return <FullScreenLoader label="Loading wallets…" />
   }
 
   return (

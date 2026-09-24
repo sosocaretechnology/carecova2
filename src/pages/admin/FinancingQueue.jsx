@@ -250,7 +250,8 @@ export default function FinancingQueue() {
                 </div>
             ) : (
                 <div className="admin-table-container">
-                    <table className="admin-table">
+                  <div className="admin-table-wrapper">
+                    <table className="admin-table has-sticky-col">
                         <thead>
                             <tr>
                                 <th>ID & Applicant</th>
@@ -343,6 +344,7 @@ export default function FinancingQueue() {
                             })}
                         </tbody>
                     </table>
+                  </div>
                     <div className="table-footer">
                         Showing {filtered.length} of {loans.length} applications
                     </div>

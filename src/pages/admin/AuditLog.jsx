@@ -64,7 +64,8 @@ export default function AuditLogs() {
             </div>
 
             <div className="admin-table-container">
-                <table className="admin-table">
+              <div className="admin-table-wrapper">
+                <table className="admin-table has-sticky-col">
                     <thead>
                         <tr>
                             <th>User</th>
@@ -112,6 +113,7 @@ export default function AuditLogs() {
                         )}
                     </tbody>
                 </table>
+              </div>
             </div>
         </div>
     )

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Building2, Save, AlertCircle, CheckCircle } from 'lucide-react'
 import { providerAuthService } from '../../services/providerAuthService'
 import IconBadge from '../../components/IconBadge'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 const PROVIDER_TYPES = [
   { value: 'hospital', label: 'Hospital' },
@@ -9,25 +10,6 @@ const PROVIDER_TYPES = [
   { value: 'dental', label: 'Dental' },
   { value: 'gym', label: 'Gym / Wellness' },
 ]
-
-const fieldStyle = {
-  width: '100%',
-  padding: '9px 12px',
-  borderRadius: '8px',
-  border: '1.5px solid #e2e8f0',
-  fontSize: '0.875rem',
-  outline: 'none',
-  background: '#fff',
-  boxSizing: 'border-box',
-}
-
-const labelStyle = {
-  display: 'block',
-  fontSize: '0.8125rem',
-  fontWeight: 500,
-  color: '#374151',
-  marginBottom: '6px',
-}
 
 export default function ProviderProfile() {
   const [profile, setProfile] = useState(null)
@@ -101,95 +83,72 @@ export default function ProviderProfile() {
     }
   }
 
-  if (loading) {
-    return <div style={{ padding: '60px', textAlign: 'center', color: '#9ca3af' }}>Loading profile…</div>
-  }
+  if (loading) return <FullScreenLoader label="Loading profile…" />
+
+  const isActive = profile?.status === 'active' || profile?.isActive
 
   return (
-    <div style={{ maxWidth: '680px' }}>
-      <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+    <div className="admin-page" style={{ maxWidth: 720 }}>
+      <div className="admin-page-header">
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>Facility Profile</h2>
-          <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: '#6b7280' }}>
-            View and manage your facility's information
-          </p>
+          <h1>Facility Profile</h1>
+          <p>View and manage your facility's information</p>
         </div>
         {!editing && (
-          <button
-            onClick={() => setEditing(true)}
-            style={{
-              padding: '9px 20px', borderRadius: '8px', border: 'none',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-              color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
-            }}
-          >
+          <button onClick={() => setEditing(true)} className="button button--primary">
             Edit Profile
           </button>
         )}
       </div>
 
       {error && (
-        <div style={{
-          marginBottom: '16px', padding: '12px 16px', borderRadius: '8px',
-          background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626',
-          fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '8px',
-        }}>
-          <AlertCircle size={16} /> {error}
+        <div className="alert-box alert-error">
+          <AlertCircle size={16} style={{ flexShrink: 0 }} /> {error}
         </div>
       )}
-
       {success && (
-        <div style={{
-          marginBottom: '16px', padding: '12px 16px', borderRadius: '8px',
-          background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a',
-          fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '8px',
-        }}>
-          <CheckCircle size={16} /> {success}
+        <div className="alert-box alert-success">
+          <CheckCircle size={16} style={{ flexShrink: 0 }} /> {success}
         </div>
       )}
 
-      <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-        {/* Header */}
-        <div style={{
-          padding: '20px 24px', borderBottom: '1px solid #f3f4f6',
-          display: 'flex', alignItems: 'center', gap: '14px',
-        }}>
+      <div className="admin-table-container" style={{ padding: 0 }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border-light)', display: 'flex', alignItems: 'center', gap: 14 }}>
           <IconBadge color="blue" size="lg"><Building2 size={24} /></IconBadge>
           <div>
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#111827' }}>
+            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)' }}>
               {profile?.name || profile?.facilityName || '—'}
             </div>
-            <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '2px', textTransform: 'capitalize' }}>
+            <div style={{ fontSize: 'var(--text-body-sm)', color: 'var(--color-text-muted)', marginTop: 2, textTransform: 'capitalize' }}>
               {profile?.type || '—'} &bull;{' '}
-              <span style={{ color: profile?.status === 'active' || profile?.isActive ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-                {profile?.status || (profile?.isActive ? 'Active' : 'Inactive')}
+              <span style={{ color: isActive ? 'var(--color-success-text)' : 'var(--color-danger-text)', fontWeight: 600 }}>
+                {profile?.status || (isActive ? 'Active' : 'Inactive')}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Form / View */}
-        <form onSubmit={handleSave} style={{ padding: '24px' }}>
-          <div style={{ display: 'grid', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>Facility Name</label>
+        <form onSubmit={handleSave} style={{ padding: 24 }}>
+          <div style={{ display: 'grid', gap: 16 }}>
+            <div className="cc-form-row-2">
+              <div className="input-group">
+                <label className="input-label">Facility Name</label>
                 <input
                   name="name"
+                  className="input"
                   value={form?.name || ''}
                   onChange={handleInput}
                   disabled={!editing}
-                  style={{ ...fieldStyle, background: editing ? '#fff' : '#f9fafb', color: editing ? '#111827' : '#6b7280' }}
                 />
               </div>
-              <div>
-                <label style={labelStyle}>Facility Type</label>
+              <div className="input-group">
+                <label className="input-label">Facility Type</label>
                 <select
                   name="type"
+                  className="input"
                   value={form?.type || ''}
                   onChange={handleInput}
                   disabled={!editing}
-                  style={{ ...fieldStyle, background: editing ? '#fff' : '#f9fafb', color: editing ? '#111827' : '#6b7280', cursor: editing ? 'pointer' : 'default' }}
                 >
                   {PROVIDER_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -198,77 +157,61 @@ export default function ProviderProfile() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={labelStyle}>Email Address</label>
+            <div className="cc-form-row-2">
+              <div className="input-group">
+                <label className="input-label">Email Address</label>
                 <input
                   name="email"
                   type="email"
+                  className="input"
                   value={form?.email || ''}
                   onChange={handleInput}
                   disabled={!editing}
-                  style={{ ...fieldStyle, background: editing ? '#fff' : '#f9fafb', color: editing ? '#111827' : '#6b7280' }}
                 />
               </div>
-              <div>
-                <label style={labelStyle}>Phone Number</label>
+              <div className="input-group">
+                <label className="input-label">Phone Number</label>
                 <input
                   name="phone"
+                  className="input"
                   value={form?.phone || ''}
                   onChange={handleInput}
                   disabled={!editing}
-                  style={{ ...fieldStyle, background: editing ? '#fff' : '#f9fafb', color: editing ? '#111827' : '#6b7280' }}
                 />
               </div>
             </div>
 
-            <div>
-              <label style={labelStyle}>Address</label>
+            <div className="input-group">
+              <label className="input-label">Address</label>
               <input
                 name="address"
+                className="input"
                 value={form?.address || ''}
                 onChange={handleInput}
                 disabled={!editing}
                 placeholder={editing ? 'e.g. 123 Street, Lagos' : '—'}
-                style={{ ...fieldStyle, background: editing ? '#fff' : '#f9fafb', color: editing ? '#111827' : '#6b7280' }}
               />
             </div>
 
-            <div>
-              <label style={labelStyle}>Contact Person</label>
+            <div className="input-group">
+              <label className="input-label">Contact Person</label>
               <input
                 name="contactName"
+                className="input"
                 value={form?.contactName || ''}
                 onChange={handleInput}
                 disabled={!editing}
                 placeholder={editing ? 'e.g. Dr. Ade Okafor' : '—'}
-                style={{ ...fieldStyle, background: editing ? '#fff' : '#f9fafb', color: editing ? '#111827' : '#6b7280' }}
               />
             </div>
           </div>
 
           {editing && (
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #f3f4f6' }}>
-              <button
-                type="button"
-                onClick={handleCancel}
-                style={{
-                  padding: '9px 20px', borderRadius: '8px', border: '1.5px solid #e2e8f0',
-                  background: '#fff', color: '#374151', fontWeight: 500, fontSize: '0.875rem', cursor: 'pointer',
-                }}
-              >
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--color-border-light)' }}>
+              <button type="button" onClick={handleCancel} className="button button--secondary">
                 Cancel
               </button>
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  padding: '9px 24px', borderRadius: '8px', border: 'none',
-                  background: saving ? '#93c5fd' : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                  color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: saving ? 'wait' : 'pointer',
-                }}
-              >
+              <button type="submit" disabled={saving} className="button button--primary">
                 <Save size={15} /> {saving ? 'Saving…' : 'Save Changes'}
               </button>
             </div>

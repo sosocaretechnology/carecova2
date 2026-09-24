@@ -159,15 +159,15 @@ export default function RecoveryWorkbench() {
 
                 <div className="dashboard-side-col">
                     {selectedLoan ? (
-                        <div className="recovery-panel bg-white p-4 rounded-lg shadow-sm border">
+                        <div className="cc-recovery-panel">
                             <h3 className="flex items-center gap-2 mb-4">
                                 <AlertTriangle className="text-error" size={20} />
                                 Recovery Action: {selectedLoan.id}
                             </h3>
 
-                            <div className="contact-info mb-6 p-3 bg-gray-50 rounded">
+                            <div className="cc-contact-info">
                                 <div className="text-sm font-bold">{selectedLoan.fullName}</div>
-                                <div className="text-sm text-primary font-medium mb-2">{selectedLoan.phone}</div>
+                                <div className="text-sm font-medium mb-2" style={{ color: 'var(--color-primary)' }}>{selectedLoan.phone}</div>
                                 <div className="flex gap-2">
                                     <a href={`tel:${selectedLoan.phone}`} className="button button--primary text-xs flex-1">
                                         <Phone size={14} /> Call Now
@@ -178,17 +178,14 @@ export default function RecoveryWorkbench() {
                                 </div>
                             </div>
 
-                            <div className="mt-4 p-3 bg-amber-50 rounded border border-amber-100">
-                              <div className="flex items-center gap-2 mb-2">
-                                <RefreshCcw size={14} className="text-amber-500" />
-                                <span className="text-xs font-bold uppercase text-amber-700">
-                                  Repayment Simulation (Demo)
-                                </span>
+                            <div className="cc-sim-panel">
+                              <div className="cc-sim-header">
+                                <RefreshCcw size={14} />
+                                <span className="cc-sim-title">Repayment Simulation (Demo)</span>
                               </div>
-                              <p className="text-xs text-amber-700 mb-2">
+                              <p className="cc-sim-desc">
                                 Use these buttons in demo mode to simulate what happens when a borrower pays
-                                part or all of the next overdue installment. This updates the loan, wallet,
-                                and repayment history.
+                                part or all of the next overdue installment.
                               </p>
                               <div className="flex gap-2">
                                 <button
@@ -230,7 +227,7 @@ export default function RecoveryWorkbench() {
                                 {selectedLoan.recoveryHistory?.length > 0 ? (
                                     <div className="space-y-3">
                                         {selectedLoan.recoveryHistory.map((h, i) => (
-                                            <div key={i} className="text-xs border-left-large pl-2 py-1" style={{ borderLeft: '2px solid #e5e7eb' }}>
+                                            <div key={i} className="cc-recovery-history-item">
                                                 <div className="font-bold">{h.adminName} <span className="text-muted font-normal ml-2">{new Date(h.date).toLocaleDateString()}</span></div>
                                                 <div className="mt-1 text-gray-700">{h.note}</div>
                                             </div>
@@ -242,7 +239,7 @@ export default function RecoveryWorkbench() {
                             </div>
                         </div>
                     ) : (
-                        <div className="empty-selection p-8 text-center bg-gray-50 rounded-lg border border-dashed">
+                        <div className="cc-empty-state">
                             <AlertTriangle size={32} className="text-muted mb-2 mx-auto" />
                             <p className="text-sm text-muted">Select a loan from the list to initiate recovery actions.</p>
                         </div>

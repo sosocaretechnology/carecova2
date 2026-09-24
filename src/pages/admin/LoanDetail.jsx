@@ -9,6 +9,7 @@ import {
     TrendingDown, DollarSign, Activity, X
 } from 'lucide-react'
 import IconBadge from '../../components/IconBadge'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 function pct(paid, total) {
     if (!total) return 0
@@ -68,7 +69,7 @@ export default function LoanDetail() {
         })()
     }, [loan?.id])
 
-    if (loading) return <div className="admin-loading">Loading loan details...</div>
+    if (loading) return <FullScreenLoader label="Loading loan details…" />
     if (!loan) return <div className="admin-page"><p>Loan not found.</p></div>
 
     const schedule = loan.repaymentSchedule || []

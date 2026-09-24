@@ -65,7 +65,8 @@ export default function Repayments() {
                     <History size={18} className="text-muted" />
                     <h2 className="text-sm font-bold uppercase tracking-widest text-muted m-0">Transaction History</h2>
                 </div>
-                <table className="admin-table">
+                <div className="admin-table-wrapper">
+                <table className="admin-table has-sticky-col">
                     <thead>
                         <tr>
                             <th>Transaction ID</th>
@@ -116,6 +117,7 @@ export default function Repayments() {
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     )
