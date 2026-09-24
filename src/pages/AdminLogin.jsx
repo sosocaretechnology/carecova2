@@ -4,6 +4,7 @@ import Button from '../components/Button'
 import Input from '../components/Input'
 import { useAuth } from '../hooks/useAuth'
 import { adminService } from '../services/adminService'
+import logo from '../assets/logo.png'
 
 export default function AdminLogin() {
   const navigate = useNavigate()
@@ -66,11 +67,19 @@ export default function AdminLogin() {
     <div className="admin-login-page">
       <div className="login-container">
         <div className="login-header">
-          <h1>CareCova Admin</h1>
-          <p>Sign in to manage loan applications</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
+            <img src={logo} alt="CareCova" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.375rem', color: 'var(--color-primary-dark)', letterSpacing: '-0.02em' }}>
+              CareCova
+            </span>
+          </div>
+          <h1>Admin Portal</h1>
+          <p>Sign in to manage credit applications</p>
         </div>
         <form onSubmit={handleSubmit} className="login-form">
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="alert-box alert-error" style={{ marginBottom: 16 }}>{error}</div>
+          )}
           <Input
             label="Username or email"
             type="text"
@@ -88,7 +97,7 @@ export default function AdminLogin() {
             required
           />
           <Button type="submit" variant="primary" className="full-width" disabled={loading || checkingSession}>
-            {checkingSession ? 'Checking session...' : loading ? 'Signing in...' : 'Sign In'}
+            {checkingSession ? 'Checking session…' : loading ? 'Signing in…' : 'Sign In'}
           </Button>
         </form>
         <div className="login-note">

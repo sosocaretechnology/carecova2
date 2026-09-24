@@ -1243,6 +1243,110 @@
 }
 
 /* ============================================================
+   CUSTOMER 360 — MOBILE TAB SCROLLING
+============================================================ */
+.customer-360-tabs,
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x proximity;
+  padding-bottom: 2px;
+}
+
+.customer-360-tabs::-webkit-scrollbar,
+.tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fade indicator on right edge to show more tabs */
+.customer-360-tabs-wrap,
+.tab-bar-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.customer-360-tabs-wrap::after,
+.tab-bar-wrap::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to right, transparent, var(--color-bg));
+  pointer-events: none;
+}
+
+/* Tab buttons */
+.tab-btn,
+.customer-360-tab {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--text-label);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+
+.tab-btn:hover,
+.customer-360-tab:hover {
+  background: var(--color-bg-warm);
+  color: var(--color-text-secondary);
+}
+
+.tab-btn.active,
+.customer-360-tab.active {
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary-muted);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+/* ============================================================
+   ALERT BOXES (used in admin pages)
+============================================================ */
+.alert-box {
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm);
+  border: 1px solid;
+  margin-bottom: 16px;
+}
+
+.alert-error {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger-text);
+}
+
+.alert-warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning-text);
+}
+
+.alert-success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
+  color: var(--color-success-text);
+}
+
+.alert-info {
+  background: var(--color-info-bg);
+  border-color: var(--color-info-border);
+  color: var(--color-info-text);
+}
+
+/* ============================================================
    ICON BADGE IMPROVEMENTS (for nav icons)
 ============================================================ */
 .icon-badge {

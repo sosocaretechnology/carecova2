@@ -71,7 +71,8 @@ export default function ActiveLoans() {
             </div>
 
             <div className="admin-table-container mt-4">
-                <table className="admin-table">
+              <div className="admin-table-wrapper">
+                <table className="admin-table has-sticky-col">
                     <thead>
                         <tr>
                             <th>Health</th>
@@ -128,6 +129,7 @@ export default function ActiveLoans() {
                         )}
                     </tbody>
                 </table>
+              </div>
             </div>
         </div>
     )
