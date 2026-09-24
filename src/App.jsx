@@ -65,11 +65,21 @@ import FinancialVerificationPage from './pages/FinancialVerification/FinancialVe
 import { NotificationProvider } from './context/NotificationContext'
 import './App.css'
 import './styles/admin-shell.css'
+import logo from './assets/logo.png'
+
+function AuthLoadingScreen() {
+  return (
+    <div className="admin-loading">
+      <img src={logo} alt="CareCova" className="cc-auth-loading-logo" />
+      <span className="cc-auth-loading-text">Loading CareCova…</span>
+    </div>
+  )
+}
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading, session } = useAuth()
 
-  if (loading) return <div className="loading">Loading...</div>
+  if (loading) return <AuthLoadingScreen />
   if (!isAuthenticated) return <Navigate to="/admin" replace />
   if (session?.role === 'credit_officer') return <Navigate to="/credit/dashboard" replace />
   return children
@@ -78,7 +88,7 @@ function ProtectedRoute({ children }) {
 function ProtectedCreditRoute({ children }) {
   const { isAuthenticated, loading, session } = useAuth()
 
-  if (loading) return <div className="loading">Loading...</div>
+  if (loading) return <AuthLoadingScreen />
   if (!isAuthenticated) return <Navigate to="/admin" replace />
   if (session?.role !== 'credit_officer' && session?.role !== 'admin') {
     return <Navigate to="/admin/dashboard" replace />
@@ -88,7 +98,7 @@ function ProtectedCreditRoute({ children }) {
 
 function ProtectedCustomerRoute({ children }) {
   const { isAuthenticated, loading } = useCustomerAuth()
-  if (loading) return <div className="loading">Loading...</div>
+  if (loading) return <AuthLoadingScreen />
   if (!isAuthenticated) return <Navigate to="/login" replace />
   return children
 }

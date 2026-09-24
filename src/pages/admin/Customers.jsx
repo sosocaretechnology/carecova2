@@ -1,27 +1,38 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { customerService } from '../../services/customerService'
-import { Search, Users, CheckCircle, AlertCircle, Clock, Wifi, WifiOff, ChevronRight } from 'lucide-react'
+import { Search, Users, CheckCircle, Clock, Wifi, WifiOff, ChevronRight, AlertTriangle, RefreshCw } from 'lucide-react'
 import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 const KYC_BADGE = {
-  verified:    { label: 'Verified',     bg: '#f0fdf4', color: '#16a34a' },
-  partial:     { label: 'Partial KYC',  bg: '#fffbeb', color: '#d97706' },
-  pending:     { label: 'Pending',      bg: '#eff6ff', color: '#3b82f6' },
-  not_started: { label: 'Not Started',  bg: '#f9fafb', color: '#9ca3af' },
+  verified:    { label: 'Verified',     bg: 'var(--color-success-bg)',  color: 'var(--color-success-text)' },
+  partial:     { label: 'Partial KYC',  bg: 'var(--color-warning-bg)',  color: 'var(--color-warning-text)' },
+  pending:     { label: 'Pending',      bg: 'var(--color-info-bg)',     color: 'var(--color-info-text)' },
+  not_started: { label: 'Not Started',  bg: 'var(--color-border-light)', color: 'var(--color-text-muted)' },
 }
 
 const MONO_BADGE = {
-  linked:      { label: 'Linked',       bg: '#f0fdf4', color: '#16a34a', Icon: Wifi },
-  pending:     { label: 'Pending',      bg: '#fffbeb', color: '#d97706', Icon: Clock },
-  not_started: { label: 'Not Linked',   bg: '#f9fafb', color: '#9ca3af', Icon: WifiOff },
+  linked:      { label: 'Linked',    bg: 'var(--color-success-bg)',   color: 'var(--color-success-text)', Icon: Wifi },
+  pending:     { label: 'Pending',   bg: 'var(--color-warning-bg)',   color: 'var(--color-warning-text)', Icon: Clock },
+  not_started: { label: 'Not Linked',bg: 'var(--color-border-light)', color: 'var(--color-text-muted)',   Icon: WifiOff },
 }
 
 function Badge({ map, value }) {
   const cfg = map[value] || map['not_started']
   return (
-    <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '2px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-      {cfg.Icon && <cfg.Icon size={12} />}
+    <span style={{
+      fontSize: 'var(--text-xs)',
+      fontWeight: 600,
+      padding: '2px 10px',
+      borderRadius: 'var(--radius-full)',
+      background: cfg.bg,
+      color: cfg.color,
+      whiteSpace: 'nowrap',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 4,
+    }}>
+      {cfg.Icon && <cfg.Icon size={11} />}
       {cfg.label}
     </span>
   )
@@ -39,20 +50,24 @@ export default function Customers() {
   const [filterKyc, setFilterKyc] = useState('all')
   const [filterMono, setFilterMono] = useState('all')
 
-  useEffect(() => {
+  const load = async () => {
     let cancelled = false
-    ;(async () => {
-      try {
-        setLoading(true)
-        const data = await customerService.getCustomers()
-        if (!cancelled) setCustomers(data)
-      } catch (err) {
-        if (!cancelled) setError(err.message || 'Failed to load customers')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await customerService.getCustomers()
+      if (!cancelled) setCustomers(data)
+    } catch (err) {
+      if (!cancelled) setError(err.message || 'Failed to load customers')
+    } finally {
+      if (!cancelled) setLoading(false)
+    }
     return () => { cancelled = true }
+  }
+
+  useEffect(() => {
+    const cancel = load()
+    return cancel
   }, [])
 
   const filtered = useMemo(() => {
@@ -70,7 +85,6 @@ export default function Customers() {
     return list
   }, [customers, search, filterKyc, filterMono])
 
-  // summary stats
   const stats = useMemo(() => ({
     total: customers.length,
     kycVerified: customers.filter(c => c.kycStatus === 'verified').length,
@@ -82,11 +96,14 @@ export default function Customers() {
 
   if (error) return (
     <div className="admin-page">
-      <div className="admin-page-header">
-        <h1>Customers</h1>
-      </div>
-      <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 16, color: '#dc2626' }}>
-        {error}
+      <div className="admin-page-header"><h1>Customers</h1></div>
+      <div className="cc-error-state">
+        <AlertTriangle size={36} className="cc-error-state-icon" />
+        <div className="cc-error-state-title">Could not load customers</div>
+        <div className="cc-error-state-desc">{error}</div>
+        <button className="button button--secondary button--sm" onClick={load}>
+          <RefreshCw size={14} /> Try again
+        </button>
       </div>
     </div>
   )
@@ -98,12 +115,12 @@ export default function Customers() {
         <p>View every CareCova patient's 360 profile — KYC, bank connections, financial data, and healthcare credit history.</p>
       </div>
 
-      {/* Summary cards */}
+      {/* KPI strip */}
       <div className="admin-kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
         <div className="admin-kpi-card primary">
           <div className="kpi-title">Total Customers</div>
           <div className="kpi-value">{stats.total}</div>
-          <div className="admin-kpi-card kpi-subtext">Unique patients on record</div>
+          <div className="kpi-subtext">Unique patients on record</div>
         </div>
         <div className="admin-kpi-card success">
           <div className="kpi-title">KYC Verified</div>
@@ -123,26 +140,27 @@ export default function Customers() {
       </div>
 
       {/* Toolbar */}
-      <div className="admin-toolbar flex-between mb-5">
-        <div className="admin-search-wrapper flex-1" style={{ marginRight: 12 }}>
-          <Search className="search-icon" size={18} />
+      <div className="admin-toolbar">
+        <div className="admin-search-wrapper" style={{ flex: 1, minWidth: 200 }}>
+          <Search className="search-icon" size={16} />
           <input
             type="text"
             placeholder="Search by name, phone or email…"
             className="admin-search-input"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            aria-label="Search customers"
           />
         </div>
-        <div className="admin-filters flex items-center gap-3">
-          <select className="admin-select" value={filterKyc} onChange={e => setFilterKyc(e.target.value)}>
+        <div className="admin-filters">
+          <select className="admin-select" value={filterKyc} onChange={e => setFilterKyc(e.target.value)} aria-label="KYC status filter">
             <option value="all">All KYC</option>
             <option value="verified">Verified</option>
             <option value="partial">Partial</option>
             <option value="pending">Pending</option>
             <option value="not_started">Not Started</option>
           </select>
-          <select className="admin-select" value={filterMono} onChange={e => setFilterMono(e.target.value)}>
+          <select className="admin-select" value={filterMono} onChange={e => setFilterMono(e.target.value)} aria-label="Bank connection filter">
             <option value="all">All Bank</option>
             <option value="linked">Linked</option>
             <option value="pending">Pending</option>
@@ -153,64 +171,68 @@ export default function Customers() {
 
       {/* Table */}
       <div className="admin-table-container">
-        {filtered.length === 0 ? (
-          <div style={{ padding: '48px 24px', textAlign: 'center', color: '#6b7280' }}>
-            <Users size={40} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-            <p style={{ margin: 0, fontWeight: 500 }}>No customers found</p>
-            <p style={{ margin: '4px 0 0', fontSize: '0.875rem' }}>Try adjusting your search or filters</p>
-          </div>
-        ) : (
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Phone</th>
-                <th>KYC Status</th>
-                <th>Bank Connection</th>
-                <th>Applications</th>
-                <th>Outstanding</th>
-                <th>Last Activity</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(c => (
-                <tr
-                  key={c.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/admin/customers/${encodeURIComponent(c.phone)}`)}
-                >
-                  <td>
-                    <div style={{ fontWeight: 600, color: '#111827' }}>{c.fullName}</div>
-                    <div style={{ fontSize: '0.8125rem', color: '#6b7280' }}>{c.email}</div>
-                  </td>
-                  <td style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>{c.phone}</td>
-                  <td><Badge map={KYC_BADGE} value={c.kycStatus} /></td>
-                  <td><Badge map={MONO_BADGE} value={c.monoConnectionStatus} /></td>
-                  <td>
-                    <span style={{ fontWeight: 600 }}>{c.totalApplications}</span>
-                    {c.activeLoansCount > 0 && (
-                      <span style={{ marginLeft: 6, fontSize: '0.75rem', color: '#2563eb', background: '#eff6ff', padding: '1px 7px', borderRadius: 999 }}>
-                        {c.activeLoansCount} active
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ fontWeight: c.outstandingBalance > 0 ? 600 : 400, color: c.outstandingBalance > 0 ? '#dc2626' : '#374151' }}>
-                    {fmt(c.outstandingBalance)}
-                  </td>
-                  <td style={{ fontSize: '0.8125rem', color: '#6b7280' }}>{fmtDate(c.lastApplicationDate)}</td>
-                  <td>
-                    <ChevronRight size={16} style={{ color: '#d1d5db' }} />
-                  </td>
+        <div className="admin-table-wrapper">
+          {filtered.length === 0 ? (
+            <div className="cc-empty-state">
+              <Users size={36} className="cc-empty-state-icon" />
+              <div className="cc-empty-state-title">No customers found</div>
+              <div className="cc-empty-state-desc">Try adjusting your search or filters</div>
+            </div>
+          ) : (
+            <table className="admin-table has-sticky-col">
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Phone</th>
+                  <th>KYC Status</th>
+                  <th>Bank Connection</th>
+                  <th>Applications</th>
+                  <th>Outstanding</th>
+                  <th>Last Activity</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {filtered.map(c => (
+                  <tr
+                    key={c.id}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/admin/customers/${encodeURIComponent(c.phone)}`)}
+                  >
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{c.fullName}</div>
+                      <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{c.email}</div>
+                    </td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-caption)' }}>{c.phone}</td>
+                    <td><Badge map={KYC_BADGE} value={c.kycStatus} /></td>
+                    <td><Badge map={MONO_BADGE} value={c.monoConnectionStatus} /></td>
+                    <td>
+                      <span style={{ fontWeight: 600 }}>{c.totalApplications}</span>
+                      {c.activeLoansCount > 0 && (
+                        <span style={{ marginLeft: 6, fontSize: 'var(--text-xs)', color: 'var(--color-info)', background: 'var(--color-info-bg)', padding: '1px 7px', borderRadius: 'var(--radius-full)' }}>
+                          {c.activeLoansCount} active
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ fontWeight: c.outstandingBalance > 0 ? 600 : 400, color: c.outstandingBalance > 0 ? 'var(--color-danger)' : 'var(--color-text-secondary)' }}>
+                      {fmt(c.outstandingBalance)}
+                    </td>
+                    <td style={{ fontSize: 'var(--text-caption)', color: 'var(--color-text-muted)' }}>
+                      {fmtDate(c.lastApplicationDate)}
+                    </td>
+                    <td>
+                      <ChevronRight size={16} style={{ color: 'var(--color-text-label)' }} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
 
-      <div style={{ marginTop: 12, fontSize: '0.8125rem', color: '#9ca3af', textAlign: 'right' }}>
-        Showing {filtered.length} of {customers.length} customers
+        <div className="admin-table-footer">
+          Showing {filtered.length} of {customers.length} customers
+        </div>
       </div>
     </div>
   )

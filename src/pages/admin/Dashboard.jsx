@@ -6,11 +6,13 @@ import FullScreenLoader from '../../components/ui/FullScreenLoader'
 import SalesDashboardView from '../../components/admin/Dashboard/SalesDashboardView'
 import AdminDashboardView from '../../components/admin/Dashboard/AdminDashboardView'
 import SupportDashboardView from '../../components/admin/Dashboard/SupportDashboardView'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 export default function Dashboard() {
     const navigate = useNavigate()
     const { session } = useAuth()
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
     const [kpis, setKpis] = useState(null)
     const [queues, setQueues] = useState(null)
     const [insights, setInsights] = useState(null)
@@ -18,7 +20,6 @@ export default function Dashboard() {
     useEffect(() => {
         if (session?.role === 'financier') {
             navigate('/admin/financing', { replace: true })
-            return
         }
     }, [session?.role, navigate])
 
@@ -26,6 +27,7 @@ export default function Dashboard() {
         async function loadData() {
             try {
                 setLoading(true)
+                setError(null)
                 if (session?.role === 'sales') {
                     try {
                         const salesData = await adminService.getSalesDashboard()
@@ -53,8 +55,9 @@ export default function Dashboard() {
                     setQueues(queueData)
                     setInsights(insightData)
                 }
-            } catch (error) {
-                console.error('Error loading dashboard data:', error)
+            } catch (err) {
+                console.error('Error loading dashboard data:', err)
+                setError(err.message || 'Failed to load dashboard data')
             } finally {
                 setLoading(false)
             }
@@ -70,25 +73,60 @@ export default function Dashboard() {
         return <FullScreenLoader label="Loading dashboard metrics…" />
     }
 
+    if (error) {
+        return (
+            <div className="admin-page">
+                <div className="admin-page-header">
+                    <h1>Dashboard</h1>
+                </div>
+                <div className="cc-error-state">
+                    <AlertTriangle size={36} className="cc-error-state-icon" />
+                    <div className="cc-error-state-title">Could not load dashboard</div>
+                    <div className="cc-error-state-desc">{error}</div>
+                    <button
+                        className="button button--secondary button--sm"
+                        onClick={() => { setError(null); setLoading(true) }}
+                    >
+                        <RefreshCw size={14} /> Try again
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    const dashboardTitle = {
+        sales: 'Sales Dashboard',
+        support: 'Support Dashboard',
+        credit_officer: 'Credit Officer Dashboard',
+    }[session?.role] || 'Admin Dashboard'
+
+    const dashboardSub = {
+        sales: 'Manage your portfolio and track performance',
+        support: 'Handle customer support and resolve issues',
+        credit_officer: 'Credit review queue and disbursement operations',
+    }[session?.role] || 'Platform overview and operational queues'
+
     const renderDashboard = () => {
         switch (session?.role) {
             case 'sales':
                 return <SalesDashboardView kpis={kpis} queues={queues} />
             case 'support':
                 return <SupportDashboardView kpis={kpis} queues={queues} />
+            case 'credit_officer':
+                return <AdminDashboardView kpis={kpis} queues={queues} insights={insights ?? {}} />
             case 'admin':
+            case 'super_admin':
             default:
                 return <AdminDashboardView kpis={kpis} queues={queues} insights={insights ?? {}} />
         }
     }
 
     return (
-        <div className="admin-dashboard-page">
+        <div className="admin-page">
             <div className="admin-page-header">
-                <h1>{session?.role === 'sales' ? 'Sales Dashboard' : session?.role === 'support' ? 'Support Dashboard' : 'Admin Dashboard'}</h1>
-                <p>{session?.role === 'sales' ? 'Manage your portfolio and performance' : 'Overview of loan applications and operations'}</p>
+                <h1>{dashboardTitle}</h1>
+                <p>{dashboardSub}</p>
             </div>
-
             {renderDashboard()}
         </div>
     )
