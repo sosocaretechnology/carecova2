@@ -212,6 +212,9 @@ export default function ProviderRegisterPatient() {
       if (!form.city.trim())        e.city        = 'City is required'
       if (!form.homeAddress.trim()) e.homeAddress = 'Home address is required'
       if (!form.documents?.id_document) e.id_document = 'Government-issued ID is required'
+      const nin = String(form.nin || '').trim()
+      if (!nin) e.nin = 'NIN is required'
+      else if (!/^\d{11}$/.test(nin)) e.nin = 'NIN must be exactly 11 digits'
     }
     if (s === 2) {
       if (!form.hospitalName.trim())       e.hospitalName    = 'Hospital name is required'
@@ -271,7 +274,7 @@ export default function ProviderRegisterPatient() {
         phone:       form.phone.trim(),
         ...(form.email.trim()      ? { email: form.email.trim() }      : {}),
         ...(form.bvn.trim()        ? { bvn: form.bvn.trim() }          : {}),
-        ...(form.nin.trim()        ? { nin: form.nin.trim() }          : {}),
+        nin:         form.nin.trim(),
         ...(form.dateOfBirth       ? { dateOfBirth: form.dateOfBirth } : {}),
         ...(form.gender            ? { gender: form.gender }           : {}),
         state:       form.state,
@@ -553,8 +556,9 @@ export default function ProviderRegisterPatient() {
                   <Field lbl="BVN (optional — encrypted at rest)">
                     <input name="bvn" value={form.bvn} onChange={e => setField('bvn', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="11-digit BVN" maxLength={11} style={fieldBase} />
                   </Field>
-                  <Field lbl="NIN (optional)">
-                    <input name="nin" value={form.nin} onChange={set} placeholder="National Identity Number" style={fieldBase} />
+                  <Field lbl="NIN" req>
+                    <input name="nin" value={form.nin} onChange={e => setField('nin', e.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="11-digit NIN" maxLength={11} style={fieldBase} />
+                    <ErrMsg text={errors.nin} />
                   </Field>
                 </div>
 

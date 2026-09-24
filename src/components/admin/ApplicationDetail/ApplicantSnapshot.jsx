@@ -177,7 +177,15 @@ export default function ApplicantSnapshot({ loan, onUpdated }) {
                                 </div>
                                 <div className="info-group">
                                   <div className="info-label">NIN</div>
-                                  <div className="info-value">{loan.nin || '—'}</div>
+                                  <div className="info-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    {loan.nin || <span style={{ color: '#ef4444', fontWeight: 600 }}>Missing</span>}
+                                    <button
+                                      onClick={() => { setEditingIdentity(true); setBvnInput(loan.bvn || ''); setNinInput(loan.nin || '') }}
+                                      style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: '4px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', color: '#6b7280' }}
+                                    >
+                                      Edit
+                                    </button>
+                                  </div>
                                 </div>
                               </>
                             )}

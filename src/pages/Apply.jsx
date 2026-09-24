@@ -749,11 +749,14 @@ export default function Apply() {
                 required
               />
               <Input
-                label="NIN (optional)"
+                label="NIN"
                 type="text"
-                placeholder="National Identity Number"
+                placeholder="11-digit NIN"
                 value={formData.nin}
-                onChange={(e) => handleChange('nin', e.target.value)}
+                onChange={(e) => handleChange('nin', e.target.value.replace(/\D/g, ''))}
+                maxLength={11}
+                error={errors.nin}
+                required
               />
               <div style={{ gridColumn: '1 / -1' }}>
                 <label className="input-label">Government-issued ID <span className="required-asterisk">*</span></label>

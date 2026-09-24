@@ -54,6 +54,9 @@ export const validateStep = (step, formData) => {
       const bvn = String(formData.bvn || '').trim()
       if (!bvn) errors.bvn = 'BVN is required'
       else if (!/^\d{11}$/.test(bvn)) errors.bvn = 'BVN must be exactly 11 digits'
+      const nin = String(formData.nin || '').trim()
+      if (!nin) errors.nin = 'NIN is required'
+      else if (!/^\d{11}$/.test(nin)) errors.nin = 'NIN must be exactly 11 digits'
       break
     }
 
