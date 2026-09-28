@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 import { SECTION_KEYS, toNumberOrEmpty } from '../../components/admin/InformedDecision/utils'
 import DecisionSupportTab from '../../components/admin/InformedDecision/DecisionSupportTab'
 import IdentityTab from '../../components/admin/InformedDecision/IdentityTab'
@@ -167,12 +168,12 @@ export default function InformedDecision() {
 
   const sections = useMemo(() => report?.sections || {}, [report])
 
-  if (loading) return <div className="admin-loading">Loading application...</div>
+  if (loading) return <FullScreenLoader label="Loading application…" />
   if (error && !loan) {
     return (
       <div className="admin-page">
         <div className="alert-box alert-error">{error}</div>
-        <button className="button button--secondary mt-4" onClick={() => navigate('/admin/applications')}>
+        <button className="button button--secondary" style={{ marginTop: 16 }} onClick={() => navigate('/admin/applications')}>
           ← Back to Applications
         </button>
       </div>
@@ -184,7 +185,7 @@ export default function InformedDecision() {
   return (
     <div className="admin-page id-page">
       <div className="id-page-header">
-        <button className="back-link text-sm text-primary font-bold bg-transparent border-none cursor-pointer" onClick={() => navigate('/admin/applications')}>
+        <button className="cc-back-link" onClick={() => navigate('/admin/applications')}>
           ← Back to Applications
         </button>
         <h1>Informed Decision — {loan?.fullName || loan?.patientName || id}</h1>

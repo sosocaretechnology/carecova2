@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
 import { auditService } from '../../services/auditService'
@@ -19,35 +19,13 @@ import TransactionAnalysisCard from '../../components/admin/ApplicationDetail/Tr
 import MonoAssessmentCard from '../../components/admin/ApplicationDetail/MonoAssessmentCard'
 import ProviderSubmissionCard from '../../components/admin/ApplicationDetail/ProviderSubmissionCard'
 import FirstCentralCard from '../../components/admin/ApplicationDetail/FirstCentralCard'
-import ReviewSidebar, { getSectionStates } from '../../components/admin/ApplicationDetail/ReviewSidebar'
+import { getSectionStates } from '../../components/admin/ApplicationDetail/ReviewSidebar'
 import InlineLoader from '../../components/ui/InlineLoader'
 import Modal from '../../components/ui/Modal'
 import RequestDocumentsModal from '../../components/admin/ApplicationDetail/RequestDocumentsModal'
 import NotifyApplicantModal from '../../components/admin/ApplicationDetail/NotifyApplicantModal'
 
 const fmt = (n) => n != null ? `₦${Number(n).toLocaleString()}` : '—'
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
-
-function SectionHeader({ id, title, subtitle, state }) {
-    const stateColors = {
-        complete:       { bg: '#f0fdf4', color: '#16a34a', label: 'Complete' },
-        partial:        { bg: '#fffbeb', color: '#d97706', label: 'In Progress' },
-        not_started:    { bg: '#f9fafb', color: '#9ca3af', label: 'Not Started' },
-        not_applicable: { bg: '#f9fafb', color: '#d1d5db', label: 'N/A' },
-    }
-    const cfg = stateColors[state] || stateColors.not_started
-    return (
-        <div id={`section-${id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', scrollMarginTop: '24px' }}>
-            <div>
-                <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#111827' }}>{title}</h2>
-                {subtitle && <p style={{ margin: '2px 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>{subtitle}</p>}
-            </div>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '3px 10px', borderRadius: '999px', background: cfg.bg, color: cfg.color, whiteSpace: 'nowrap' }}>
-                {cfg.label}
-            </span>
-        </div>
-    )
-}
 
 export default function ApplicationDetail() {
     const { id } = useParams()
@@ -56,7 +34,7 @@ export default function ApplicationDetail() {
     const [loading, setLoading] = useState(true)
     const [loan, setLoan] = useState(null)
     const [error, setError] = useState(null)
-    const [activeSection, setActiveSection] = useState('applicant')
+    const [activeTab, setActiveTab] = useState('applicant')
     const [monoInitiating, setMonoInitiating] = useState(false)
     const [monoRefreshing, setMonoRefreshing] = useState(false)
     const [monoFeedbackMessage, setMonoFeedbackMessage] = useState('')
@@ -118,26 +96,6 @@ export default function ApplicationDetail() {
         }
     }, [session?.role])
 
-    // Scrollspy — update active section as user scrolls
-    useEffect(() => {
-        const sectionIds = ['applicant', 'verification', 'credit', 'ai', 'provider', 'documents']
-        const observer = new IntersectionObserver(
-            (entries) => {
-                for (const entry of entries) {
-                    if (entry.isIntersecting) {
-                        const sectionId = entry.target.id.replace('section-', '')
-                        setActiveSection(sectionId)
-                    }
-                }
-            },
-            { rootMargin: '-20% 0px -60% 0px', threshold: 0 },
-        )
-        sectionIds.forEach((sid) => {
-            const el = document.getElementById(`section-${sid}`)
-            if (el) observer.observe(el)
-        })
-        return () => observer.disconnect()
-    }, [loan])
 
     const handleAssignProvider = async () => {
         if (!selectedProviderId) return
@@ -259,17 +217,17 @@ export default function ApplicationDetail() {
         <div className="admin-page">
 
             {/* ── Page header ── */}
-            <div style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div className="cc-app-header">
+                <div className="cc-app-header-nav">
                     <button
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', color: '#2563eb', fontWeight: 600, padding: '0' }}
+                        className="cc-back-link"
                         onClick={() => navigate('/admin/applications')}
                     >
                         ← Back to Applications
                     </button>
                     {loan.phone && (
                         <button
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.8125rem', fontWeight: 600, padding: '5px 12px', borderRadius: '7px', border: '1px solid #bfdbfe', background: '#eff6ff', color: '#2563eb', cursor: 'pointer' }}
+                            className="cc-view-patient-btn"
                             onClick={() => navigate(`/admin/customers/${encodeURIComponent(customerService.normalisePhone(loan.phone))}`)}
                             title="Open Customer 360 profile"
                         >
@@ -279,31 +237,30 @@ export default function ApplicationDetail() {
                     )}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' }}>
+                <div className="cc-app-header-main">
                     <div>
-                        <h1 style={{ margin: '0 0 6px', fontSize: '1.375rem', fontWeight: 700, color: '#111827' }}>
+                        <h1 className="cc-app-title">
                             {loan.fullName || loan.patientName || 'Applicant'}
                         </h1>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', fontSize: '0.8125rem', color: '#6b7280' }}>
-                            {loan.applicationCode && <span style={{ fontWeight: 700, color: '#1d4ed8' }}>{loan.applicationCode}</span>}
+                        <div className="cc-app-header-meta">
+                            {loan.applicationCode && <span className="cc-app-code">{loan.applicationCode}</span>}
                             <span>ID: {loan.id}</span>
                             <span>·</span>
                             <span>Submitted {new Date(loan.submittedAt).toLocaleDateString()} at {new Date(loan.submittedAt).toLocaleTimeString()}</span>
                             {loan.assignedTo && (
                                 <>
                                     <span>·</span>
-                                    <span>Assigned to <strong style={{ color: '#374151' }}>{loan.assignedTo === session?.username ? 'Me' : loan.assignedTo}</strong></span>
+                                    <span>Assigned to <strong className="cc-app-assigned">{loan.assignedTo === session?.username ? 'Me' : loan.assignedTo}</strong></span>
                                 </>
                             )}
                         </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                    <div className="cc-app-header-actions">
                         <StatusBadge status={loan.status} financingStatus={loan.financing_status} />
                         <span className="stage-pill">{getStageLabel(loan)}</span>
                         {isSuperAdmin && !loan.deletedAt && (
                             <button
                                 className="button button--danger button--compact"
-                                style={{ marginLeft: '8px' }}
                                 onClick={() => setShowDeleteConfirm(true)}
                             >
                                 🗑 Delete
@@ -313,48 +270,56 @@ export default function ApplicationDetail() {
                 </div>
 
                 {loan.financing_status && (
-                    <div style={{ marginTop: '12px', padding: '10px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexWrap: 'wrap', gap: '20px', fontSize: '0.8125rem' }}>
-                        <span style={{ color: '#6b7280' }}>Financing:</span>
+                    <div className="cc-financing-bar">
+                        <span>Financing:</span>
                         <StatusBadge status={loan.status} financingStatus={loan.financing_status} />
-                        {loan.reserved_by_financier_id && <span><span style={{ color: '#6b7280' }}>Reserved by</span> {loan.reserved_by_financier_id}</span>}
-                        {loan.financing_amount && <span><span style={{ color: '#6b7280' }}>Amount</span> ₦{loan.financing_amount.toLocaleString()}</span>}
-                        {loan.financed_at && <span><span style={{ color: '#6b7280' }}>Financed</span> {new Date(loan.financed_at).toLocaleDateString()}</span>}
+                        {loan.reserved_by_financier_id && <span>Reserved by {loan.reserved_by_financier_id}</span>}
+                        {loan.financing_amount && <span>Amount ₦{loan.financing_amount.toLocaleString()}</span>}
+                        {loan.financed_at && <span>Financed {new Date(loan.financed_at).toLocaleDateString()}</span>}
                     </div>
                 )}
             </div>
 
             {/* ── Sales early view ── */}
             {isSalesOwnedEarly ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '720px' }}>
+                <div className="cc-sales-early-view">
                     <ApplicantSnapshot loan={loan} onUpdated={() => loadLoanDetails({ silent: true })} />
                     {salesCanDoStage1 && (
                         <SalesDataCollection loan={loan} onSave={() => {}} onApproveStage1={handleApproveStage1} />
                     )}
                 </div>
             ) : (
-                /* ── 3-column toolkit layout ── */
-                <div className="detail-toolkit-grid">
+                /* ── Tabbed layout ── */
+                <div className="cc-app-tabs">
+                    <div className="cc-tab-bar" role="tablist">
+                        {[
+                            { key: 'applicant',    label: 'Applicant',    state: sectionStates.applicant },
+                            { key: 'verification', label: 'Verification', state: sectionStates.verification },
+                            { key: 'credit',       label: 'Credit',       state: sectionStates.credit },
+                            { key: 'ai',           label: 'AI Analysis',  state: sectionStates.ai },
+                            { key: 'provider',     label: 'Provider',     state: sectionStates.provider },
+                            { key: 'documents',    label: 'Documents',    state: sectionStates.documents },
+                            { key: 'actions',      label: 'Actions',      state: null },
+                        ].map(tab => (
+                            <button
+                                key={tab.key}
+                                role="tab"
+                                aria-selected={activeTab === tab.key}
+                                className={`cc-tab${activeTab === tab.key ? ' is-active' : ''}`}
+                                onClick={() => setActiveTab(tab.key)}
+                            >
+                                {tab.state && <span className={`cc-tab-dot cc-tab-dot--${tab.state}`} />}
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
 
-                    {/* Left sidebar */}
-                    <ReviewSidebar states={sectionStates} activeSection={activeSection} />
-
-                    {/* Main content — all sections */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', minWidth: 0 }}>
-
-                        {/* §1 Applicant Info */}
-                        <section>
-                            <SectionHeader id="applicant" title="Applicant Info" state={sectionStates.applicant} />
+                    <div className="cc-tab-content">
+                        {activeTab === 'applicant' && (
                             <ApplicantSnapshot loan={loan} onUpdated={() => loadLoanDetails({ silent: true })} />
-                        </section>
+                        )}
 
-                        {/* §2 Verification & Bank */}
-                        <section>
-                            <SectionHeader
-                                id="verification"
-                                title="Verification & Bank Statement"
-                                subtitle="BVN verification · Mono Connect · affordability"
-                                state={sectionStates.verification}
-                            />
+                        {activeTab === 'verification' && (
                             <VerificationRisk
                                 loan={loan}
                                 onInitiateMonoConnect={handleInitiateMonoConnect}
@@ -369,88 +334,58 @@ export default function ApplicationDetail() {
                                     else loadLoanDetails({ silent: true })
                                 }}
                             />
-                        </section>
+                        )}
 
-                        {/* §3 Credit Analysis */}
-                        <section>
-                            <SectionHeader
-                                id="credit"
-                                title="Credit Analysis"
-                                subtitle="Bank statement analysis · Mono income & creditworthiness · FirstCentral bureau"
-                                state={sectionStates.credit}
-                            />
-                            <div className="detail-credit-grid">
-                                <MonoAssessmentCard
-                                    loan={loan}
-                                    onUpdated={(updated) => {
-                                        const merged = updatedWithPreserved(updated)
-                                        if (merged) setLoan(merged)
-                                        else loadLoanDetails({ silent: true })
-                                    }}
-                                />
-                                <TransactionAnalysisCard
-                                    loan={loan}
-                                    onUpdated={(updated) => {
-                                        const merged = updatedWithPreserved(updated)
-                                        if (merged) setLoan(merged)
-                                        else loadLoanDetails({ silent: true })
-                                    }}
-                                />
-                            </div>
-                            <div style={{ marginTop: '20px' }}>
+                        {activeTab === 'credit' && (
+                            <div className="cc-main-sections">
+                                <div className="detail-credit-grid">
+                                    <MonoAssessmentCard
+                                        loan={loan}
+                                        onUpdated={(updated) => {
+                                            const merged = updatedWithPreserved(updated)
+                                            if (merged) setLoan(merged)
+                                            else loadLoanDetails({ silent: true })
+                                        }}
+                                    />
+                                    <TransactionAnalysisCard
+                                        loan={loan}
+                                        onUpdated={(updated) => {
+                                            const merged = updatedWithPreserved(updated)
+                                            if (merged) setLoan(merged)
+                                            else loadLoanDetails({ silent: true })
+                                        }}
+                                    />
+                                </div>
                                 <FirstCentralCard
                                     loan={loan}
                                     onUpdated={() => loadLoanDetails({ silent: true })}
                                 />
                             </div>
-                        </section>
+                        )}
 
-                        {/* §4 AI Analysis */}
-                        <section>
-                            <SectionHeader
-                                id="ai"
-                                title="AI Analysis"
-                                subtitle="Pre-screen, consistency check, and AI underwriter chat"
-                                state={sectionStates.ai}
-                            />
-                            <AiPreScreenCard
-                                loan={loan}
-                                onUpdated={(updated) => {
-                                    const merged = updatedWithPreserved(updated)
-                                    if (merged) setLoan(merged)
-                                }}
-                            />
-                            <div style={{ marginTop: '20px' }}>
+                        {activeTab === 'ai' && (
+                            <div className="cc-main-sections">
+                                <AiPreScreenCard
+                                    loan={loan}
+                                    onUpdated={(updated) => {
+                                        const merged = updatedWithPreserved(updated)
+                                        if (merged) setLoan(merged)
+                                    }}
+                                />
                                 <AiChatPanel loan={loan} />
                             </div>
-                        </section>
+                        )}
 
-                        {/* §5 Provider Submission */}
-                        <section>
-                            <SectionHeader
-                                id="provider"
-                                title="Provider Submission"
-                                subtitle="P2Vest credit review · multi-provider framework"
-                                state={sectionStates.provider}
-                            />
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
+                        {activeTab === 'provider' && (
+                            <div className="cc-provider-submission-grid">
                                 <P2VestCard loan={loan} onUpdated={() => loadLoanDetails({ silent: true })} />
                                 <ProviderSubmissionCard loan={loan} onUpdated={() => loadLoanDetails({ silent: true })} />
                             </div>
-                        </section>
+                        )}
 
-                        {/* §6 Documents */}
-                        <section>
-                            <SectionHeader
-                                id="documents"
-                                title="Documents"
-                                subtitle="Uploaded files and document requests"
-                                state={sectionStates.documents}
-                            />
+                        {activeTab === 'documents' && (
                             <div className="detail-card">
-
-                                {/* ── Submission documents ── */}
-                                <p style={{ margin: '0 0 10px', fontWeight: 700, fontSize: '0.8125rem', color: '#374151' }}>Submitted with application</p>
+                                <p className="cc-doc-heading">Submitted with application</p>
                                 {[
                                     { key: 'id_document', label: 'Government-issued ID' },
                                     { key: 'treatment_estimate', label: 'Treatment Estimate' },
@@ -459,233 +394,187 @@ export default function ApplicationDetail() {
                                     const doc = loan.documents?.[key]
                                     const hasUrl = !!doc?.url
                                     return (
-                                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid #f3f4f6', fontSize: '0.8125rem' }}>
+                                        <div key={key} className="cc-doc-row">
                                             <span style={{ fontSize: '1rem' }}>{hasUrl ? '✅' : '⬜'}</span>
-                                            <div style={{ flex: 1 }}>
-                                                <span style={{ fontWeight: 600 }}>{label}</span>
-                                                {doc?.fileName && <span style={{ color: '#6b7280', marginLeft: '6px' }}>— {doc.fileName}</span>}
-                                                {!hasUrl && <span style={{ color: '#9ca3af', marginLeft: '6px', fontStyle: 'italic' }}>not uploaded</span>}
+                                            <div className="cc-doc-row-info">
+                                                <span className="cc-doc-name">{label}</span>
+                                                {doc?.fileName && <span className="cc-doc-filename">— {doc.fileName}</span>}
+                                                {!hasUrl && <span className="cc-doc-missing">not uploaded</span>}
                                             </div>
                                             {hasUrl && (
-                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                    <a href={doc.url} target="_blank" rel="noopener noreferrer"
-                                                        style={{ color: '#2563eb', fontSize: '0.75rem', textDecoration: 'underline' }}>View</a>
-                                                    <a href={doc.url} download={doc.fileName}
-                                                        style={{ color: '#059669', fontSize: '0.75rem', textDecoration: 'underline' }}>Download</a>
-                                                    <button
-                                                        onClick={() => { navigator.clipboard.writeText(doc.url) }}
-                                                        style={{ fontSize: '0.75rem', color: '#7c3aed', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-                                                        Share link
-                                                    </button>
+                                                <div className="cc-doc-actions">
+                                                    <a href={doc.url} target="_blank" rel="noopener noreferrer" className="cc-doc-link-view">View</a>
+                                                    <a href={doc.url} download={doc.fileName} className="cc-doc-link-download">Download</a>
+                                                    <button onClick={() => navigator.clipboard.writeText(doc.url)} className="cc-doc-link-share">Share link</button>
                                                 </div>
                                             )}
                                         </div>
                                     )
                                 })}
-
-                                {/* ── Requested documents ── */}
-                                <p style={{ margin: '16px 0 10px', fontWeight: 700, fontSize: '0.8125rem', color: '#374151' }}>Requested documents</p>
+                                <p className="cc-doc-heading" style={{ marginTop: '16px' }}>Requested documents</p>
                                 {loan.documentRequests?.length > 0 ? (
                                     <div style={{ marginBottom: '12px' }}>
                                         {loan.documentRequests.map((doc) => (
-                                            <div key={doc.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 0', borderBottom: '1px solid #f3f4f6', fontSize: '0.8125rem' }}>
+                                            <div key={doc.key} className="cc-doc-row">
                                                 <span style={{ fontSize: '1rem' }}>{doc.status === 'uploaded' ? '✅' : '⏳'}</span>
-                                                <div style={{ flex: 1 }}>
-                                                    <span style={{ fontWeight: 600 }}>{doc.label}</span>
-                                                    {doc.note && <span style={{ color: '#6b7280', marginLeft: '6px' }}>— {doc.note}</span>}
+                                                <div className="cc-doc-row-info">
+                                                    <span className="cc-doc-name">{doc.label}</span>
+                                                    {doc.note && <span className="cc-doc-filename">— {doc.note}</span>}
                                                 </div>
                                                 {doc.status === 'uploaded' && doc.fileUrl && (
-                                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer"
-                                                            style={{ color: '#2563eb', fontSize: '0.75rem', textDecoration: 'underline' }}>View</a>
-                                                        <a href={doc.fileUrl} download={doc.fileName}
-                                                            style={{ color: '#059669', fontSize: '0.75rem', textDecoration: 'underline' }}>Download</a>
-                                                        <button
-                                                            onClick={() => { navigator.clipboard.writeText(doc.fileUrl) }}
-                                                            style={{ fontSize: '0.75rem', color: '#7c3aed', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-                                                            Share link
-                                                        </button>
+                                                    <div className="cc-doc-actions">
+                                                        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="cc-doc-link-view">View</a>
+                                                        <a href={doc.fileUrl} download={doc.fileName} className="cc-doc-link-download">Download</a>
+                                                        <button onClick={() => navigator.clipboard.writeText(doc.fileUrl)} className="cc-doc-link-share">Share link</button>
                                                     </div>
                                                 )}
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p style={{ margin: '0 0 14px', color: '#9ca3af', fontSize: '0.8125rem' }}>No documents requested yet.</p>
+                                    <p style={{ margin: '0 0 14px', color: 'var(--color-text-label)', fontSize: '0.8125rem' }}>No documents requested yet.</p>
                                 )}
-                                <button
-                                    onClick={() => setShowRequestDocs(true)}
-                                    style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '7px', padding: '8px 14px', color: '#1d4ed8', fontWeight: 600, fontSize: '0.8125rem', cursor: 'pointer', width: '100%', marginTop: '4px' }}
-                                >
+                                <button onClick={() => setShowRequestDocs(true)} className="cc-request-docs-btn">
                                     Request Documents from Applicant
                                 </button>
                             </div>
-                        </section>
-
-                        {/* Audit trail at the bottom of main */}
-                        <section style={{ paddingBottom: '48px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Audit Trail</h2>
-                            </div>
-                            <div className="detail-card">
-                                <AuditTimeline loanId={loan.id} />
-                            </div>
-                        </section>
-                    </div>
-
-                    {/* Right panel (sticky) */}
-                    <div className="detail-right-panel">
-
-                        {/* Loan summary */}
-                        <div className="detail-card" style={{ borderLeft: '4px solid #2563eb' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Loan Summary</span>
-                                <span className="stage-pill" style={{ fontSize: '0.7rem' }}>{getStageLabel(loan)}</span>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {[
-                                    { label: 'Requested', value: fmt(loan.requestedAmount) },
-                                    { label: 'Duration', value: loan.preferredDuration ? `${loan.preferredDuration} months` : '—' },
-                                    { label: 'Purpose', value: loan.procedureOrService || loan.treatmentCategory || loan.loanPurpose || '—' },
-                                    { label: 'Hospital', value: loan.hospitalName || loan.provider?.name || '—' },
-                                    { label: 'Employment', value: loan.employmentType || '—' },
-                                    ...(loan.approvedAmount ? [{ label: 'Approved', value: fmt(loan.approvedAmount) }] : []),
-                                    ...(loan.monthlyInstallment ? [{ label: 'Monthly', value: fmt(loan.monthlyInstallment) }] : []),
-                                ].map(({ label, value }) => (
-                                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                                        <span style={{ color: '#6b7280' }}>{label}</span>
-                                        <span style={{ fontWeight: 600, color: '#111827', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Financier Report Download */}
-                        <div className="detail-card" style={{ borderLeft: '4px solid #0f766e' }}>
-                            <div style={{ marginBottom: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Financier Report</span>
-                                <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#6b7280' }}>
-                                    Structured credit report for lenders — includes KYC, bank analysis, credit decision.
-                                </p>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <button
-                                    onClick={async () => {
-                                        setPdfDownloading(true)
-                                        setPdfError('')
-                                        try {
-                                            await adminService.downloadFinancierReportPdf(loan.id || loan._id)
-                                        } catch (err) {
-                                            setPdfError(err.message || 'Failed to download PDF')
-                                        } finally {
-                                            setPdfDownloading(false)
-                                        }
-                                    }}
-                                    disabled={pdfDownloading}
-                                    style={{
-                                        width: '100%', padding: '9px 14px', borderRadius: '8px',
-                                        border: 'none', background: pdfDownloading ? '#e5e7eb' : '#0f766e',
-                                        color: pdfDownloading ? '#9ca3af' : '#fff',
-                                        fontWeight: 700, fontSize: '0.8125rem',
-                                        cursor: pdfDownloading ? 'not-allowed' : 'pointer',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    }}
-                                >
-                                    {pdfDownloading ? 'Generating PDF…' : '⬇ Download PDF Report'}
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            const report = await adminService.getFinancierReport(loan.id || loan._id)
-                                            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
-                                            const url = URL.createObjectURL(blob)
-                                            const a = document.createElement('a')
-                                            a.href = url
-                                            a.download = `carecova-report-${loan.applicationCode || (loan.id || loan._id).slice(-8)}.json`
-                                            document.body.appendChild(a)
-                                            a.click()
-                                            document.body.removeChild(a)
-                                            URL.revokeObjectURL(url)
-                                        } catch (err) {
-                                            setPdfError(err.message || 'Failed to download JSON')
-                                        }
-                                    }}
-                                    style={{
-                                        width: '100%', padding: '7px 14px', borderRadius: '8px',
-                                        border: '1.5px solid #ccfbf1', background: '#f0fdfa',
-                                        color: '#0f766e', fontWeight: 600, fontSize: '0.8rem',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    {'{ }'} Download JSON Report
-                                </button>
-                            </div>
-                            {pdfError && <p style={{ margin: '6px 0 0', fontSize: '0.8125rem', color: '#dc2626' }}>{pdfError}</p>}
-                        </div>
-
-                        {/* Assign hospital provider */}
-                        {session?.role === 'admin' && (
-                            <div className="detail-card">
-                                <h3 style={{ margin: '0 0 10px', fontSize: '0.875rem', fontWeight: 600 }}>Linked Hospital</h3>
-                                {loan.providerName || loan.provider?.name ? (
-                                    <p style={{ margin: '0 0 8px', fontSize: '0.8125rem', color: '#111827', fontWeight: 600 }}>
-                                        {loan.providerName || loan.provider?.name}
-                                    </p>
-                                ) : (
-                                    <p style={{ margin: '0 0 8px', fontSize: '0.8125rem', color: '#9ca3af' }}>No hospital linked.</p>
-                                )}
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <select
-                                        value={selectedProviderId}
-                                        onChange={(e) => { setSelectedProviderId(e.target.value); setAssignProviderError('') }}
-                                        style={{ flex: 1, padding: '7px 8px', borderRadius: '7px', border: '1.5px solid #e2e8f0', fontSize: '0.8125rem', background: '#fff' }}
-                                    >
-                                        <option value="">Change hospital…</option>
-                                        {providers.map((p) => (
-                                            <option key={p.id || p._id} value={p.id || p._id}>{p.name || p.facilityName || p.email}</option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        onClick={handleAssignProvider}
-                                        disabled={!selectedProviderId || assigningProvider}
-                                        style={{ padding: '7px 12px', borderRadius: '7px', border: 'none', background: selectedProviderId ? '#2563eb' : '#e5e7eb', color: selectedProviderId ? '#fff' : '#9ca3af', fontWeight: 600, fontSize: '0.8125rem', cursor: selectedProviderId ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}
-                                    >
-                                        {assigningProvider ? '…' : 'Link'}
-                                    </button>
-                                </div>
-                                {assignProviderError && <p style={{ margin: '6px 0 0', fontSize: '0.8125rem', color: '#dc2626' }}>{assignProviderError}</p>}
-                            </div>
                         )}
 
-                        {/* Notify Applicant */}
-                        <div className="detail-card" style={{ borderLeft: '4px solid #7c3aed' }}>
-                            <div style={{ marginBottom: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Applicant Notification</span>
-                                <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#6b7280' }}>
-                                    Send a status update email directly to the applicant.
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setShowNotifyModal(true)}
-                                style={{
-                                    width: '100%', padding: '9px 14px', borderRadius: '8px',
-                                    border: 'none', background: '#7c3aed', color: '#fff',
-                                    fontWeight: 700, fontSize: '0.8125rem', cursor: 'pointer',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                }}
-                            >
-                                ✉ Notify Applicant
-                            </button>
-                        </div>
+                        {activeTab === 'actions' && (
+                            <div className="cc-actions-tab">
+                                <div className="cc-main-sections">
+                                    <DecisionPanel
+                                        loan={loan}
+                                        session={session}
+                                        onApprove={handleApprove}
+                                        onReject={handleReject}
+                                        onRequestInfo={handleRequestInfo}
+                                    />
+                                    <div>
+                                        <div className="cc-audit-section-header">
+                                            <h2>Audit Trail</h2>
+                                        </div>
+                                        <div className="detail-card">
+                                            <AuditTimeline loanId={loan.id} />
+                                        </div>
+                                    </div>
+                                </div>
 
-                        {/* Decision panel */}
-                        <DecisionPanel
-                            loan={loan}
-                            session={session}
-                            onApprove={handleApprove}
-                            onReject={handleReject}
-                            onRequestInfo={handleRequestInfo}
-                        />
+                                <div className="cc-main-sections">
+                                    <div className="detail-card cc-accent-card--blue">
+                                        <div className="cc-summary-header">
+                                            <span className="cc-card-eyebrow cc-card-eyebrow--blue">Loan Summary</span>
+                                            <span className="stage-pill" style={{ fontSize: '0.7rem' }}>{getStageLabel(loan)}</span>
+                                        </div>
+                                        <div className="cc-summary-rows">
+                                            {[
+                                                { label: 'Requested', value: fmt(loan.requestedAmount) },
+                                                { label: 'Duration', value: loan.preferredDuration ? `${loan.preferredDuration} months` : '—' },
+                                                { label: 'Purpose', value: loan.procedureOrService || loan.treatmentCategory || loan.loanPurpose || '—' },
+                                                { label: 'Hospital', value: loan.hospitalName || loan.provider?.name || '—' },
+                                                { label: 'Employment', value: loan.employmentType || '—' },
+                                                ...(loan.approvedAmount ? [{ label: 'Approved', value: fmt(loan.approvedAmount) }] : []),
+                                                ...(loan.monthlyInstallment ? [{ label: 'Monthly', value: fmt(loan.monthlyInstallment) }] : []),
+                                            ].map(({ label, value }) => (
+                                                <div key={label} className="cc-summary-row">
+                                                    <span className="cc-summary-label">{label}</span>
+                                                    <span className="cc-summary-value">{value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="detail-card cc-accent-card--teal">
+                                        <div style={{ marginBottom: '8px' }}>
+                                            <span className="cc-card-eyebrow cc-card-eyebrow--teal">Financier Report</span>
+                                            <p className="cc-card-desc">Structured credit report for lenders — includes KYC, bank analysis, credit decision.</p>
+                                        </div>
+                                        <div className="cc-report-btns">
+                                            <button
+                                                onClick={async () => {
+                                                    setPdfDownloading(true)
+                                                    setPdfError('')
+                                                    try {
+                                                        await adminService.downloadFinancierReportPdf(loan.id || loan._id)
+                                                    } catch (err) {
+                                                        setPdfError(err.message || 'Failed to download PDF')
+                                                    } finally {
+                                                        setPdfDownloading(false)
+                                                    }
+                                                }}
+                                                disabled={pdfDownloading}
+                                                className="cc-btn-teal"
+                                            >
+                                                {pdfDownloading ? 'Generating PDF…' : '⬇ Download PDF Report'}
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const report = await adminService.getFinancierReport(loan.id || loan._id)
+                                                        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+                                                        const url = URL.createObjectURL(blob)
+                                                        const a = document.createElement('a')
+                                                        a.href = url
+                                                        a.download = `carecova-report-${loan.applicationCode || (loan.id || loan._id).slice(-8)}.json`
+                                                        document.body.appendChild(a)
+                                                        a.click()
+                                                        document.body.removeChild(a)
+                                                        URL.revokeObjectURL(url)
+                                                    } catch (err) {
+                                                        setPdfError(err.message || 'Failed to download JSON')
+                                                    }
+                                                }}
+                                                className="cc-btn-teal-outline"
+                                            >
+                                                {'{ }'} Download JSON Report
+                                            </button>
+                                        </div>
+                                        {pdfError && <p className="cc-field-error">{pdfError}</p>}
+                                    </div>
+
+                                    {session?.role === 'admin' && (
+                                        <div className="detail-card">
+                                            <h3 style={{ margin: '0 0 10px', fontSize: '0.875rem', fontWeight: 600 }}>Linked Hospital</h3>
+                                            {loan.providerName || loan.provider?.name ? (
+                                                <p style={{ margin: '0 0 8px', fontSize: '0.8125rem', fontWeight: 600 }}>{loan.providerName || loan.provider?.name}</p>
+                                            ) : (
+                                                <p style={{ margin: '0 0 8px', fontSize: '0.8125rem', color: 'var(--color-text-label)' }}>No hospital linked.</p>
+                                            )}
+                                            <div className="cc-provider-select-row">
+                                                <select
+                                                    value={selectedProviderId}
+                                                    onChange={(e) => { setSelectedProviderId(e.target.value); setAssignProviderError('') }}
+                                                    className="cc-provider-select"
+                                                >
+                                                    <option value="">Change hospital…</option>
+                                                    {providers.map((p) => (
+                                                        <option key={p.id || p._id} value={p.id || p._id}>{p.name || p.facilityName || p.email}</option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    onClick={handleAssignProvider}
+                                                    disabled={!selectedProviderId || assigningProvider}
+                                                    className="cc-provider-link-btn"
+                                                >
+                                                    {assigningProvider ? '…' : 'Link'}
+                                                </button>
+                                            </div>
+                                            {assignProviderError && <p className="cc-field-error">{assignProviderError}</p>}
+                                        </div>
+                                    )}
+
+                                    <div className="detail-card cc-accent-card--purple">
+                                        <div style={{ marginBottom: '8px' }}>
+                                            <span className="cc-card-eyebrow cc-card-eyebrow--purple">Applicant Notification</span>
+                                            <p className="cc-card-desc">Send a status update email directly to the applicant.</p>
+                                        </div>
+                                        <button onClick={() => setShowNotifyModal(true)} className="cc-btn-purple">
+                                            ✉ Notify Applicant
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -748,25 +637,16 @@ export default function ApplicationDetail() {
             </p>
         </Modal>
 
-        {/* Delete result banner */}
+        {/* Delete result toast */}
         {deleteResult && (
-            <div
-                style={{
-                    position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
-                    padding: '14px 18px', borderRadius: '10px', maxWidth: '360px',
-                    background: deleteResult.error ? '#fef2f2' : '#f0fdf4',
-                    border: `1px solid ${deleteResult.error ? '#fecaca' : '#bbf7d0'}`,
-                    color: deleteResult.error ? '#dc2626' : '#15803d',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                }}
-            >
-                <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+            <div className={`cc-toast${deleteResult.error ? ' cc-toast--error' : ' cc-toast--success'}`}>
+                <div className="cc-toast-title">
                     {deleteResult.error ? 'Delete failed' : 'Application queued for deletion'}
                 </div>
-                <div style={{ fontSize: '0.8125rem' }}>
+                <div className="cc-toast-body">
                     {deleteResult.error || deleteResult.message}
                 </div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <div className="cc-toast-actions">
                     {!deleteResult.error && (
                         <button
                             className="button button--secondary button--compact"
@@ -799,24 +679,20 @@ function AuditTimeline({ loanId }) {
     const logs = auditService.getForLoan(loanId)
 
     if (logs.length === 0) return (
-        <div style={{ padding: '24px', textAlign: 'center', color: '#9ca3af', fontSize: '0.875rem' }}>
-            No recorded activity for this application.
-        </div>
+        <div className="cc-audit-empty">No recorded activity for this application.</div>
     )
 
     return (
         <div>
             {logs.map((log) => (
-                <div key={log.id} style={{ borderLeft: '2px solid #e5e7eb', paddingLeft: '20px', marginBottom: '20px', position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: '-5px', top: '2px', width: '8px', height: '8px', borderRadius: '50%', background: '#6366f1' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.875rem', textTransform: 'capitalize' }}>{log.action?.replace('_', ' ') || 'Action'}</span>
-                        <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>by {log.adminName || 'Admin'}</span>
+                <div key={log.id} className="cc-audit-item">
+                    <div className="cc-audit-dot" />
+                    <div className="cc-audit-row">
+                        <span className="cc-audit-action">{log.action?.replace('_', ' ') || 'Action'}</span>
+                        <span className="cc-audit-actor">by {log.adminName || 'Admin'}</span>
                     </div>
-                    <p style={{ margin: '0 0 4px', fontSize: '0.8125rem', color: '#374151', fontStyle: 'italic', borderLeft: '3px solid #6366f1', paddingLeft: '10px' }}>
-                        "{log.details || 'No details available'}"
-                    </p>
-                    <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{new Date(log.timestamp).toLocaleString()}</span>
+                    <p className="cc-audit-detail">"{log.details || 'No details available'}"</p>
+                    <span className="cc-audit-time">{new Date(log.timestamp).toLocaleString()}</span>
                 </div>
             ))}
         </div>

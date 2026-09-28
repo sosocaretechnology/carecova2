@@ -188,7 +188,7 @@ export default function FinancierApplicationDetail() {
 
     const canStartReview =
         loan.financing_status === FINANCING_STATUS.AVAILABLE_FOR_FINANCING ||
-        (loan.financing_status === FINANCING_STATUS.UNDER_FINANCIER_REVIEW && !isReservedByMe && !isReservedBySomeoneElse)
+        (loan.financing_status === FINANCING_STATUS.UNDER_FINANCIER_REVIEW && !isReservingFinancier && !isReservedBySomeoneElse)
 
     const canReserve =
         loan.financing_status === FINANCING_STATUS.AVAILABLE_FOR_FINANCING &&
@@ -202,10 +202,11 @@ export default function FinancierApplicationDetail() {
             <div className="admin-page-header flex-between align-center">
                 <div>
                     <button
-                        className="back-link mb-2 bg-transparent border-none cursor-pointer"
+                        className="cc-back-link"
+                        style={{ marginBottom: 8 }}
                         onClick={() => navigate('/admin/financing')}
                     >
-                        <ArrowLeft size={20} /> Back to Financing Queue
+                        <ArrowLeft size={16} /> Back to Financing Queue
                     </button>
                     <h1 className="flex items-center gap-3 flex-wrap">
                         {loan.fullName || loan.patientName}
@@ -222,7 +223,7 @@ export default function FinancierApplicationDetail() {
             {loan.financing_status && (
                 <div className="detail-card mb-4">
                     <h3>Financing Information</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                    <div className="cc-auto-grid--sm">
                         <div>
                             <span className="text-xs text-muted">Current Status</span>
                             {getBadge(loan.financing_status)}
@@ -274,7 +275,7 @@ export default function FinancierApplicationDetail() {
                 </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+            <div className="cc-auto-grid">
                 <div className="detail-card">
                     <h3>Applicant Information</h3>
                     <div style={{ display: 'grid', gap: '8px' }}>
@@ -431,40 +432,25 @@ export default function FinancierApplicationDetail() {
                 ) : activityLog.length === 0 ? (
                     <p className="text-xs text-muted">No financing activity recorded yet.</p>
                 ) : (
-                    <div className="audit-timeline mt-4">
-                        {activityLog.map((entry) => (
-                            <div
-                                key={entry.id}
-                                className="timeline-item flex gap-4 mb-4"
-                                style={{ borderLeft: '2px solid #e5e7eb', paddingLeft: '1.5rem', position: 'relative' }}
-                            >
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        left: '-6px',
-                                        top: '0',
-                                        width: '10px',
-                                        height: '10px',
-                                        borderRadius: '50%',
-                                        background: entry.action === 'APPROVE_FINANCING' ? '#10b981' :
-                                                   entry.action === 'DECLINE_FINANCING' ? '#ef4444' :
-                                                   entry.action === 'RESERVE_FOR_FINANCING' ? '#f59e0b' : '#6366f1',
-                                    }}
-                                />
-                                <div className="timeline-content">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-bold text-sm capitalize">
+                    <div style={{ marginTop: 16 }}>
+                        {activityLog.map((entry) => {
+                            const dotMod = entry.action === 'APPROVE_FINANCING' ? '--approve'
+                                : entry.action === 'DECLINE_FINANCING' ? '--decline'
+                                : entry.action === 'RESERVE_FOR_FINANCING' ? '--reserve' : ''
+                            return (
+                                <div key={entry.id} className="cc-fin-timeline-item">
+                                    <div className={`cc-fin-timeline-dot${dotMod}`} />
+                                    <div className="cc-audit-row">
+                                        <span className="cc-audit-action">
                                             {entry.action?.toLowerCase().replace(/_/g, ' ')}
                                         </span>
-                                        <span className="text-xs text-muted">by {entry.userId || 'Financier'}</span>
+                                        <span className="cc-audit-actor">by {entry.userId || 'Financier'}</span>
                                     </div>
-                                    <p className="text-sm text-gray-700 italic text-xs">{entry.notes || '—'}</p>
-                                    <span className="text-xs text-muted block mt-1">
-                                        {new Date(entry.createdAt).toLocaleString()}
-                                    </span>
+                                    <p className="cc-audit-detail">{entry.notes || '—'}</p>
+                                    <span className="cc-audit-time">{new Date(entry.createdAt).toLocaleString()}</span>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 )}
             </div>

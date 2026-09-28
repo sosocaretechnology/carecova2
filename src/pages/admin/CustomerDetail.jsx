@@ -47,10 +47,10 @@ const fmt = (n) => n != null ? `₦${Number(n).toLocaleString()}` : '—'
 
 function KycStatusIcon({ status }) {
   const map = {
-    verified:    { Icon: CheckCircle, color: '#16a34a' },
-    partial:     { Icon: AlertCircle, color: '#d97706' },
-    pending:     { Icon: Clock,       color: '#3b82f6' },
-    not_started: { Icon: AlertCircle, color: '#9ca3af' },
+    verified:    { Icon: CheckCircle, color: 'var(--color-success)' },
+    partial:     { Icon: AlertCircle, color: 'var(--color-warning)' },
+    pending:     { Icon: Clock,       color: 'var(--color-info)' },
+    not_started: { Icon: AlertCircle, color: 'var(--color-text-label)' },
   }
   const { Icon, color } = map[status] || map.not_started
   return <Icon size={14} color={color} />
@@ -113,10 +113,10 @@ export default function CustomerDetail() {
 
   if (error) return (
     <div className="admin-page">
-      <button onClick={() => navigate('/admin/customers')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16, background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+      <button onClick={() => navigate('/admin/customers')} className="cc-back-link" style={{ marginBottom: 16 }}>
         <ChevronLeft size={16} /> Back to Customers
       </button>
-      <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 16, color: '#dc2626' }}>{error}</div>
+      <div className="alert-box alert-error">{error}</div>
     </div>
   )
 
@@ -128,41 +128,35 @@ export default function CustomerDetail() {
   return (
     <div className="admin-page">
       {/* Back nav */}
-      <button
-        onClick={() => navigate('/admin/customers')}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 16, background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}
-      >
+      <button onClick={() => navigate('/admin/customers')} className="cc-back-link" style={{ marginBottom: 16 }}>
         <ChevronLeft size={16} /> All Customers
       </button>
 
       {/* Customer header */}
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '24px 28px', marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      <div className="cc-c360-header">
+        <div className="cc-c360-header-inner">
           {/* Left: identity */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 14, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <User size={28} color="#3b82f6" />
+          <div className="cc-c360-identity">
+            <div className="cc-c360-avatar">
+              <User size={28} />
             </div>
             <div>
-              <h1 style={{ margin: '0 0 2px', fontSize: '1.4rem', fontWeight: 800, color: '#111827' }}>{customer.fullName}</h1>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+              <h1 className="cc-c360-name">{customer.fullName}</h1>
+              <div className="cc-c360-contact">
                 {customer.phone}
                 {customer.email && customer.email !== '—' && <> · {customer.email}</>}
               </div>
-              <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {/* KYC badge */}
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 600, padding: '2px 9px', borderRadius: 999, background: kycStatus === 'verified' ? '#f0fdf4' : '#fffbeb', color: kycStatus === 'verified' ? '#16a34a' : '#d97706' }}>
+              <div className="cc-c360-badges">
+                <span className={`cc-c360-badge cc-c360-badge--${kycStatus === 'verified' ? 'verified' : kycStatus === 'partial' ? 'partial' : kycStatus === 'pending' ? 'pending' : 'not-started'}`}>
                   <KycStatusIcon status={kycStatus} />
                   {kycLabels[kycStatus]}
                 </span>
-                {/* Mono badge */}
                 {customer.hasMonoConnection
-                  ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 600, padding: '2px 9px', borderRadius: 999, background: '#f0fdf4', color: '#16a34a' }}><Wifi size={11} /> Bank Linked</span>
-                  : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 600, padding: '2px 9px', borderRadius: 999, background: '#f9fafb', color: '#9ca3af' }}><WifiOff size={11} /> No Bank</span>
+                  ? <span className="cc-c360-badge cc-c360-badge--bank"><Wifi size={11} /> Bank Linked</span>
+                  : <span className="cc-c360-badge cc-c360-badge--no-bank"><WifiOff size={11} /> No Bank</span>
                 }
-                {/* Active credit */}
                 {customer.activeLoansCount > 0 && (
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '2px 9px', borderRadius: 999, background: '#eff6ff', color: '#2563eb' }}>
+                  <span className="cc-c360-badge cc-c360-badge--loan">
                     {customer.activeLoansCount} Active Loan{customer.activeLoansCount !== 1 ? 's' : ''}
                   </span>
                 )}
@@ -171,16 +165,16 @@ export default function CustomerDetail() {
           </div>
 
           {/* Right: key numbers */}
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div className="cc-c360-stats">
             {[
-              { label: 'Outstanding',   value: fmt(customer.outstandingBalance), danger: customer.outstandingBalance > 0 },
-              { label: 'Total Credit',  value: fmt(customer.totalCreditLimit) },
+              { label: 'Outstanding',  value: fmt(customer.outstandingBalance), danger: customer.outstandingBalance > 0 },
+              { label: 'Total Credit', value: fmt(customer.totalCreditLimit) },
               { label: 'Applications', value: String(customer.totalApplications) },
-              { label: 'Last Sync',    value: fmtDate(customer.lastMonoSync) },
+              { label: 'Last Sync',   value: fmtDate(customer.lastMonoSync) },
             ].map(k => (
-              <div key={k.label} style={{ textAlign: 'center', padding: '8px 14px', background: '#f9fafb', borderRadius: 8 }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', marginBottom: 2 }}>{k.label}</div>
-                <div style={{ fontWeight: 800, fontSize: '0.9375rem', color: k.danger ? '#dc2626' : '#111827' }}>{k.value}</div>
+              <div key={k.label} className="cc-c360-stat">
+                <div className="cc-c360-stat-label">{k.label}</div>
+                <div className={`cc-c360-stat-value${k.danger ? ' cc-c360-stat-value--danger' : ''}`}>{k.value}</div>
               </div>
             ))}
           </div>
@@ -188,23 +182,17 @@ export default function CustomerDetail() {
       </div>
 
       {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 2, overflowX: 'auto', marginBottom: 20, background: '#f9fafb', borderRadius: 10, padding: 4, border: '1px solid #e5e7eb' }}>
+      <div className="cc-tab-bar" role="tablist" style={{ marginBottom: 20 }}>
         {TABS.map(tab => {
           const { Icon } = tab
           const active = activeTab === tab.key
           return (
             <button
               key={tab.key}
+              role="tab"
+              aria-selected={active}
               onClick={() => setActiveTab(tab.key)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '8px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
-                fontWeight: active ? 700 : 500, fontSize: '0.8125rem', whiteSpace: 'nowrap',
-                background: active ? (tab.highlight ? '#7c3aed' : '#fff') : (tab.highlight ? '#f5f3ff' : 'transparent'),
-                color: active ? (tab.highlight ? '#fff' : '#2563eb') : (tab.highlight ? '#7c3aed' : '#6b7280'),
-                boxShadow: active ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                transition: 'all 0.15s',
-              }}
+              className={`cc-tab${tab.highlight ? ' cc-tab--highlight' : ''}${active ? ' is-active' : ''}`}
             >
               <Icon size={14} />
               {tab.label}

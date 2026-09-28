@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { adminService } from '../../services/adminService'
 import StatusBadge from '../../components/StatusBadge'
+import FullScreenLoader from '../../components/ui/FullScreenLoader'
 import { getRiskConfig } from '../../data/riskConfig'
 import {
     CheckCircle, AlertTriangle, XCircle, ArrowLeft, Loader, Beaker
@@ -113,7 +114,7 @@ export default function DisbursementCaseFile() {
         navigate(queuePath)
     }
 
-    if (loading) return <div className="admin-loading">Loading case file...</div>
+    if (loading) return <FullScreenLoader label="Loading case file…" />
     if (!loan) return <div className="admin-page"><p>Case not found.</p></div>
 
     const isDone = ['disbursement_processing', 'active'].includes(loan.status)
@@ -123,8 +124,7 @@ export default function DisbursementCaseFile() {
         <div className="admin-page">
             <div className="admin-page-header mb-5">
                 <div>
-                    <button className="back-link mb-2 text-sm text-primary font-bold bg-transparent border-none cursor-pointer"
-                        onClick={() => navigate(queuePath)}>
+                    <button className="cc-back-link" style={{ marginBottom: 8 }} onClick={() => navigate(queuePath)}>
                         ← Back to Queue
                     </button>
                     <div className="flex items-center gap-3">
@@ -137,31 +137,28 @@ export default function DisbursementCaseFile() {
                 </div>
             </div>
 
-            {/* Success / Processing Banner */}
+            {/* Status Banners */}
             {loan.status === 'active' && (
-                <div className="mb-4 p-4 rounded-lg flex items-center gap-3"
-                    style={{ background: '#d1fae5', border: '1px solid #6ee7b7' }}>
-                    <CheckCircle className="text-success" size={22} />
+                <div className="cc-status-banner cc-status-banner--success">
+                    <CheckCircle size={22} />
                     <div>
-                        <div className="font-bold text-success">Disbursement Successful</div>
-                        <div className="text-sm">Ref: {loan.disbursementIntent?.providerReference} · Loan is now Active</div>
+                        <div className="cc-status-banner-title">Disbursement Successful</div>
+                        <div className="cc-status-banner-body">Ref: {loan.disbursementIntent?.providerReference} · Loan is now Active</div>
                     </div>
                 </div>
             )}
             {loan.status === 'disbursement_processing' && (
-                <div className="mb-4 p-4 rounded-lg flex items-center gap-3"
-                    style={{ background: '#dbeafe', border: '1px solid #93c5fd' }}>
+                <div className="cc-status-banner cc-status-banner--info">
                     <Loader className="animate-spin" size={22} />
-                    <div className="font-bold">Payout processing... (simulating transfer)</div>
+                    <div className="cc-status-banner-title">Payout processing… (simulating transfer)</div>
                 </div>
             )}
             {isFailed && (
-                <div className="mb-4 p-4 rounded-lg flex items-center gap-3"
-                    style={{ background: '#fee2e2', border: '1px solid #fca5a5' }}>
-                    <XCircle className="text-error" size={22} />
+                <div className="cc-status-banner cc-status-banner--error">
+                    <XCircle size={22} />
                     <div>
-                        <div className="font-bold text-error">Disbursement Failed</div>
-                        <div className="text-sm">{loan.disbursementIntent?.failureReason}</div>
+                        <div className="cc-status-banner-title">Disbursement Failed</div>
+                        <div className="cc-status-banner-body">{loan.disbursementIntent?.failureReason}</div>
                     </div>
                 </div>
             )}
@@ -252,7 +249,7 @@ export default function DisbursementCaseFile() {
                                 placeholder="e.g. Lagos Island General Hospital"
                                 style={validationErrors.hospitalName && payout.hospitalName !== undefined ? { borderColor: '#ef4444' } : {}}
                             />
-                            {validationErrors.hospitalName && <p style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: 3 }}>⚠ {validationErrors.hospitalName}</p>}
+                            {validationErrors.hospitalName && <p className="cc-field-error">⚠ {validationErrors.hospitalName}</p>}
                         </div>
 
                         <div className="form-group">
@@ -262,10 +259,10 @@ export default function DisbursementCaseFile() {
                                 placeholder="Exact name on bank account"
                                 style={validationErrors.hospitalAccountName && payout.hospitalAccountName !== undefined ? { borderColor: '#ef4444' } : {}}
                             />
-                            {validationErrors.hospitalAccountName && <p style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: 3 }}>⚠ {validationErrors.hospitalAccountName}</p>}
+                            {validationErrors.hospitalAccountName && <p className="cc-field-error">⚠ {validationErrors.hospitalAccountName}</p>}
                         </div>
 
-                        <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div className="form-row cc-form-row-2">
                             <div className="form-group">
                                 <label className="form-label">Bank Name *</label>
                                 <select className="input" value={payout.hospitalBankName} disabled={isDone}
@@ -282,7 +279,7 @@ export default function DisbursementCaseFile() {
                                     placeholder="10-digit NUBAN"
                                     style={validationErrors.hospitalAccountNumber ? { borderColor: '#ef4444' } : {}}
                                 />
-                                {validationErrors.hospitalAccountNumber && <p style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: 3 }}>⚠ {validationErrors.hospitalAccountNumber}</p>}
+                                {validationErrors.hospitalAccountNumber && <p className="cc-field-error">⚠ {validationErrors.hospitalAccountNumber}</p>}
                             </div>
                         </div>
 
@@ -293,7 +290,7 @@ export default function DisbursementCaseFile() {
                                 placeholder="+234..." />
                         </div>
 
-                        <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div className="form-row cc-form-row-2">
                             <div className="form-group">
                                 <label className="form-label">Invoice Amount (₦)</label>
                                 <input type="number" className="input" value={payout.invoiceAmount} disabled={isDone}
@@ -309,10 +306,10 @@ export default function DisbursementCaseFile() {
 
                         <div className="form-group">
                             <label className="form-label">Payout breakdown</label>
-                            <div className="p-3 rounded-lg border border-gray-200 bg-gray-50 text-sm">
-                                <div className="flex justify-between"><span>Approved (loan amount)</span><span className="font-medium">₦{approvedAmountNum.toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span>Provider commission ({(providerPct * 100).toFixed(0)}%)</span><span className="font-medium">− ₦{platformCommissionAmount.toLocaleString()}</span></div>
-                                <div className="flex justify-between pt-2 border-t border-gray-200 font-bold"><span>Amount to provider</span><span>₦{providerPayoutComputed.toLocaleString()}</span></div>
+                            <div className="cc-payout-breakdown">
+                                <div className="cc-payout-row"><span>Approved (loan amount)</span><span>₦{approvedAmountNum.toLocaleString()}</span></div>
+                                <div className="cc-payout-row"><span>Provider commission ({(providerPct * 100).toFixed(0)}%)</span><span>− ₦{platformCommissionAmount.toLocaleString()}</span></div>
+                                <div className="cc-payout-row cc-payout-row--total"><span>Amount to provider</span><span>₦{providerPayoutComputed.toLocaleString()}</span></div>
                             </div>
                         </div>
                         <div className="form-group">
@@ -334,28 +331,12 @@ export default function DisbursementCaseFile() {
                         {!isDone && (
                             <div
                                 onClick={() => setAccountConfirmed(v => !v)}
-                                style={{
-                                    marginTop: '16px',
-                                    padding: '12px 14px',
-                                    borderRadius: '8px',
-                                    border: `2px solid ${accountConfirmed ? '#22c55e' : '#e5e7eb'}`,
-                                    background: accountConfirmed ? '#f0fdf4' : '#f9fafb',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    transition: 'all 0.15s',
-                                }}
+                                className={`cc-account-confirm${accountConfirmed ? ' is-confirmed' : ''}`}
                             >
-                                <div style={{
-                                    width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                                    border: `2px solid ${accountConfirmed ? '#22c55e' : '#d1d5db'}`,
-                                    background: accountConfirmed ? '#22c55e' : 'white',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                }}>
-                                    {accountConfirmed && <span style={{ color: 'white', fontSize: 12, fontWeight: 'bold' }}>✓</span>}
+                                <div className="cc-account-confirm-radio">
+                                    {accountConfirmed && '✓'}
                                 </div>
-                                <span style={{ fontSize: '0.825rem', fontWeight: 500, color: accountConfirmed ? '#15803d' : '#374151' }}>
+                                <span className="cc-account-confirm-label">
                                     I confirm the account name matches the hospital name on the invoice
                                 </span>
                             </div>
@@ -379,13 +360,12 @@ export default function DisbursementCaseFile() {
                             <>
                                 {/* Dev Simulate Tool (local mode only) */}
                                 {!USE_BACKEND && (
-                                    <div className="p-3 mb-4 rounded-lg border border-dashed border-gray-300"
-                                        style={{ background: '#f9fafb' }}>
-                                        <div className="flex items-center gap-2 mb-2 text-xs font-bold text-muted uppercase">
+                                    <div className="cc-dev-panel">
+                                        <div className="cc-dev-panel-label">
                                             <Beaker size={14} />
                                             Simulate Payout (Dev Tool)
                                         </div>
-                                        <select className="input text-xs" value={simulateResult}
+                                        <select className="input" value={simulateResult}
                                             onChange={e => setSimulateResult(e.target.value)}>
                                             <option value="success">✅ Simulate Success (3s)</option>
                                             <option value="fail">❌ Simulate Failure</option>
@@ -408,18 +388,16 @@ export default function DisbursementCaseFile() {
 
                                 {/* Validation Checklist */}
                                 {!isFormValid() && (
-                                    <div style={{ background: '#fef9f0', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
-                                        <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#92400e', marginBottom: 6 }}>Complete these to proceed:</p>
+                                    <div className="cc-validation-list">
+                                        <p className="cc-validation-list-title">Complete these to proceed:</p>
                                         {Object.entries(validationErrors).filter(([, v]) => v !== null).map(([k, msg]) => (
-                                            <p key={k} style={{ fontSize: '0.7rem', color: '#b45309', margin: '2px 0' }}>✗ {msg}</p>
+                                            <p key={k} className="cc-validation-item">✗ {msg}</p>
                                         ))}
-                                        {!accountConfirmed && <p style={{ fontSize: '0.7rem', color: '#b45309', margin: '2px 0' }}>✗ Tick the account confirmation below the form</p>}
+                                        {!accountConfirmed && <p className="cc-validation-item">✗ Tick the account confirmation below the form</p>}
                                     </div>
                                 )}
                                 {!accountConfirmed && isFormValid() && (
-                                    <p style={{ fontSize: '0.75rem', color: '#b45309', textAlign: 'center', marginBottom: 12 }}>
-                                        ☝ Tick the account confirmation above to proceed
-                                    </p>
+                                    <p className="cc-confirm-hint">☝ Tick the account confirmation above to proceed</p>
                                 )}
 
                                 <div className="form-group">

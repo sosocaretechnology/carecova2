@@ -75,61 +75,45 @@ export default function CreditDashboard() {
 
             {/* Processing Banner */}
             {processingCount > 0 && (
-                <div className="mb-5 p-4 rounded-lg flex items-center gap-3"
-                    style={{ background: '#dbeafe', border: '1px solid #93c5fd' }}>
-                    <div className="kpi-icon" style={{ background: '#bfdbfe', width: 32, height: 32, minWidth: 32 }}>
-                        <Clock size={16} style={{ color: '#1d4ed8' }} />
-                    </div>
-                    <span className="text-sm font-medium" style={{ color: '#1d4ed8' }}>
+                <div className="cc-status-banner cc-status-banner--info">
+                    <Clock size={18} />
+                    <span>
                         {processingCount} disbursement{processingCount !== 1 ? 's' : ''} currently processing…
                     </span>
                 </div>
             )}
 
             {/* Queue Sections */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+            <div className="cc-queue-grid">
                 {/* Ready for Payout */}
                 <div className="detail-card">
-                    <div className="flex items-center gap-2 mb-4">
-                        <CheckCircle size={16} style={{ color: '#22c55e' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                        <CheckCircle size={16} color="var(--color-success)" />
                         <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>
                             Ready for Payout
-                            <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
-                                style={{ background: '#dcfce7', color: '#15803d' }}>
-                                {readyItems.length}
-                            </span>
+                            <span className="cc-section-count cc-section-count--success">{readyItems.length}</span>
                         </h3>
                     </div>
 
                     {readyItems.length === 0 ? (
                         <p className="text-sm text-muted italic">No cases ready for payout.</p>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div className="cc-queue-items">
                             {readyItems.slice(0, 5).map(l => (
                                 <div
                                     key={l.id}
                                     onClick={() => navigate(`/credit/disbursements/${l.id}`)}
-                                    className="flex-between"
-                                    style={{
-                                        padding: '12px 14px',
-                                        background: '#f9fafb',
-                                        borderRadius: '8px',
-                                        border: '1px solid #e5e7eb',
-                                        cursor: 'pointer',
-                                        transition: 'border-color 0.15s, background 0.15s',
-                                    }}
-                                    onMouseOver={e => e.currentTarget.style.borderColor = '#22c55e'}
-                                    onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+                                    className="cc-queue-row"
                                 >
                                     <div>
-                                        <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{l.fullName || l.patientName}</div>
-                                        <div style={{ fontSize: '0.7rem', color: '#6b7280', fontFamily: 'monospace' }}>{l.id}</div>
+                                        <div className="cc-queue-row-name">{l.fullName || l.patientName}</div>
+                                        <div className="cc-queue-row-id">{l.id}</div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <span className="cc-queue-row-amount">
                                             ₦{(l.approvedAmount || 0).toLocaleString()}
                                         </span>
-                                        <ArrowRight size={14} style={{ color: '#9ca3af' }} />
+                                        <ArrowRight size={14} color="var(--color-text-label)" />
                                     </div>
                                 </div>
                             ))}
@@ -139,40 +123,26 @@ export default function CreditDashboard() {
 
                 {/* Needs Clarification */}
                 <div className="detail-card">
-                    <div className="flex items-center gap-2 mb-4">
-                        <AlertTriangle size={16} style={{ color: '#f59e0b' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                        <AlertTriangle size={16} color="var(--color-warning)" />
                         <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700 }}>
                             Needs Clarification
-                            <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
-                                style={{ background: '#fef3c7', color: '#b45309' }}>
-                                {clarificationItems.length}
-                            </span>
+                            <span className="cc-section-count cc-section-count--warning">{clarificationItems.length}</span>
                         </h3>
                     </div>
 
                     {clarificationItems.length === 0 ? (
                         <p className="text-sm text-muted italic">No cases awaiting clarification.</p>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div className="cc-queue-items">
                             {clarificationItems.slice(0, 5).map(l => (
                                 <div
                                     key={l.id}
                                     onClick={() => navigate(`/credit/disbursements/${l.id}`)}
-                                    style={{
-                                        padding: '12px 14px',
-                                        background: '#fffbeb',
-                                        borderRadius: '8px',
-                                        border: '1px solid #fde68a',
-                                        cursor: 'pointer',
-                                        transition: 'border-color 0.15s',
-                                    }}
-                                    onMouseOver={e => e.currentTarget.style.borderColor = '#f59e0b'}
-                                    onMouseOut={e => e.currentTarget.style.borderColor = '#fde68a'}
+                                    className="cc-queue-row cc-queue-row--warning"
                                 >
-                                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{l.fullName || l.patientName}</div>
-                                    <div style={{ fontSize: '0.75rem', color: '#92400e', marginTop: 2 }}>
-                                        {l.correctionNotes || 'Missing details'}
-                                    </div>
+                                    <div className="cc-queue-row-name">{l.fullName || l.patientName}</div>
+                                    <div className="cc-queue-row-note">{l.correctionNotes || 'Missing details'}</div>
                                 </div>
                             ))}
                         </div>

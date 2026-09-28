@@ -1840,3 +1840,715 @@
   padding-top: 20px;
   border-top: 1px solid var(--color-border-light);
 }
+
+/* ── ApplicationDetail page ───────────────────────────────── */
+
+/* SectionHeader */
+.cc-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  scroll-margin-top: 24px;
+}
+.cc-section-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.cc-section-header p {
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+.cc-section-state {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.cc-section-state--complete {
+  background: var(--color-bg-sage);
+  color: var(--color-success);
+}
+.cc-section-state--partial {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+.cc-section-state--not-started {
+  background: var(--color-bg);
+  color: var(--color-text-label);
+}
+.cc-section-state--na {
+  background: var(--color-bg);
+  color: #d1d5db;
+}
+
+/* Application page header */
+.cc-app-header {
+  margin-bottom: 24px;
+}
+.cc-app-header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.cc-back-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-info);
+  font-weight: 600;
+  padding: 0;
+}
+.cc-back-link:hover { color: var(--color-info-text); }
+.cc-view-patient-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  cursor: pointer;
+}
+.cc-view-patient-btn:hover { background: #dbeafe; }
+.cc-app-header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.cc-app-title {
+  margin: 0 0 6px;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.cc-app-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+.cc-app-code {
+  font-weight: 700;
+  color: var(--color-info-text);
+}
+.cc-app-assigned { color: var(--color-text-secondary); }
+.cc-app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* Financing status bar */
+.cc-financing-bar {
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 0.8125rem;
+}
+
+/* Sales early view */
+.cc-sales-early-view {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  max-width: 720px;
+}
+
+/* Main detail sections column */
+.cc-main-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}
+
+/* Provider submission 2-col grid */
+.cc-provider-submission-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Documents panel */
+.cc-doc-heading {
+  margin: 0 0 10px;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+.cc-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: 0.8125rem;
+}
+.cc-doc-row-info { flex: 1; }
+.cc-doc-name { font-weight: 600; }
+.cc-doc-filename { color: var(--color-text-muted); margin-left: 6px; }
+.cc-doc-missing { color: var(--color-text-label); margin-left: 6px; font-style: italic; }
+.cc-doc-actions { display: flex; gap: 8px; align-items: center; }
+.cc-doc-link-view { color: var(--color-info); font-size: 0.75rem; text-decoration: underline; }
+.cc-doc-link-download { color: var(--color-success); font-size: 0.75rem; text-decoration: underline; }
+.cc-doc-link-share {
+  font-size: 0.75rem;
+  color: #7c3aed;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+.cc-request-docs-btn {
+  background: var(--color-info-bg);
+  border: 1.5px solid var(--color-info-border);
+  border-radius: 7px;
+  padding: 8px 14px;
+  color: var(--color-info-text);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 4px;
+}
+.cc-request-docs-btn:hover { background: #dbeafe; }
+
+/* Audit trail section */
+.cc-audit-section { padding-bottom: 48px; }
+.cc-audit-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.cc-audit-section-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Right panel accent cards */
+.cc-accent-card--blue  { border-left: 4px solid var(--color-info); }
+.cc-accent-card--teal  { border-left: 4px solid #0f766e; }
+.cc-accent-card--purple { border-left: 4px solid #7c3aed; }
+
+.cc-card-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.cc-card-eyebrow--blue   { color: var(--color-info); }
+.cc-card-eyebrow--teal   { color: #0f766e; }
+.cc-card-eyebrow--purple { color: #7c3aed; }
+.cc-card-desc { margin: 4px 0 0; font-size: 0.78rem; color: var(--color-text-muted); }
+
+/* Loan summary rows */
+.cc-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.cc-summary-rows { display: flex; flex-direction: column; gap: 8px; }
+.cc-summary-row { display: flex; justify-content: space-between; font-size: 0.8125rem; }
+.cc-summary-label { color: var(--color-text-muted); }
+.cc-summary-value {
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: right;
+  max-width: 60%;
+}
+
+/* Report download buttons */
+.cc-report-btns { display: flex; flex-direction: column; gap: 6px; }
+.cc-btn-teal {
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.cc-btn-teal:disabled {
+  background: var(--color-border);
+  color: var(--color-text-label);
+  cursor: not-allowed;
+}
+.cc-btn-teal-outline {
+  width: 100%;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #ccfbf1;
+  background: #f0fdfa;
+  color: #0f766e;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.cc-btn-purple {
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.cc-btn-purple:hover { background: #6d28d9; }
+
+/* Provider select row */
+.cc-provider-select-row { display: flex; gap: 8px; }
+.cc-provider-select {
+  flex: 1;
+  padding: 7px 8px;
+  border-radius: 7px;
+  border: 1.5px solid var(--color-border);
+  font-size: 0.8125rem;
+  background: var(--color-bg-elevated);
+}
+.cc-provider-link-btn {
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--color-info);
+  color: var(--color-text-inverse);
+}
+.cc-provider-link-btn:disabled {
+  background: var(--color-border);
+  color: var(--color-text-label);
+  cursor: not-allowed;
+}
+
+/* Field-level error note */
+.cc-field-error { margin: 6px 0 0; font-size: 0.8125rem; color: var(--color-danger); }
+
+/* Delete result toast */
+.cc-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  padding: 14px 18px;
+  border-radius: 10px;
+  max-width: 360px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+.cc-toast--success {
+  background: var(--color-bg-sage);
+  border: 1px solid var(--color-success-border);
+  color: var(--color-success-text);
+}
+.cc-toast--error {
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  color: var(--color-danger);
+}
+.cc-toast-title { font-weight: 600; margin-bottom: 4px; }
+.cc-toast-body  { font-size: 0.8125rem; }
+.cc-toast-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+/* Audit timeline */
+.cc-audit-item {
+  border-left: 2px solid var(--color-border);
+  padding-left: 20px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.cc-audit-dot {
+  position: absolute;
+  left: -5px;
+  top: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6366f1;
+}
+.cc-audit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.cc-audit-action { font-weight: 700; font-size: 0.875rem; text-transform: capitalize; }
+.cc-audit-actor  { font-size: 0.75rem; color: var(--color-text-muted); }
+.cc-audit-detail {
+  margin: 0 0 4px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  border-left: 3px solid #6366f1;
+  padding-left: 10px;
+}
+.cc-audit-time  { font-size: 0.75rem; color: var(--color-text-muted); }
+.cc-audit-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+/* ── ApplicationDetail Tab Layout ─────────────────────────── */
+
+.cc-app-tabs {
+  /* tab container — full width */
+}
+
+.cc-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cc-tab-bar::-webkit-scrollbar { display: none; }
+
+.cc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.cc-tab:hover { color: var(--color-text); }
+.cc-tab.is-active {
+  color: var(--color-info);
+  border-bottom-color: var(--color-info);
+  font-weight: 600;
+}
+
+/* Status dot on tab */
+.cc-tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cc-tab-dot--complete      { background: var(--color-success); }
+.cc-tab-dot--partial       { background: var(--color-warning); }
+.cc-tab-dot--not_started   { background: var(--color-border); }
+.cc-tab-dot--not_applicable { background: var(--color-border-light); }
+
+.cc-tab-content {
+  /* panel below tabs */
+}
+
+/* Actions tab: 2-column grid */
+.cc-actions-tab {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .cc-actions-tab { grid-template-columns: 1fr; }
+  .cc-provider-submission-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Customer 360 Header ───────────────────────────────────── */
+.cc-c360-header {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+}
+.cc-c360-header-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.cc-c360-identity { display: flex; align-items: center; gap: 16px; }
+.cc-c360-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--color-info-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-info);
+}
+.cc-c360-name { margin: 0 0 2px; font-size: 1.4rem; font-weight: 800; color: var(--color-text); }
+.cc-c360-contact { font-size: 0.875rem; color: var(--color-text-muted); }
+.cc-c360-badges { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+.cc-c360-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+.cc-c360-badge--verified   { background: var(--color-bg-sage);    color: var(--color-success); }
+.cc-c360-badge--partial    { background: var(--color-warning-bg);  color: var(--color-warning); }
+.cc-c360-badge--pending    { background: var(--color-info-bg);     color: var(--color-info); }
+.cc-c360-badge--not-started { background: var(--color-bg);         color: var(--color-text-muted); }
+.cc-c360-badge--bank       { background: var(--color-bg-sage);    color: var(--color-success); }
+.cc-c360-badge--no-bank    { background: var(--color-bg);         color: var(--color-text-label); }
+.cc-c360-badge--loan       { background: var(--color-info-bg);    color: var(--color-info); }
+
+.cc-c360-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+.cc-c360-stat  { text-align: center; padding: 8px 14px; background: var(--color-bg); border-radius: 8px; }
+.cc-c360-stat-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-label);
+  margin-bottom: 2px;
+}
+.cc-c360-stat-value { font-weight: 800; font-size: 0.9375rem; color: var(--color-text); }
+.cc-c360-stat-value--danger { color: var(--color-danger); }
+
+/* Highlight tab (e.g. Credit Decision) */
+.cc-tab--highlight { background: #f5f3ff; color: #7c3aed; }
+.cc-tab--highlight.is-active {
+  background: #7c3aed;
+  color: #fff;
+  border-bottom-color: #7c3aed;
+}
+
+/* ── Credit Dashboard & DisbursementCaseFile ───────────────── */
+.cc-queue-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4, 16px);
+  margin-bottom: 16px;
+}
+@media (max-width: 768px) { .cc-queue-grid { grid-template-columns: 1fr; } }
+
+.cc-queue-items { display: flex; flex-direction: column; gap: 8px; }
+
+.cc-queue-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--color-bg);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cc-queue-row:hover { border-color: var(--color-primary); background: var(--color-bg-mint); }
+.cc-queue-row--warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+}
+.cc-queue-row--warning:hover { border-color: var(--color-warning); }
+
+.cc-queue-row-name { font-weight: 600; font-size: 0.875rem; }
+.cc-queue-row-id   { font-size: 0.7rem; color: var(--color-text-muted); font-family: var(--font-mono, monospace); }
+.cc-queue-row-note { font-size: 0.75rem; color: var(--color-warning-text); margin-top: 2px; }
+.cc-queue-row-amount { font-weight: 700; font-size: 0.875rem; }
+
+.cc-section-count {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+}
+.cc-section-count--success { background: var(--color-bg-sage); color: var(--color-success-text); }
+.cc-section-count--warning { background: var(--color-warning-bg); color: var(--color-accent); }
+
+/* DisbursementCaseFile status banners */
+.cc-status-banner {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cc-status-banner--success {
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  color: var(--color-success-text);
+}
+.cc-status-banner--info {
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
+  color: var(--color-info-text);
+}
+.cc-status-banner--error {
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  color: var(--color-danger);
+}
+.cc-status-banner-title { font-weight: 700; }
+.cc-status-banner-body  { font-size: 0.875rem; margin-top: 2px; }
+
+/* Account confirmation toggle */
+.cc-account-confirm {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cc-account-confirm.is-confirmed {
+  border-color: var(--color-primary);
+  background: var(--color-bg-sage);
+}
+.cc-account-confirm-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-bg-elevated);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.cc-account-confirm.is-confirmed .cc-account-confirm-radio {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+.cc-account-confirm-label {
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+.cc-account-confirm.is-confirmed .cc-account-confirm-label { color: var(--color-success-text); }
+
+/* Payout breakdown */
+.cc-payout-breakdown {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-size: 0.875rem;
+}
+.cc-payout-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+.cc-payout-row--total {
+  padding-top: 8px;
+  margin-top: 6px;
+  border-top: 1px solid var(--color-border);
+  font-weight: 700;
+}
+
+/* Disbursement validation checklist */
+.cc-validation-list {
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.cc-validation-list-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 6px;
+}
+.cc-validation-item {
+  font-size: 0.7rem;
+  color: var(--color-accent-hover);
+  margin: 2px 0;
+}
+
+/* Financier activity timeline */
+.cc-fin-timeline-item {
+  border-left: 2px solid var(--color-border);
+  padding-left: 24px;
+  margin-bottom: 16px;
+  position: relative;
+}
+.cc-fin-timeline-dot {
+  position: absolute;
+  left: -6px;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6366f1;
+}
+.cc-fin-timeline-dot--approve { background: var(--color-primary); }
+.cc-fin-timeline-dot--decline { background: var(--color-danger); }
+.cc-fin-timeline-dot--reserve { background: var(--color-warning); }
+
+/* Auto-fit card grids */
+.cc-auto-grid    { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.cc-auto-grid--sm { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+
+/* 2-column form row */
+.cc-form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 600px) { .cc-form-row-2 { grid-template-columns: 1fr; } }
+
+/* Dev tool panel */
+.cc-dev-panel { padding: 12px; margin-bottom: 16px; border-radius: 8px; border: 1px dashed var(--color-border); background: var(--color-bg); }
+.cc-dev-panel-label {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-label);
+}
+
+/* Hint text below confirm button */
+.cc-confirm-hint { font-size: 0.75rem; color: var(--color-warning-text); text-align: center; margin-bottom: 12px; }
