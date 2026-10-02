@@ -76,26 +76,25 @@ export default function ProviderManagement() {
     if (addForm.password.length < 8) return setAddError('Password must be at least 8 characters')
     setAddSubmitting(true)
     try {
-      const created = await adminService.createProvider({
+      await adminService.createProvider({
         name: addForm.name.trim(),
         type: addForm.type,
         email: addForm.email.trim(),
         phone: addForm.phone.trim(),
+        initialPassword: addForm.password.trim(),
         ...(addForm.address?.trim() ? { address: addForm.address.trim() } : {}),
         ...(addForm.accountName?.trim() ? { accountName: addForm.accountName.trim() } : {}),
         ...(addForm.accountNumber?.trim() ? { accountNumber: addForm.accountNumber.trim() } : {}),
         ...(addForm.bankCode?.trim() ? { bankCode: addForm.bankCode.trim() } : {}),
       })
-      const providerId = created?.id || created?._id
-      if (providerId) {
-        await adminService.resetProviderPassword(providerId, addForm.password.trim())
-      }
       setAddSuccess(`Provider "${addForm.name}" created. They can now log in with their facility email and the password you set.`)
       setAddForm(EMPTY_FORM)
-      await load()
       setTimeout(() => { setShowAddModal(false); setAddSuccess('') }, 3000)
     } catch (err) {
-      setAddError(err.message || 'Failed to create provider')
+      const permissionHint = /insufficient role|forbidden/i.test(err.message)
+        ? ' Confirm the updated API has been deployed and restarted.'
+        : ''
+      setAddError(`Facility creation failed: ${err.message || 'Request failed'}${permissionHint}`)
     } finally {
       setAddSubmitting(false)
     }
