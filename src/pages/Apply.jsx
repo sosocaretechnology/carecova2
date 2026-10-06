@@ -77,6 +77,7 @@ const TENOR_OPTIONS = [
   { value: '2', label: '2 months' },
   { value: '3-4', label: '3–4 months' },
   { value: '6', label: '6 months' },
+  { value: '12', label: '12 months' },
 ]
 
 const REPAYMENT_METHOD_OPTIONS = [
@@ -1070,7 +1071,7 @@ export default function Apply() {
               </div>
 
               <MoneyInput label="Requested credit amount" placeholder="₦ 0.00" value={formData.requestedAmount} onChange={(v) => handleChange('requestedAmount', v)} error={errors.requestedAmount} required />
-              <Select label="Preferred repayment tenor" options={TENOR_OPTIONS} value={formData.preferredTenor} onChange={(e) => { handleChange('preferredTenor', e.target.value); const m = { '1': 1, '2': 2, '3-4': 4, '6': 6 }[e.target.value]; if (m) handleChange('preferredDuration', m) }} onBlur={() => setErrors((prev) => ({ ...prev, ...validateStep(3, formData) }))} error={errors.preferredTenor} required />
+              <Select label="Preferred repayment tenor" options={TENOR_OPTIONS} value={formData.preferredTenor} onChange={(e) => { handleChange('preferredTenor', e.target.value); const m = { '1': 1, '2': 2, '3-4': 4, '6': 6, '12': 12 }[e.target.value]; if (m) handleChange('preferredDuration', m) }} onBlur={() => setErrors((prev) => ({ ...prev, ...validateStep(3, formData) }))} error={errors.preferredTenor} required />
 
               {formData.requestedAmount >= 100000 && formData.preferredDuration >= 1 && (
                 <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>

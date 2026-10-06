@@ -239,9 +239,17 @@ export default function ProviderRegisterPatient() {
     }
     if (s === 4) {
       if (!form.guarantorName.trim())         e.guarantorName         = 'Guarantor name is required'
-      if (!form.guarantorPhone.trim())        e.guarantorPhone        = 'Guarantor phone is required'
-      if (!form.guarantorEmail.trim())        e.guarantorEmail        = 'Guarantor email is required'
-      if (!form.guarantorBvn.trim())          e.guarantorBvn          = 'Guarantor BVN is required'
+      const guarantorPhone = form.guarantorPhone.trim()
+      if (!guarantorPhone) e.guarantorPhone = 'Guarantor phone is required'
+      else if (!/^[0-9\s\-+()]+$/.test(guarantorPhone) || guarantorPhone.replace(/\D/g, '').length < 10) {
+        e.guarantorPhone = 'Enter a valid guarantor phone number'
+      }
+      const guarantorEmail = form.guarantorEmail.trim()
+      if (!guarantorEmail) e.guarantorEmail = 'Guarantor email is required'
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guarantorEmail)) e.guarantorEmail = 'Enter a valid guarantor email'
+      const guarantorBvn = form.guarantorBvn.trim()
+      if (!guarantorBvn) e.guarantorBvn = 'Guarantor BVN is required'
+      else if (!/^\d{11}$/.test(guarantorBvn)) e.guarantorBvn = 'Guarantor BVN must be exactly 11 digits'
       if (!form.guarantorRelationship.trim()) e.guarantorRelationship = 'Relationship to patient is required'
     }
     if (s === 5) {
@@ -263,7 +271,7 @@ export default function ProviderRegisterPatient() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const e5 = validate(5)
+    const e5 = { ...validate(4), ...validate(5) }
     if (Object.keys(e5).length) { setErrors(e5); return }
 
     setSubmitting(true)
@@ -309,6 +317,7 @@ export default function ProviderRegisterPatient() {
         ...(form.repaymentAccountNumber.trim() ? { repaymentAccountNumber: form.repaymentAccountNumber.trim() } : {}),
         hasActiveLoans: form.hasActiveLoans,
         ...(form.hasActiveLoans && form.activeLoansMonthlyRepayment ? { activeLoansMonthlyRepayment: Number(form.activeLoansMonthlyRepayment) } : {}),
+        addGuarantor: true,
         guarantorName:             form.guarantorName.trim(),
         guarantorPhone:            form.guarantorPhone.trim(),
         guarantorEmail:            form.guarantorEmail.trim(),

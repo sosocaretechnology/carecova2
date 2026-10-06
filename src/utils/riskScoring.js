@@ -15,7 +15,7 @@ function getMonthlyRepayment(requestedAmount, tenorMonths) {
 
 function tenorToMonths(tenor) {
   if (typeof tenor === 'number') return tenor
-  const map = { '1': 1, '2': 2, '3-4': 4, '6': 6 }
+  const map = { '1': 1, '2': 2, '3-4': 4, '6': 6, '12': 12 }
   return map[tenor] || 6
 }
 

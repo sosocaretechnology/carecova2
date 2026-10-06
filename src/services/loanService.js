@@ -1,5 +1,6 @@
 import { mockApplications } from '../data/mockApplications'
 import { computeRiskScore } from '../utils/riskScoring'
+import { validateEmail, validatePhone } from '../utils/validation'
 import { customerAuthService } from './customerAuthService'
 
 const STORAGE_KEY = 'carecova_loans'
@@ -19,7 +20,7 @@ function getCustomerToken() {
   } catch { return null }
 }
 
-const TENOR_TO_MONTHS = { '1': 1, '2': 2, '3-4': 4, '6': 6 }
+const TENOR_TO_MONTHS = { '1': 1, '2': 2, '3-4': 4, '6': 6, '12': 12 }
 
 function looksLikeBackendId(value) {
   if (typeof value !== 'string') return false
@@ -133,7 +134,8 @@ function buildApiPayload(data) {
   const location = data.location || {}
   const gps = location.gps || {}
 
-  const addGuarantor = data.addGuarantor === true || data.addGuarantor === 'yes'
+  // Every new application requires a guarantor.
+  const addGuarantor = true
   const hasActiveLoans = data.hasActiveLoans === true || data.hasActiveLoans === 'yes'
 
   const coBorrower = data.coBorrower || (
@@ -152,10 +154,10 @@ function buildApiPayload(data) {
   )
 
   // Flat guarantor fields — the backend assembles the P2Vest guarantor block from these.
-  const guarantorName = data.guarantorName ?? data.coBorrowerName
-  const guarantorPhone = data.guarantorPhone ?? data.coBorrowerPhone
-  const guarantorEmail = data.guarantorEmail ?? data.coBorrowerEmail
-  const guarantorBvn = data.guarantorBvn ?? data.coBorrowerBvn
+  const guarantorName = data.guarantorName ?? data.guarantor?.fullName
+  const guarantorPhone = data.guarantorPhone ?? data.guarantor?.phone
+  const guarantorEmail = data.guarantorEmail ?? data.guarantor?.email
+  const guarantorBvn = data.guarantorBvn ?? data.guarantor?.bvn
 
   const payload = {
     fullName: name,
@@ -213,9 +215,9 @@ function buildApiPayload(data) {
     guarantorPhone,
     guarantorEmail,
     guarantorBvn,
-    guarantorRelationship: data.guarantorRelationship ?? data.coBorrowerRelationship,
+    guarantorRelationship: data.guarantorRelationship ?? data.guarantor?.relationship,
     guarantorAddress: data.guarantorAddress,
-    guarantorEmploymentType: data.guarantorEmploymentType ?? data.coBorrowerEmploymentSector,
+    guarantorEmploymentType: data.guarantorEmploymentType ?? data.guarantor?.employmentSector,
 
     coBorrower,
 
@@ -324,14 +326,21 @@ function validateApplicationData(applicationData) {
       throw new Error('Active loans details are required when you have active loans')
     }
   }
-  if (applicationData.addGuarantor === true || applicationData.addGuarantor === 'yes') {
-    const gBvn = String(applicationData.guarantorBvn || applicationData.coBorrowerBvn || '').trim()
-    if (!(applicationData.guarantorName || '').trim() || !(applicationData.guarantorPhone || '').trim() || !(applicationData.guarantorRelationship || '').trim()) {
-      throw new Error('Guarantor details are required when adding a guarantor')
-    }
-    if (!/^\d{11}$/.test(gBvn)) {
-      throw new Error('A valid 11-digit guarantor BVN is required when adding a guarantor')
-    }
+  const guarantor = applicationData.guarantor || {}
+  const gName = String(applicationData.guarantorName || guarantor.fullName || '').trim()
+  const gPhone = String(applicationData.guarantorPhone || guarantor.phone || '').trim()
+  const gEmail = String(applicationData.guarantorEmail || guarantor.email || '').trim()
+  const gBvn = String(applicationData.guarantorBvn || guarantor.bvn || '').trim()
+  const gRelationship = String(applicationData.guarantorRelationship || guarantor.relationship || '').trim()
+  if (!gName || !gPhone || !gEmail || !gBvn || !gRelationship) {
+    throw new Error('Guarantor name, phone, email, BVN, and relationship are required')
+  }
+  const gPhoneError = validatePhone(gPhone)
+  if (gPhoneError) throw new Error(`Guarantor ${gPhoneError.toLowerCase()}`)
+  const gEmailError = validateEmail(gEmail)
+  if (gEmailError) throw new Error(`Guarantor ${gEmailError.toLowerCase()}`)
+  if (!/^\d{11}$/.test(gBvn)) {
+    throw new Error('Guarantor BVN must be exactly 11 digits')
   }
   if (!applicationData.consentDataProcessing || !applicationData.consentTerms) {
     throw new Error('Consent is required')

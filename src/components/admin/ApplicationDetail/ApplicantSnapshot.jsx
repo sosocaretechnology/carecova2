@@ -83,6 +83,14 @@ export default function ApplicantSnapshot({ loan, onUpdated }) {
     const location = loan.location || { state: loan.state, city: loan.city }
     const hospital = loan.hospital || { name: loan.hospitalName || loan.hospital, isPartnerSuggested: false }
     const riskMetrics = loan.internalRiskMetrics || loan.affordability || {}
+    const guarantor = loan.guarantor || {}
+    const guarantorName = loan.guarantorName || guarantor.fullName
+    const guarantorPhone = loan.guarantorPhone || guarantor.phone
+    const guarantorEmail = loan.guarantorEmail || guarantor.email
+    const guarantorBvn = loan.guarantorBvn || guarantor.bvn
+    const guarantorRelationship = loan.guarantorRelationship || guarantor.relationship
+    const guarantorEmploymentSector = loan.guarantorEmploymentSector || guarantor.employmentSector
+    const guarantorMonthlyIncome = loan.guarantorMonthlyIncome || guarantor.monthlyIncome
 
     // Fallbacks if not set
     const badgeInfo = useRiskBadge(riskMetrics.riskLevel || 'LOW')
@@ -318,41 +326,39 @@ export default function ApplicantSnapshot({ loan, onUpdated }) {
                 </div>
             </div>
 
-            {(loan.guarantorName || loan.coBorrower) && (
-                <div className="detail-card" style={{ borderLeft: '4px solid #3b82f6' }}>
-                    <h2>Guarantor</h2>
+            <div className="detail-card" style={{ borderLeft: '4px solid #3b82f6' }}>
+                    <h2>Guarantor (Required)</h2>
                     <div className="info-grid">
                         <div className="info-group">
                             <div className="info-label">Name</div>
-                            <div className="info-value">{loan.guarantorName || loan.coBorrower?.name || '—'}</div>
+                            <div className="info-value">{guarantorName || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">Phone</div>
-                            <div className="info-value">{loan.guarantorPhone || loan.coBorrower?.phone || '—'}</div>
+                            <div className="info-value">{guarantorPhone || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">Email</div>
-                            <div className="info-value">{loan.guarantorEmail || loan.coBorrower?.email || '—'}</div>
+                            <div className="info-value">{guarantorEmail || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">BVN</div>
-                            <div className="info-value">{loan.guarantorBvn || loan.coBorrower?.bvn || '—'}</div>
+                            <div className="info-value">{guarantorBvn || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">Relationship</div>
-                            <div className="info-value">{loan.guarantorRelationship || loan.coBorrower?.relationship || '—'}</div>
+                            <div className="info-value">{guarantorRelationship || '—'}</div>
                         </div>
                         <div className="info-group">
                             <div className="info-label">Sector</div>
-                            <div className="info-value capitalize">{loan.guarantorEmploymentSector || loan.coBorrower?.employmentSector || '—'}</div>
+                            <div className="info-value capitalize">{guarantorEmploymentSector || '—'}</div>
                         </div>
                         <div className="info-group col-span-2">
                             <div className="info-label">Income</div>
-                            <div className="info-value">₦{(loan.guarantorMonthlyIncome || loan.coBorrower?.monthlyIncome) ? Number(loan.guarantorMonthlyIncome || loan.coBorrower?.monthlyIncome).toLocaleString() : '—'}</div>
+                            <div className="info-value">{guarantorMonthlyIncome ? `₦${Number(guarantorMonthlyIncome).toLocaleString()}` : '—'}</div>
                         </div>
                     </div>
-                </div>
-            )}
+            </div>
 
             {(loan.coBorrowers || []).length > 0 && (
                 <div className="detail-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
