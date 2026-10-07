@@ -38,6 +38,9 @@ export default function MonoConnectionCard({
   const [fetching, setFetching] = useState(false)
   const [fetchResult, setFetchResult] = useState(null)
   const [fetchError, setFetchError] = useState('')
+  const [statementPeriod, setStatementPeriod] = useState('last6months')
+  const [downloading, setDownloading] = useState('')
+  const [downloadError, setDownloadError] = useState('')
 
   const statusKey = loan.monoConnectionStatus || 'not_started'
   const meta = STATUS_META[statusKey] || STATUS_META.not_started
@@ -59,6 +62,28 @@ export default function MonoConnectionCard({
       setFetchError(err.message || 'Failed to fetch bank statement')
     } finally {
       setFetching(false)
+    }
+  }
+
+  const handleDownload = async (format) => {
+    setDownloading(format)
+    setDownloadError('')
+    try {
+      const file = format === 'pdf'
+        ? await adminService.downloadMonoStatementPdf(loan.id, statementPeriod)
+        : await adminService.downloadMonoTransactionsCsv(loan.id)
+      const objectUrl = window.URL.createObjectURL(file.blob)
+      const link = document.createElement('a')
+      link.href = objectUrl
+      link.download = file.filename || `carecova-mono-statement.${format}`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000)
+    } catch (err) {
+      setDownloadError(err.message || `Failed to download ${format.toUpperCase()} statement`)
+    } finally {
+      setDownloading('')
     }
   }
 
@@ -195,6 +220,44 @@ export default function MonoConnectionCard({
         {fetchError && (
           <div className="alert-box alert-error" style={{ marginTop: '8px', fontSize: '0.8125rem' }}>
             {fetchError}
+          </div>
+        )}
+        {statusKey === 'linked' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+            <label htmlFor={`mono-statement-period-${loan.id}`} style={{ fontSize: '0.8125rem', color: '#475569' }}>
+              PDF period
+            </label>
+            <select
+              id={`mono-statement-period-${loan.id}`}
+              value={statementPeriod}
+              onChange={(event) => setStatementPeriod(event.target.value)}
+              disabled={Boolean(downloading)}
+              style={{ padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: '7px', background: '#fff' }}
+            >
+              <option value="last1month">Last month</option>
+              <option value="last3months">Last 3 months</option>
+              <option value="last6months">Last 6 months</option>
+              <option value="last12months">Last 12 months</option>
+            </select>
+            <button
+              className="button button--secondary"
+              onClick={() => handleDownload('pdf')}
+              disabled={Boolean(downloading)}
+            >
+              {downloading === 'pdf' ? 'Preparing PDF…' : 'Download Mono PDF'}
+            </button>
+            <button
+              className="button button--secondary"
+              onClick={() => handleDownload('csv')}
+              disabled={Boolean(downloading)}
+            >
+              {downloading === 'csv' ? 'Preparing CSV…' : 'Export transactions CSV'}
+            </button>
+          </div>
+        )}
+        {downloadError && (
+          <div className="alert-box alert-error" style={{ marginTop: '8px', fontSize: '0.8125rem' }}>
+            {downloadError}
           </div>
         )}
       </div>

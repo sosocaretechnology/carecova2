@@ -227,6 +227,48 @@ async function adminRequest(path, options = {}, retried = false) {
   return body
 }
 
+async function adminRequestFile(path, retried = false) {
+  const session = getStoredSession()
+  let token = session?.accessToken
+  if (!token) throw new Error('Not authenticated')
+
+  let response
+  try {
+    response = await fetch(`${API_ROOT}${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Unable to reach backend at ${API_ROOT}. Please check the API connection.`)
+    }
+    throw error
+  }
+
+  if (response.status === 401 && !retried && session?.refreshToken) {
+    try {
+      token = await refreshAccessToken()
+      return adminRequestFile(path, true)
+    } catch (_) {
+      throw new Error('Session expired. Please sign in again.')
+    }
+  }
+  if (response.status === 401) {
+    clearSession()
+    throw new Error('Session expired. Please sign in again.')
+  }
+  if (!response.ok) {
+    const { isJson, body } = await parseResponseBody(response)
+    throw new Error(getResponseMessage(body, isJson))
+  }
+
+  const disposition = response.headers.get('content-disposition') || ''
+  const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|\")?([^\";]+)/i)
+  return {
+    blob: await response.blob(),
+    filename: filenameMatch ? decodeURIComponent(filenameMatch[1].replace(/\"/g, '').trim()) : '',
+  }
+}
+
 function normalizeLoanFromApi(loan) {
   if (!loan) return loan
   const source = loan.loan && typeof loan.loan === 'object' ? loan.loan : loan
@@ -552,6 +594,25 @@ export const adminService = {
     return adminRequest(`/admin/loan-applications/${trimmed}/mono/fetch-transactions`, {
       method: 'POST',
     })
+  },
+
+  downloadMonoStatementPdf: async (loanId, period = 'last6months') => {
+    requireBackendFeature('Mono statement PDF download')
+    const trimmed = assertBackendLoanId(loanId, 'Mono statement PDF download')
+    const query = new URLSearchParams({ period })
+    return adminRequestFile(`/admin/loan-applications/${trimmed}/mono/statement/pdf?${query}`)
+  },
+
+  downloadMonoTransactionsCsv: async (loanId) => {
+    requireBackendFeature('Mono transaction CSV download')
+    const trimmed = assertBackendLoanId(loanId, 'Mono transaction CSV download')
+    return adminRequestFile(`/admin/loan-applications/${trimmed}/mono/statement/csv`)
+  },
+
+  getMonoTransactionAnalysis: async (loanId) => {
+    requireBackendFeature('Mono transaction analysis')
+    const trimmed = assertBackendLoanId(loanId, 'Mono transaction analysis')
+    return adminRequest(`/admin/loan-applications/${trimmed}/mono/transactions/analysis`)
   },
 
   runTransactionAnalysis: async (loanId) => {

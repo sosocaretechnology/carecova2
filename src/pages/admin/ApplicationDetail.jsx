@@ -16,6 +16,7 @@ import P2VestCard from '../../components/admin/ApplicationDetail/P2VestCard'
 import AiPreScreenCard from '../../components/admin/ApplicationDetail/AiPreScreenCard'
 import AiChatPanel from '../../components/admin/ApplicationDetail/AiChatPanel'
 import TransactionAnalysisCard from '../../components/admin/ApplicationDetail/TransactionAnalysisCard'
+import TransactionExplorer from '../../components/admin/ApplicationDetail/TransactionExplorer'
 import MonoAssessmentCard from '../../components/admin/ApplicationDetail/MonoAssessmentCard'
 import ProviderSubmissionCard from '../../components/admin/ApplicationDetail/ProviderSubmissionCard'
 import FirstCentralCard from '../../components/admin/ApplicationDetail/FirstCentralCard'
@@ -53,6 +54,7 @@ export default function ApplicationDetail() {
     const [showNotifyModal, setShowNotifyModal] = useState(false)
 
     const isSuperAdmin = session?.role === 'super_admin'
+    const canViewBankAnalysis = ['super_admin', 'admin', 'credit_admin', 'credit_officer', 'reviewer'].includes(session?.role)
 
     const handleDelete = useCallback(async () => {
         setDeleting(true)
@@ -296,6 +298,7 @@ export default function ApplicationDetail() {
                             { key: 'applicant',    label: 'Applicant',    state: sectionStates.applicant },
                             { key: 'verification', label: 'Verification', state: sectionStates.verification },
                             { key: 'credit',       label: 'Credit',       state: sectionStates.credit },
+                            ...(canViewBankAnalysis ? [{ key: 'bank-analysis', label: 'Bank Analysis', state: null }] : []),
                             { key: 'ai',           label: 'AI Analysis',  state: sectionStates.ai },
                             { key: 'provider',     label: 'Provider',     state: sectionStates.provider },
                             { key: 'documents',    label: 'Documents',    state: sectionStates.documents },
@@ -361,6 +364,10 @@ export default function ApplicationDetail() {
                                     onUpdated={() => loadLoanDetails({ silent: true })}
                                 />
                             </div>
+                        )}
+
+                        {activeTab === 'bank-analysis' && canViewBankAnalysis && (
+                            <TransactionExplorer loan={loan} />
                         )}
 
                         {activeTab === 'ai' && (
