@@ -28,3 +28,5 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+# Local Google service-account credentials
+acoustic-cirrus-509318-k5-058be7a55bf8.json

@@ -7,6 +7,7 @@ import Select from '../components/Select'
 import { hospitalService } from '../services/hospitalService'
 import { eligibilityService } from '../services/eligibilityService'
 import { useEffect } from 'react'
+import { trackGoogleAnalyticsEvent } from '../services/googleAnalytics'
 
 export default function EligibilityCheck() {
   const navigate = useNavigate()
@@ -67,6 +68,7 @@ export default function EligibilityCheck() {
     setLoading(true)
     try {
       const eligibilityResult = await eligibilityService.checkEligibility(formData)
+      trackGoogleAnalyticsEvent('eligibility_check_completed')
       setResult(eligibilityResult)
     } catch (err) {
       setError('Failed to check eligibility. Please try again.')

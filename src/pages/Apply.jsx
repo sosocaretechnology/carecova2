@@ -18,6 +18,7 @@ import { useAffordabilityCheck } from '../hooks/useAffordabilityCheck'
 import { uploadFileToCloudinary } from '../services/cloudinaryService'
 import LoanCalculator from '../components/LoanCalculator'
 import ApplicationStages from '../components/ApplicationStages'
+import { trackGoogleAnalyticsEvent } from '../services/googleAnalytics'
 
 const TOTAL_STEPS = 5
 
@@ -444,6 +445,7 @@ export default function Apply() {
     try {
       const payload = buildPayload()
       const result = await loanService.submitApplication(payload)
+      trackGoogleAnalyticsEvent('application_submitted')
       if (draftIdState) await applicationService.deleteDraft(draftIdState)
       applicationService.clearLastDraft()
       setLoanId(result.id)
