@@ -18,17 +18,20 @@ import HealthcareTab       from '../../components/admin/Customer360/HealthcareTa
 import RepaymentsTab       from '../../components/admin/Customer360/RepaymentsTab'
 import ActivityLogTab      from '../../components/admin/Customer360/ActivityLogTab'
 import CreditDecisionTab   from '../../components/admin/Customer360/CreditDecisionTab'
+import FirstCentralReportsTab from '../../components/admin/Customer360/FirstCentralReportsTab'
+import { firstCentralService } from '../../services/firstCentralService'
 
 import {
   User, Shield, Wifi, TrendingUp, BarChart2, ArrowLeftRight,
   FileText, CreditCard, Hospital, DollarSign, Activity,
-  ChevronLeft, RefreshCw, CheckCircle, AlertCircle, Clock, WifiOff, Zap,
+  ChevronLeft, RefreshCw, CheckCircle, AlertCircle, Clock, WifiOff, Zap, BadgeCheck,
 } from 'lucide-react'
 
 const TABS = [
   { key: 'overview',       label: 'Overview',              Icon: User },
   { key: 'personal',       label: 'Personal Info',          Icon: User },
   { key: 'kyc',            label: 'KYC / Identity',         Icon: Shield },
+  { key: 'firstcentral',   label: 'FirstCentral',           Icon: BadgeCheck },
   { key: 'bank',           label: 'Bank Accounts',          Icon: Wifi },
   { key: 'financial',      label: 'Financial Profile',      Icon: TrendingUp },
   { key: 'income',         label: 'Income Analysis',        Icon: BarChart2 },
@@ -61,6 +64,7 @@ export default function CustomerDetail() {
   const navigate = useNavigate()
   const { session } = useAuth()
   const isAdmin = session?.role === 'admin'
+  const canViewFirstCentral = ['super_admin', 'admin', 'credit_admin', 'credit_officer', 'reviewer'].includes(session?.role)
 
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState(null)
@@ -69,6 +73,7 @@ export default function CustomerDetail() {
   const [transactions, setTransactions] = useState({ transactions: [], retrievedAt: null })
   const [repayments, setRepayments]   = useState([])
   const [geminiAnalysis, setGeminiAnalysis] = useState(null)
+  const [firstCentralReports, setFirstCentralReports] = useState([])
   const [activeTab, setActiveTab] = useState('overview')
 
   const decodedId = decodeURIComponent(customerId)
@@ -78,12 +83,15 @@ export default function CustomerDetail() {
       setLoading(true)
       setError(null)
 
-      const [profile, accounts, txData, repData, analysis] = await Promise.all([
+      const [profile, accounts, txData, repData, analysis, bureauReports] = await Promise.all([
         customerService.getCustomerById(decodedId),
         customerService.getCustomerBankAccounts(decodedId),
         customerService.getCustomerTransactions(decodedId),
         customerService.getCustomerRepayments(decodedId),
         customerService.getCustomerFinancialAnalysis(decodedId),
+        canViewFirstCentral
+          ? firstCentralService.getCustomerReports(decodedId).catch(() => [])
+          : Promise.resolve([]),
       ])
 
       const enriched = { ...profile, _bankAccounts: accounts, _geminiAnalysis: analysis }
@@ -92,6 +100,7 @@ export default function CustomerDetail() {
       setTransactions(txData)
       setRepayments(repData)
       setGeminiAnalysis(analysis)
+      setFirstCentralReports(Array.isArray(bureauReports) ? bureauReports : [])
 
       // Audit: record profile view
       auditService.record('customer_profile_viewed', {
@@ -107,7 +116,7 @@ export default function CustomerDetail() {
 
   useEffect(() => {
     load()
-  }, [decodedId])
+  }, [decodedId, canViewFirstCentral])
 
   if (loading) return <FullScreenLoader label="Loading Customer 360…" />
 
@@ -183,7 +192,7 @@ export default function CustomerDetail() {
 
       {/* Tab bar */}
       <div className="cc-tab-bar" role="tablist" style={{ marginBottom: 20 }}>
-        {TABS.map(tab => {
+        {TABS.filter(tab => tab.key !== 'firstcentral' || canViewFirstCentral).map(tab => {
           const { Icon } = tab
           const active = activeTab === tab.key
           return (
@@ -206,6 +215,7 @@ export default function CustomerDetail() {
         {activeTab === 'overview'     && <OverviewTab         customer={customer} />}
         {activeTab === 'personal'     && <PersonalInfoTab     customer={customer} />}
         {activeTab === 'kyc'          && <KycIdentityTab      customer={customer} />}
+        {activeTab === 'firstcentral' && canViewFirstCentral && <FirstCentralReportsTab reports={firstCentralReports} />}
         {activeTab === 'bank'         && <BankAccountsTab     customer={customer} isAdmin={isAdmin} onDataRefreshed={load} />}
         {activeTab === 'financial'    && <FinancialProfileTab customer={customer} />}
         {activeTab === 'income'       && <IncomeAnalysisTab   customer={customer} onDataRefreshed={load} />}

@@ -19,7 +19,7 @@ import TransactionAnalysisCard from '../../components/admin/ApplicationDetail/Tr
 import TransactionExplorer from '../../components/admin/ApplicationDetail/TransactionExplorer'
 import MonoAssessmentCard from '../../components/admin/ApplicationDetail/MonoAssessmentCard'
 import ProviderSubmissionCard from '../../components/admin/ApplicationDetail/ProviderSubmissionCard'
-import FirstCentralCard from '../../components/admin/ApplicationDetail/FirstCentralCard'
+import FirstCentralTab from '../../components/admin/ApplicationDetail/FirstCentralTab'
 import { getSectionStates } from '../../components/admin/ApplicationDetail/ReviewSidebar'
 import InlineLoader from '../../components/ui/InlineLoader'
 import Modal from '../../components/ui/Modal'
@@ -298,6 +298,7 @@ export default function ApplicationDetail() {
                             { key: 'applicant',    label: 'Applicant',    state: sectionStates.applicant },
                             { key: 'verification', label: 'Verification', state: sectionStates.verification },
                             { key: 'credit',       label: 'Credit',       state: sectionStates.credit },
+                            ...(canViewBankAnalysis ? [{ key: 'first-central', label: 'FirstCentral', state: sectionStates.credit }] : []),
                             ...(canViewBankAnalysis ? [{ key: 'bank-analysis', label: 'Bank Analysis', state: null }] : []),
                             { key: 'ai',           label: 'AI Analysis',  state: sectionStates.ai },
                             { key: 'provider',     label: 'Provider',     state: sectionStates.provider },
@@ -359,11 +360,14 @@ export default function ApplicationDetail() {
                                         }}
                                     />
                                 </div>
-                                <FirstCentralCard
-                                    loan={loan}
-                                    onUpdated={() => loadLoanDetails({ silent: true })}
-                                />
                             </div>
+                        )}
+
+                        {activeTab === 'first-central' && canViewBankAnalysis && (
+                            <FirstCentralTab
+                                loan={loan}
+                                onUpdated={() => loadLoanDetails({ silent: true })}
+                            />
                         )}
 
                         {activeTab === 'bank-analysis' && canViewBankAnalysis && (

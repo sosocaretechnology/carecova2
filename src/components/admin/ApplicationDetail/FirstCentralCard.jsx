@@ -1,15 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { firstCentralService } from '../../../services/firstCentralService'
 
 const SCORE_COLOR = (score) => {
-  if (!score) return '#64748b'
+  if (score == null) return '#64748b'
   if (score >= 700) return '#10b981'
   if (score >= 580) return '#f59e0b'
   return '#ef4444'
 }
 
 const SCORE_LABEL = (score) => {
-  if (!score) return '—'
+  if (score == null) return '—'
   if (score >= 700) return 'Good'
   if (score >= 580) return 'Fair'
   return 'Poor'
@@ -24,10 +24,10 @@ function InfoRow({ label, value, highlight }) {
   )
 }
 
-export default function FirstCentralCard({ loan, onUpdated }) {
-  const stored = loan.firstCentralResult || null
+export default function FirstCentralCard({ loan, onUpdated, storedResult, storedCheckedAt }) {
+  const stored = storedResult || loan.firstCentralResult || null
   const [result, setResult] = useState(stored)
-  const [checkedAt, setCheckedAt] = useState(loan.firstCentralCheckedAt || null)
+  const [checkedAt, setCheckedAt] = useState(storedCheckedAt || loan.firstCentralCheckedAt || null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [lookupType, setLookupType] = useState(() =>
@@ -38,6 +38,11 @@ export default function FirstCentralCard({ loan, onUpdated }) {
   const phone = loan.phone || loan.applicantPhone || ''
   const hasSelectedIdentifier = lookupType === 'phone' ? Boolean(phone) : Boolean(bvn)
 
+  useEffect(() => {
+    setResult(storedResult || loan.firstCentralResult || null)
+    setCheckedAt(storedCheckedAt || loan.firstCentralCheckedAt || null)
+  }, [loan.firstCentralCheckedAt, loan.firstCentralResult, storedCheckedAt, storedResult])
+
   const runCheck = async () => {
     if (!hasSelectedIdentifier) {
       setError(`No ${lookupType === 'phone' ? 'phone number' : 'BVN'} found on this application — cannot run bureau check.`)
@@ -47,9 +52,8 @@ export default function FirstCentralCard({ loan, onUpdated }) {
     setError('')
     try {
       const data = await firstCentralService.runCreditCheck(loan.id, bvn, lookupType, phone)
-      firstCentralService.saveResultLocally(loan.id, data)
       setResult(data)
-      setCheckedAt(new Date().toISOString())
+      setCheckedAt(data.enquiryDate || new Date().toISOString())
       onUpdated?.()
     } catch (err) {
       setError(err.message || 'Bureau check failed — please try again.')
@@ -60,6 +64,8 @@ export default function FirstCentralCard({ loan, onUpdated }) {
 
   const fmt = (v) => v != null ? v.toLocaleString() : '—'
   const fmtDate = (v) => v ? new Date(v).toLocaleString('en-NG') : '—'
+  const rating = result?.riskBand
+  const displayRating = rating != null && Number.isNaN(Number(rating)) ? rating : '—'
 
   return (
     <div className="detail-card" style={{ borderLeft: '4px solid #6366f1' }}>
@@ -156,7 +162,7 @@ export default function FirstCentralCard({ loan, onUpdated }) {
                 {SCORE_LABEL(result.iScore)}
               </div>
               <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
-                Risk Band: <strong>{result.riskBand || '—'}</strong>
+                Repayment rating: <strong>{displayRating}</strong>
               </div>
               <div style={{ marginTop: '8px', height: '6px', borderRadius: '99px', background: '#e2e8f0', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${Math.min(((result.iScore || 0) / 850) * 100, 100)}%`, background: SCORE_COLOR(result.iScore), borderRadius: '99px', transition: 'width 0.6s ease' }} />
@@ -194,9 +200,9 @@ export default function FirstCentralCard({ loan, onUpdated }) {
         </>
       )}
 
-      {!result && !loading && !error && bvn && (
+      {!result && !loading && !error && hasSelectedIdentifier && (
         <div style={{ textAlign: 'center', padding: '20px 0', color: '#94a3b8', fontSize: '0.85rem' }}>
-          No bureau check run yet. Click <strong>Run Credit Check</strong> to query FirstCentral using the applicant's BVN.
+          No bureau check run yet. Select BVN or phone number and click <strong>Run Credit Check</strong> to query FirstCentral.
         </div>
       )}
     </div>

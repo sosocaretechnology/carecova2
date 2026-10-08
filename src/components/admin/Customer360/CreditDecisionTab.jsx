@@ -170,9 +170,9 @@ export default function CreditDecisionTab({ customer }) {
     : p2vest.decisionStatus === 'manual_review' ? 'warn'
     : 'fail'
 
-  const firstCentral = latest.firstCentralResult || {}
+  const firstCentral = customer.firstCentralResult || latest.firstCentralResult || {}
   const fcScore = firstCentral.iScore ?? firstCentral.creditScore
-  const fcSignal = !fcScore ? 'pending'
+  const fcSignal = fcScore == null ? 'pending'
     : fcScore >= 600 ? 'pass'
     : fcScore >= 400 ? 'warn'
     : 'fail'

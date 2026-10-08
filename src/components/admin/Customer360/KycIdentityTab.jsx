@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, Clock, AlertCircle, ShieldCheck, CreditCard } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, AlertCircle, ShieldCheck } from 'lucide-react'
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 const fmtDateTime = (d) => d ? new Date(d).toLocaleString('en-NG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'
@@ -29,47 +29,16 @@ function VerificationRow({ label, status, detail, timestamp, source }) {
   )
 }
 
-function FirstCentralCard({ result, checkedAt }) {
-  if (!result) return (
-    <div style={{ padding: '20px 0', color: '#9ca3af', fontSize: '0.875rem', textAlign: 'center' }}>
-      No credit bureau check on record.
-    </div>
-  )
-
-  const score = result.iScore ?? result.creditScore ?? '—'
-  const band  = result.riskBand ?? result.band ?? '—'
-  const facilities = result.totalFacilities ?? result.noOfLoans ?? '—'
-  const overdue = result.overdueAmount ?? result.totalOverdueAmount
-
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginTop: 12 }}>
-      {[
-        { label: 'Credit Score',     value: score,    highlight: true },
-        { label: 'Risk Band',        value: band },
-        { label: 'Total Facilities', value: facilities },
-        { label: 'Overdue Amount',   value: overdue != null ? `₦${Number(overdue).toLocaleString()}` : '—' },
-        { label: 'Checked',          value: fmtDate(checkedAt) },
-      ].map(c => (
-        <div key={c.label} style={{ background: '#f9fafb', borderRadius: 8, padding: '12px 14px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{c.label}</div>
-          <div style={{ fontWeight: c.highlight ? 800 : 600, fontSize: c.highlight ? '1.5rem' : '1rem', color: '#111827' }}>{String(c.value)}</div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 export default function KycIdentityTab({ customer }) {
   const identity = customer.latestLoan || {}
   const vs = customer.verificationStatus || {}
 
   const identityStatus   = vs.identity === 'verified' ? 'verified' : (vs.identity || 'not_run')
-  const creditStatus     = vs.credit   === 'verified' ? 'verified' : (vs.credit   || (customer.latestLoan?.firstCentralResult ? 'verified' : 'not_run'))
+  const creditStatus     = vs.credit   === 'verified' ? 'verified' : (vs.credit   || (customer.firstCentralResult ? 'verified' : 'not_run'))
   const bankingStatus    = vs.banking  === 'verified' ? 'verified' : (vs.banking  || (customer.hasMonoConnection || customer.monoAccountId ? 'verified' : 'not_run'))
   const payrollStatus    = vs.payroll  === 'verified' ? 'verified' : (vs.payroll  || 'not_run')
 
-  const fc = customer.latestLoan?.firstCentralResult
-  const fcAt = customer.latestLoan?.firstCentralCheckedAt
+  const fcAt = customer.firstCentralCheckedAt
 
   return (
     <div>
@@ -130,16 +99,6 @@ export default function KycIdentityTab({ customer }) {
           detail="Employer payroll confirmation"
           source="Remita"
         />
-      </div>
-
-      {/* First Central Results */}
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: '20px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <CreditCard size={20} color="#7c3aed" />
-          <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700, color: '#111827' }}>Credit Bureau Report</h3>
-        </div>
-        <p style={{ margin: '0 0 4px', fontSize: '0.8125rem', color: '#6b7280' }}>FirstCentral credit history and iScore.</p>
-        <FirstCentralCard result={fc} checkedAt={fcAt} />
       </div>
     </div>
   )

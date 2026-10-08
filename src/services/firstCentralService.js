@@ -121,9 +121,30 @@ async function backendCheck(loanId, lookupType = 'bvn') {
   return data
 }
 
+async function backendGet(path) {
+  const token = getAdminToken()
+  if (!token) throw new Error('Not authenticated')
+  const res = await fetch(`${API_ROOT}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data?.message || `FirstCentral report request failed (${res.status})`)
+  return data
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export const firstCentralService = {
+  getSavedReport: async (loanId) => {
+    if (!USE_BACKEND) return null
+    return backendGet(`/admin/loan-applications/${encodeURIComponent(loanId)}/first-central/report`)
+  },
+
+  getCustomerReports: async (phone) => {
+    if (!USE_BACKEND) return []
+    return backendGet(`/admin/loan-applications/customer/${encodeURIComponent(phone)}/first-central/reports`)
+  },
+
   /**
    * Run a full credit bureau check for a loan application.
    * In backend mode: proxied through CareCova API.
@@ -168,20 +189,4 @@ export const firstCentralService = {
     }
   },
 
-  /**
-   * Persist the bureau result onto the loan record in local storage.
-   * The backend persists it server-side automatically.
-   */
-  saveResultLocally: (loanId, result) => {
-    try {
-      const key = 'carecova_loans'
-      const loans = JSON.parse(localStorage.getItem(key) || '[]')
-      const idx = loans.findIndex(l => l.id === loanId)
-      if (idx !== -1) {
-        loans[idx].firstCentralResult = result
-        loans[idx].firstCentralCheckedAt = new Date().toISOString()
-        localStorage.setItem(key, JSON.stringify(loans))
-      }
-    } catch { /* non-critical */ }
-  },
 }

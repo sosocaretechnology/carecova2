@@ -77,6 +77,9 @@ function buildProfileFromLoans(loans) {
 
   const sorted = [...loans].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
   const latest = sorted[0]
+  const latestFirstCentral = [...sorted]
+    .filter(loan => loan.firstCentralCheckedAt || loan.firstCentralResult)
+    .sort((a, b) => new Date(b.firstCentralCheckedAt || 0) - new Date(a.firstCentralCheckedAt || 0))[0]
 
   // ── identity ────────────────────────────────────────────────────────────
   const phone = normalisePhone(latest.phone)
@@ -151,6 +154,9 @@ function buildProfileFromLoans(loans) {
     identityVerified,
     creditChecked,
     verificationStatus: anyVerification?.verificationStatus || {},
+    firstCentralResult: latestFirstCentral?.firstCentralResult || null,
+    firstCentralCheckedAt: latestFirstCentral?.firstCentralCheckedAt || null,
+    firstCentralApplicationCode: latestFirstCentral?.applicationCode || null,
     // mono / bank
     hasMonoConnection,
     monoAccountId: monoLoan.monoAccountId || null,
