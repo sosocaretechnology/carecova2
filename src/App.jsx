@@ -244,7 +244,7 @@ function App() {
           <Route
             path="providers"
             element={
-              <RequireRoles allowedRoles={['admin', 'sales']}>
+              <RequireRoles allowedRoles={['admin', 'sales', 'support']}>
                 <ProviderManagement />
               </RequireRoles>
             }
@@ -284,7 +284,7 @@ function App() {
           <Route
             path="analytics"
             element={
-              <RequireRoles allowedRoles={['admin']}>
+              <RequireRoles allowedRoles={['admin', 'support']}>
                 <Analytics />
               </RequireRoles>
             }

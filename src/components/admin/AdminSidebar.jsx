@@ -47,14 +47,14 @@ const NAV_GROUPS = [
   {
     label: 'Partners',
     items: [
-      { name: 'Providers',  path: '/admin/providers', icon: Building2, roles: ['admin', 'sales'] },
+      { name: 'Providers',  path: '/admin/providers', icon: Building2, roles: ['admin', 'sales', 'support'] },
       { name: 'Financing',  path: '/admin/financing', icon: Banknote,  roles: ['financier'] },
     ],
   },
   {
     label: 'Insights',
     items: [
-      { name: 'Analytics',  path: '/admin/analytics', icon: BarChart2, roles: ['admin'] },
+      { name: 'Analytics',  path: '/admin/analytics', icon: BarChart2, roles: ['admin', 'support'] },
       { name: 'Audit Logs', path: '/admin/audit',     icon: FileText,  roles: ['admin'] },
     ],
   },
