@@ -32,6 +32,44 @@ function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
+function collectReportSections(value, fallbackLabel = 'Report details') {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => {
+      if (isObject(item)) {
+        const entries = Object.entries(item)
+        if (entries.length === 1) {
+          const [label, child] = entries[0]
+          if (/^record\s*\d+$/i.test(label)) return collectReportSections(child, `${fallbackLabel} ${index + 1}`)
+          return [{ label, value: child }]
+        }
+        if (entries.length > 1) return entries.map(([label, child]) => ({ label, value: child }))
+      }
+      return [{ label: `${fallbackLabel} ${index + 1}`, value: item }]
+    })
+  }
+
+  if (isObject(value)) {
+    const entries = Object.entries(value)
+    if (entries.length === 1) {
+      const [label, child] = entries[0]
+      if (/^record\s*\d+$/i.test(label)) return collectReportSections(child, fallbackLabel)
+      return [{ label, value: child }]
+    }
+    return entries.map(([label, child]) => ({ label, value: child }))
+  }
+
+  return value === null || value === undefined ? [] : [{ label: fallbackLabel, value }]
+}
+
+function sectionGroup(label) {
+  const name = humanize(label).toLowerCase()
+  if (/subject|personal|identity|demograph|consumer match|identification/.test(name)) return 'identity'
+  if (/enquir|search request/.test(name)) return 'enquiries'
+  if (/payment|delinquen|repay|arrear|overdue|default/.test(name)) return 'payments'
+  if (/credit account|credit agreement|facility|facilities|loan|credit limit/.test(name)) return 'credit'
+  return 'other'
+}
+
 function formatValue(value) {
   if (value === null || value === undefined || value === '') return '—'
   if (typeof value === 'boolean') return value ? 'Yes' : 'No'
@@ -140,6 +178,7 @@ function downloadReport(report, summary, applicationLabel) {
 
 export default function FirstCentralReportViewer({ report, summary, checkedAt, applicationLabel }) {
   const [copied, setCopied] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')
 
   if (!report) {
     return (
@@ -149,15 +188,46 @@ export default function FirstCentralReportViewer({ report, summary, checkedAt, a
     )
   }
 
-  const productSections = [
-    ['consumerMatch', 'Consumer match'],
-    ['detailedCredit', 'Consumer Detailed Credit · Product 45'],
-    ['iScore', 'iScore · Product 70'],
-  ].filter(([key]) => Object.prototype.hasOwnProperty.call(report, key))
   const productKeys = new Set(['consumerMatch', 'detailedCredit', 'iScore', 'iScoreStatus'])
   const additionalFields = Object.fromEntries(
     Object.entries(report).filter(([key]) => !productKeys.has(key)),
   )
+  const bureauSections = collectReportSections(report.detailedCredit)
+  const sectionsByGroup = bureauSections.reduce((groups, section) => {
+    const group = sectionGroup(section.label)
+    groups[group].push(section)
+    return groups
+  }, { identity: [], credit: [], payments: [], enquiries: [], other: [] })
+  const hasConsumerMatch = Object.prototype.hasOwnProperty.call(report, 'consumerMatch')
+  const hasIScore = Object.prototype.hasOwnProperty.call(report, 'iScore')
+  const tabs = [
+    { key: 'overview', label: 'Overview' },
+    ...((hasConsumerMatch || sectionsByGroup.identity.length) ? [{ key: 'identity', label: 'Identity', count: sectionsByGroup.identity.length + Number(hasConsumerMatch) }] : []),
+    ...(sectionsByGroup.credit.length ? [{ key: 'credit', label: 'Credit facilities', count: sectionsByGroup.credit.length }] : []),
+    ...(sectionsByGroup.payments.length ? [{ key: 'payments', label: 'Repayment history', count: sectionsByGroup.payments.length }] : []),
+    ...(sectionsByGroup.enquiries.length ? [{ key: 'enquiries', label: 'Enquiries', count: sectionsByGroup.enquiries.length }] : []),
+    ...(hasIScore ? [{ key: 'score', label: 'Score details' }] : []),
+    ...((sectionsByGroup.other.length || Object.keys(additionalFields).length) ? [{ key: 'other', label: 'Other data', count: sectionsByGroup.other.length + Object.keys(additionalFields).length }] : []),
+  ]
+  const selectedTab = tabs.some((tab) => tab.key === activeTab) ? activeTab : tabs[0].key
+
+  const handleTabKeyDown = (event, index) => {
+    let nextIndex
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (index + 1) % tabs.length
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (index - 1 + tabs.length) % tabs.length
+    if (event.key === 'Home') nextIndex = 0
+    if (event.key === 'End') nextIndex = tabs.length - 1
+    if (nextIndex !== undefined) {
+      event.preventDefault()
+      const nextTab = tabs[nextIndex]
+      setActiveTab(nextTab.key)
+      document.getElementById(`firstcentral-tab-${nextTab.key}`)?.focus()
+    }
+  }
+
+  const renderSections = (sections) => sections.map((section, index) => (
+    <JsonNode key={`${section.label}-${index}`} label={section.label} value={section.value} depth={0} />
+  ))
 
   const copyJson = async () => {
     try {
@@ -184,49 +254,73 @@ export default function FirstCentralReportViewer({ report, summary, checkedAt, a
         </div>
       </header>
 
-      {summary && (
-        <div>
-          <div style={{ marginBottom: 8, color: '#334155', fontSize: 13, fontWeight: 750 }}>Credit overview</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 8, marginBottom: 16 }}>
-            {[
-              ['iScore', summary.iScore],
-              ['Repayment rating', summary.repaymentRating ?? summary.riskBand],
-              ['Facilities', summary.totalFacilities],
-              ['Performing', summary.performingFacilities],
-              ['Non-performing', summary.nonPerformingFacilities],
-              ['Outstanding', formatNaira(summary.totalOutstanding)],
-              ['Overdue', formatNaira(summary.totalOverdue)],
-              ['Recent enquiries', summary.recentEnquiries],
-            ].map(([label, value]) => (
-              <ValueField key={label} label={label} value={value} />
-            ))}
-          </div>
-        </div>
-      )}
+      <div role="tablist" aria-label="FirstCentral report sections" style={{ display: 'flex', gap: 4, overflowX: 'auto', borderBottom: '1px solid #e2e8f0', marginBottom: 14 }}>
+        {tabs.map((tab, index) => {
+          const selected = selectedTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              id={`firstcentral-tab-${tab.key}`}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={`firstcentral-panel-${tab.key}`}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => setActiveTab(tab.key)}
+              onKeyDown={(event) => handleTabKeyDown(event, index)}
+              style={{ flex: '0 0 auto', padding: '10px 13px', border: 0, borderBottom: selected ? '3px solid #059669' : '3px solid transparent', background: 'transparent', color: selected ? '#047857' : '#64748b', fontSize: 13, fontWeight: selected ? 750 : 600, cursor: 'pointer' }}
+            >
+              {tab.label}{tab.count !== undefined && <span style={{ marginLeft: 6, color: selected ? '#047857' : '#94a3b8' }}>({tab.count})</span>}
+            </button>
+          )
+        })}
+      </div>
 
-      {report.iScoreStatus === 'unavailable' && (
-        <div style={{ padding: 12, marginBottom: 12, background: '#fff7ed', borderRadius: 8, color: '#9a3412', fontSize: 13 }}>
-          FirstCentral did not return the iScore product for this check. The detailed credit response is still saved below.
-        </div>
-      )}
-      {report.iScoreStatus === 'available' && (
-        <div style={{ marginBottom: 12, color: '#64748b', fontSize: 13 }}>iScore product response saved.</div>
-      )}
-
-      {productSections.length ? productSections.map(([key, title]) => (
-        <details key={key} open style={{ ...sectionStyle, marginTop: 10 }}>
-          <SectionSummary label={title} />
-          <div style={{ padding: '0 10px 10px' }}><JsonNode label={title} value={report[key]} depth={0} /></div>
-        </details>
-      )) : (
-        <JsonNode label="FirstCentral response" value={report} depth={0} />
-      )}
-      {Object.keys(additionalFields).length > 0 && (
-        <details style={{ ...sectionStyle, marginTop: 10 }}>
-          <SectionSummary label="Additional captured fields" />
-          <div style={{ padding: '0 10px 10px' }}><JsonNode label="Additional fields" value={additionalFields} depth={0} /></div>
-        </details>
-      )}
+      <div id={`firstcentral-panel-${selectedTab}`} role="tabpanel" aria-labelledby={`firstcentral-tab-${selectedTab}`} tabIndex={0}>
+        {selectedTab === 'overview' && (
+          <>
+            {summary ? (
+              <>
+                <div style={{ marginBottom: 8, color: '#334155', fontSize: 13, fontWeight: 750 }}>Credit overview</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 8 }}>
+                  {[
+                    ['iScore', summary.iScore],
+                    ['Repayment rating', summary.repaymentRating ?? summary.riskBand],
+                    ['Facilities', summary.totalFacilities],
+                    ['Performing', summary.performingFacilities],
+                    ['Non-performing', summary.nonPerformingFacilities],
+                    ['Outstanding', formatNaira(summary.totalOutstanding)],
+                    ['Overdue', formatNaira(summary.totalOverdue)],
+                    ['Recent enquiries', summary.recentEnquiries],
+                  ].map(([label, value]) => <ValueField key={label} label={label} value={value} />)}
+                </div>
+              </>
+            ) : <div style={{ color: '#64748b', fontSize: 13 }}>No summary metrics were returned for this check.</div>}
+            {report.iScoreStatus === 'unavailable' && (
+              <div style={{ padding: 12, marginTop: 12, background: '#fff7ed', borderRadius: 8, color: '#9a3412', fontSize: 13 }}>
+                FirstCentral did not return the iScore product for this check. The detailed credit response is still saved in the other tabs.
+              </div>
+            )}
+            {report.iScoreStatus === 'available' && <div style={{ marginTop: 12, color: '#64748b', fontSize: 13 }}>iScore product response saved.</div>}
+          </>
+        )}
+        {selectedTab === 'identity' && (
+          <>
+            {hasConsumerMatch && <JsonNode label="Consumer match" value={report.consumerMatch} depth={0} />}
+            {renderSections(sectionsByGroup.identity)}
+          </>
+        )}
+        {selectedTab === 'credit' && renderSections(sectionsByGroup.credit)}
+        {selectedTab === 'payments' && renderSections(sectionsByGroup.payments)}
+        {selectedTab === 'enquiries' && renderSections(sectionsByGroup.enquiries)}
+        {selectedTab === 'score' && <JsonNode label="iScore · Product 70" value={report.iScore} depth={0} />}
+        {selectedTab === 'other' && (
+          <>
+            {renderSections(sectionsByGroup.other)}
+            {Object.keys(additionalFields).length > 0 && <JsonNode label="Additional captured fields" value={additionalFields} depth={0} />}
+          </>
+        )}
+      </div>
     </section>
   )
 }
