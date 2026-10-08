@@ -8,56 +8,121 @@ const panelStyle = {
   marginBottom: 14,
 }
 
+const sectionStyle = {
+  border: '1px solid #e2e8f0',
+  borderRadius: 8,
+  background: '#fff',
+}
+
 function humanize(value) {
-  return String(value)
+  const label = String(value)
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+
+  return label
+    .replace(/\bBvn\b/gi, 'BVN')
+    .replace(/\bNin\b/gi, 'NIN')
+    .replace(/\bId\b/g, 'ID')
+    .replace(/\bI Score\b/gi, 'iScore')
+}
+
+function isObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function formatValue(value) {
+  if (value === null || value === undefined || value === '') return '—'
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  return String(value)
+}
+
+function ValueField({ label, value }) {
+  return (
+    <div style={{ minWidth: 0, padding: '9px 10px', background: '#f8fafc', borderRadius: 6 }}>
+      <div style={{ color: '#64748b', fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{humanize(label)}</div>
+      <div style={{ color: '#1e293b', fontSize: 13, fontWeight: 600, overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>
+        {formatValue(value)}
+      </div>
+    </div>
+  )
+}
+
+function SectionSummary({ label, count }) {
+  return (
+    <summary style={{ cursor: 'pointer', listStylePosition: 'inside', padding: '11px 13px', color: '#334155', fontWeight: 750 }}>
+      {humanize(label)}
+      {count !== undefined && <span style={{ marginLeft: 7, color: '#94a3b8', fontWeight: 500 }}>({count})</span>}
+    </summary>
+  )
 }
 
 function JsonNode({ label, value, depth = 0 }) {
   if (Array.isArray(value)) {
     return (
-      <details open={depth < 1} style={{ borderTop: '1px solid #eef2f7', padding: '8px 0' }}>
-        <summary style={{ cursor: 'pointer', fontWeight: 700, color: '#334155' }}>
-          {humanize(label)} <span style={{ color: '#94a3b8', fontWeight: 500 }}>({value.length})</span>
-        </summary>
-        <div style={{ paddingLeft: 14 }}>
-          {value.length ? value.map((item, index) => (
-            <JsonNode key={`${label}-${index}`} label={`Record ${index + 1}`} value={item} depth={depth + 1} />
-          )) : <div style={{ padding: 8, color: '#94a3b8' }}>No entries</div>}
+      <details open={depth === 0} style={{ ...sectionStyle, marginTop: 8 }}>
+        <SectionSummary label={label} count={value.length} />
+        <div style={{ display: 'grid', gap: 8, padding: '0 10px 10px' }}>
+          {value.length ? value.map((item, index) => {
+            // FirstCentral wraps named report sections in anonymous one-key records.
+            // Promote that key to the heading so the UI shows "Credit Account Summary"
+            // instead of the unhelpful "Record 4".
+            const entries = isObject(item) ? Object.entries(item) : []
+            const [sectionName, sectionValue] = entries[0] || []
+            const isNamedSection = entries.length === 1 && (Array.isArray(sectionValue) || isObject(sectionValue))
+
+            return (
+              <JsonNode
+                key={`${label}-${index}`}
+                label={isNamedSection ? sectionName : `Entry ${index + 1}`}
+                value={isNamedSection ? sectionValue : item}
+                depth={depth + 1}
+              />
+            )
+          }) : <div style={{ padding: '4px 2px', color: '#64748b', fontSize: 13 }}>No entries returned.</div>}
         </div>
       </details>
     )
   }
 
-  if (value && typeof value === 'object') {
+  if (isObject(value)) {
     const entries = Object.entries(value)
-    return (
-      <details open={depth < 1} style={{ borderTop: '1px solid #eef2f7', padding: '8px 0' }}>
-        <summary style={{ cursor: 'pointer', fontWeight: 700, color: '#334155' }}>{humanize(label)}</summary>
-        <div style={{ paddingLeft: 14 }}>
-          {entries.length ? entries.map(([key, child]) => (
-            <JsonNode key={`${label}-${key}`} label={key} value={child} depth={depth + 1} />
-          )) : <div style={{ padding: 8, color: '#94a3b8' }}>No fields</div>}
+    const fields = entries.filter(([, child]) => !Array.isArray(child) && !isObject(child))
+    const nested = entries.filter(([, child]) => Array.isArray(child) || isObject(child))
+
+    if (!entries.length) {
+      return (
+        <div style={{ ...sectionStyle, padding: 12, color: '#64748b', fontSize: 13 }}>
+          {humanize(label)}: no fields returned.
         </div>
-      </details>
+      )
+    }
+
+    return (
+      <section style={{ ...sectionStyle, padding: 11, marginTop: 8 }}>
+        <div style={{ color: '#334155', fontSize: 13, fontWeight: 750, marginBottom: fields.length ? 9 : 0 }}>{humanize(label)}</div>
+        {fields.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))', gap: 7 }}>
+            {fields.map(([key, child]) => <ValueField key={key} label={key} value={child} />)}
+          </div>
+        )}
+        {nested.length > 0 && (
+          <div style={{ display: 'grid', gap: 7, marginTop: fields.length ? 8 : 0 }}>
+            {nested.map(([key, child]) => <JsonNode key={key} label={key} value={child} depth={depth + 1} />)}
+          </div>
+        )}
+      </section>
     )
   }
 
-  const formatted = value === null || value === undefined
-    ? 'null'
-    : typeof value === 'boolean'
-      ? value ? 'Yes' : 'No'
-      : String(value)
+  return <ValueField label={label} value={value} />
+}
 
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(170px, 30%) minmax(0, 1fr)', gap: 12, padding: '7px 0', borderTop: '1px solid #f1f5f9' }}>
-      <span style={{ color: '#64748b', fontSize: 13, overflowWrap: 'anywhere' }}>{humanize(label)}</span>
-      <span style={{ color: '#1e293b', fontSize: 13, fontWeight: 600, overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>{formatted}</span>
-    </div>
-  )
+function formatNaira(value) {
+  if (value === null || value === undefined || value === '') return '—'
+  const amount = Number(value)
+  return Number.isFinite(amount) ? `₦${amount.toLocaleString('en-NG')}` : String(value)
 }
 
 function downloadReport(report, summary, applicationLabel) {
@@ -108,9 +173,9 @@ export default function FirstCentralReportViewer({ report, summary, checkedAt, a
     <section style={panelStyle}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap', marginBottom: 14 }}>
         <div>
-          <h3 style={{ margin: 0, color: '#0f172a', fontSize: 18 }}>Full FirstCentral response</h3>
+          <h3 style={{ margin: 0, color: '#0f172a', fontSize: 18 }}>FirstCentral credit report</h3>
           <p style={{ margin: '5px 0 0', color: '#64748b', fontSize: 13 }}>
-            Saved {checkedAt ? new Date(checkedAt).toLocaleString('en-NG') : 'time unavailable'} · all JSON fields returned by the requested products are shown below.
+            Saved {checkedAt ? new Date(checkedAt).toLocaleString('en-NG') : 'time unavailable'} · report sections and returned fields.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -120,22 +185,22 @@ export default function FirstCentralReportViewer({ report, summary, checkedAt, a
       </header>
 
       {summary && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 10, marginBottom: 18 }}>
-          {[
-            ['iScore', summary.iScore],
-            ['Repayment rating', summary.repaymentRating ?? summary.riskBand],
-            ['Facilities', summary.totalFacilities],
-            ['Performing', summary.performingFacilities],
-            ['Non-performing', summary.nonPerformingFacilities],
-            ['Outstanding', summary.totalOutstanding == null ? '—' : `₦${Number(summary.totalOutstanding).toLocaleString()}`],
-            ['Overdue', summary.totalOverdue == null ? '—' : `₦${Number(summary.totalOverdue).toLocaleString()}`],
-            ['Recent enquiries', summary.recentEnquiries],
-          ].map(([label, value]) => (
-            <div key={label} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px' }}>
-              <div style={{ color: '#64748b', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</div>
-              <div style={{ marginTop: 4, color: '#0f172a', fontWeight: 700, overflowWrap: 'anywhere' }}>{value ?? '—'}</div>
-            </div>
-          ))}
+        <div>
+          <div style={{ marginBottom: 8, color: '#334155', fontSize: 13, fontWeight: 750 }}>Credit overview</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: 8, marginBottom: 16 }}>
+            {[
+              ['iScore', summary.iScore],
+              ['Repayment rating', summary.repaymentRating ?? summary.riskBand],
+              ['Facilities', summary.totalFacilities],
+              ['Performing', summary.performingFacilities],
+              ['Non-performing', summary.nonPerformingFacilities],
+              ['Outstanding', formatNaira(summary.totalOutstanding)],
+              ['Overdue', formatNaira(summary.totalOverdue)],
+              ['Recent enquiries', summary.recentEnquiries],
+            ].map(([label, value]) => (
+              <ValueField key={label} label={label} value={value} />
+            ))}
+          </div>
         </div>
       )}
 
@@ -149,17 +214,17 @@ export default function FirstCentralReportViewer({ report, summary, checkedAt, a
       )}
 
       {productSections.length ? productSections.map(([key, title]) => (
-        <details key={key} open style={{ marginTop: 10, border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 14px' }}>
-          <summary style={{ cursor: 'pointer', color: '#1e293b', fontSize: 14, fontWeight: 800 }}>{title}</summary>
-          <div style={{ marginTop: 8 }}><JsonNode label={title} value={report[key]} depth={0} /></div>
+        <details key={key} open style={{ ...sectionStyle, marginTop: 10 }}>
+          <SectionSummary label={title} />
+          <div style={{ padding: '0 10px 10px' }}><JsonNode label={title} value={report[key]} depth={0} /></div>
         </details>
       )) : (
-        <JsonNode label="FirstCentral response" value={report} />
+        <JsonNode label="FirstCentral response" value={report} depth={0} />
       )}
       {Object.keys(additionalFields).length > 0 && (
-        <details style={{ marginTop: 10, border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 14px' }}>
-          <summary style={{ cursor: 'pointer', color: '#1e293b', fontSize: 14, fontWeight: 800 }}>Additional captured fields</summary>
-          <div style={{ marginTop: 8 }}><JsonNode label="Additional fields" value={additionalFields} depth={0} /></div>
+        <details style={{ ...sectionStyle, marginTop: 10 }}>
+          <SectionSummary label="Additional captured fields" />
+          <div style={{ padding: '0 10px 10px' }}><JsonNode label="Additional fields" value={additionalFields} depth={0} /></div>
         </details>
       )}
     </section>
