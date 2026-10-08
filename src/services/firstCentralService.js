@@ -52,27 +52,30 @@ async function getToken() {
   return _cachedToken
 }
 
-async function matchConsumer(token, bvn) {
+async function matchConsumer(token, identifier) {
   const data = await fcRequest('/ConnectConsumerMatch', {
     DataTicket: token,
     EnquiryReason: 'Credit Application',
-    Surname: '',
-    Forename: '',
-    MiddleName: '',
-    Identification: bvn,
-    ProductID: 44, // Consumer Basic Credit
+    ConsumerName: '',
+    DateOfBirth: '',
+    Identification: identifier,
+    Accountno: '',
+    ProductID: 45, // Consumer Detailed Credit
   })
-  const match = (data?.MatchedConsumers || data?.matchedConsumers || [])[0]
-  if (!match) throw new Error('No matching consumer record found for this BVN in FirstCentral')
+  const records = Array.isArray(data) ? data : [data]
+  const outer = records.find((record) => record && typeof record === 'object') || {}
+  const match = (outer.MatchedConsumer || outer.matchedConsumer || [])[0]
+  if (!match) throw new Error('No matching consumer record found in FirstCentral')
   return match
 }
 
 async function fetchReport(token, match, productId = 70) {
   return fcRequest('/consumerreports', {
     DataTicket: token,
-    consumerID: match.ConsumerID || match.consumerId,
+    consumerID: match.ConsumerID || match.consumerID || match.consumerId,
     EnquiryID: match.EnquiryID || match.enquiryId,
     SubscriberEnquiryEngineID: match.SubscriberEnquiryEngineID || match.subscriberEnquiryEngineId,
+    consumerMergeList: match.ConsumerMergeList || match.consumerMergeList || match.ConsumerID || match.consumerID || match.consumerId,
     productid: productId,
   })
 }
@@ -97,13 +100,14 @@ function buildMockResult(bvn) {
 
 // ─── Backend proxy helpers ────────────────────────────────────────────────────
 
-async function backendCheck(loanId) {
+async function backendCheck(loanId, lookupType = 'bvn') {
   const token = getAdminToken()
   const headers = { 'Content-Type': 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
   const res = await fetch(`${API_ROOT}/admin/loan-applications/${loanId}/first-central/check`, {
     method: 'POST',
     headers,
+    body: JSON.stringify({ lookupType }),
   })
   // 404 means the backend endpoint hasn't been deployed yet — fall through to direct call
   if (res.status === 404) return null
@@ -125,30 +129,34 @@ export const firstCentralService = {
    * In backend mode: proxied through CareCova API.
    * In UAT/local mode: calls FirstCentral directly (test credentials).
    */
-  runCreditCheck: async (loanId, bvn) => {
+  runCreditCheck: async (loanId, bvn, lookupType = 'bvn', phone = '') => {
     if (USE_BACKEND) {
-      const backendResult = await backendCheck(loanId)
+      const backendResult = await backendCheck(loanId, lookupType)
       // If backend returned a result, use it; if 404 (endpoint not yet deployed), fall through to direct UAT call
       if (backendResult) return backendResult
     }
-    // Direct UAT path: login → match → iScore report
+    const identifier = lookupType === 'phone' ? phone : bvn
+    if (!identifier) throw new Error(`No ${lookupType === 'phone' ? 'phone number' : 'BVN'} found on this application`)
+
+    // Direct UAT path: login → match by BVN or phone → iScore and Basic Credit reports.
     try {
       const token = await getToken()
-      const match = await matchConsumer(token, bvn)
-      // Fetch iScore (70) and Basic Credit (44) in parallel
+      const match = await matchConsumer(token, identifier)
+      // Fetch iScore (70) and Consumer Detailed Credit (45) in parallel
       const [iScoreRaw, basicCreditRaw] = await Promise.allSettled([
         fetchReport(token, match, 70),
-        fetchReport(token, match, 44),
+        fetchReport(token, match, 45),
       ])
       return {
         _isMock: false,
-        bvn,
+        bvn: lookupType === 'bvn' ? bvn : undefined,
+        lookupType,
         iScore: iScoreRaw.status === 'fulfilled' ? (iScoreRaw.value?.Score ?? iScoreRaw.value?.iScore ?? null) : null,
         riskBand: iScoreRaw.status === 'fulfilled' ? (iScoreRaw.value?.RiskBand ?? iScoreRaw.value?.riskBand ?? null) : null,
         iScoreRaw: iScoreRaw.status === 'fulfilled' ? iScoreRaw.value : null,
         basicCreditRaw: basicCreditRaw.status === 'fulfilled' ? basicCreditRaw.value : null,
         enquiryDate: new Date().toISOString(),
-        consumerID: match.ConsumerID || match.consumerId,
+        consumerID: match.ConsumerID || match.consumerID || match.consumerId,
       }
     } catch (err) {
       // CORS will block direct calls in browser in some environments — return mock

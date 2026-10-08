@@ -30,15 +30,23 @@ export default function FirstCentralCard({ loan, onUpdated }) {
   const [checkedAt, setCheckedAt] = useState(loan.firstCentralCheckedAt || null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [lookupType, setLookupType] = useState(() =>
+    loan.bvn || loan.applicantBvn ? 'bvn' : 'phone',
+  )
 
   const bvn = loan.bvn || loan.applicantBvn || ''
+  const phone = loan.phone || loan.applicantPhone || ''
+  const hasSelectedIdentifier = lookupType === 'phone' ? Boolean(phone) : Boolean(bvn)
 
   const runCheck = async () => {
-    if (!bvn) { setError('No BVN found on this application — cannot run bureau check.'); return }
+    if (!hasSelectedIdentifier) {
+      setError(`No ${lookupType === 'phone' ? 'phone number' : 'BVN'} found on this application — cannot run bureau check.`)
+      return
+    }
     setLoading(true)
     setError('')
     try {
-      const data = await firstCentralService.runCreditCheck(loan.id, bvn)
+      const data = await firstCentralService.runCreditCheck(loan.id, bvn, lookupType, phone)
       firstCentralService.saveResultLocally(loan.id, data)
       setResult(data)
       setCheckedAt(new Date().toISOString())
@@ -64,10 +72,24 @@ export default function FirstCentralCard({ loan, onUpdated }) {
               : 'Credit history, active loans, and iScore from FirstCentral.'}
           </p>
         </div>
-        <button
-          onClick={runCheck}
-          disabled={loading || !bvn}
-          style={{
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <label htmlFor={`first-central-lookup-${loan.id}`} style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+            Search using
+          </label>
+          <select
+            id={`first-central-lookup-${loan.id}`}
+            value={lookupType}
+            onChange={(event) => setLookupType(event.target.value)}
+            disabled={loading}
+            style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', color: '#334155', fontWeight: 600 }}
+          >
+            <option value="bvn" disabled={!bvn}>BVN</option>
+            <option value="phone" disabled={!phone}>Phone number</option>
+          </select>
+          <button
+            onClick={runCheck}
+            disabled={loading || !hasSelectedIdentifier}
+            style={{
             padding: '8px 18px',
             borderRadius: '8px',
             background: loading ? '#e0e7ff' : '#6366f1',
@@ -75,17 +97,30 @@ export default function FirstCentralCard({ loan, onUpdated }) {
             border: 'none',
             fontWeight: 700,
             fontSize: '0.8rem',
-            cursor: loading || !bvn ? 'not-allowed' : 'pointer',
+            cursor: loading || !hasSelectedIdentifier ? 'not-allowed' : 'pointer',
             whiteSpace: 'nowrap',
-          }}
-        >
-          {loading ? 'Checking…' : result ? 'Re-run Check' : 'Run Credit Check'}
-        </button>
+            }}
+          >
+            {loading ? 'Checking…' : result ? 'Re-run Check' : 'Run Credit Check'}
+          </button>
+        </div>
       </div>
 
-      {!bvn && (
+      {lookupType === 'phone' && phone && (
+        <p style={{ margin: '-6px 0 12px', color: '#64748b', fontSize: '0.75rem' }}>
+          BVN is the more unique search. Phone lookup will stop if FirstCentral returns multiple consumers.
+        </p>
+      )}
+
+      {lookupType === 'bvn' && !bvn && (
         <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#fef9c3', color: '#a16207', fontSize: '0.8rem', fontWeight: 600 }}>
           BVN not found on this application. Ask the applicant to provide their BVN before running a bureau check.
+        </div>
+      )}
+
+      {lookupType === 'phone' && !phone && (
+        <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#fef9c3', color: '#a16207', fontSize: '0.8rem', fontWeight: 600 }}>
+          Phone number not found on this application. Add the applicant’s phone number before running a phone match.
         </div>
       )}
 
@@ -97,6 +132,17 @@ export default function FirstCentralCard({ loan, onUpdated }) {
 
       {result && (
         <>
+          {result.reportStatus === 'no_facilities' && (
+            <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#eff6ff', color: '#1d4ed8', fontSize: '0.8rem', fontWeight: 600, marginBottom: '12px' }}>
+              FirstCentral returned a report, but it lists no credit facilities. This is different from a report with active credit history.
+            </div>
+          )}
+          {result.reportStatus === 'unrecognized' && (
+            <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#fff7ed', color: '#c2410c', fontSize: '0.8rem', fontWeight: 600, marginBottom: '12px' }}>
+              The consumer match succeeded, but the report contained no fields this app recognizes. Treat this as an incomplete bureau response, not a confirmed clean credit file.
+            </div>
+          )}
+
           {/* iScore banner */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', background: '#f8faff', borderRadius: '10px', padding: '16px 20px', marginBottom: '16px', border: '1px solid #e0e7ff' }}>
             <div style={{ textAlign: 'center' }}>
@@ -136,7 +182,7 @@ export default function FirstCentralCard({ loan, onUpdated }) {
               value={result.totalOverdue != null ? `₦${fmt(result.totalOverdue)}` : '—'}
               highlight={result.totalOverdue > 0 ? '#ef4444' : '#10b981'}
             />
-            <InfoRow label="BVN Checked" value={result.bvn || '—'} />
+            <InfoRow label="Lookup Method" value={result.lookupType === 'phone' ? 'Phone number' : 'BVN'} />
             <InfoRow label="Consumer ID" value={result.consumerID || '—'} />
           </div>
 
