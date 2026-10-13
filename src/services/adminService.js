@@ -2016,6 +2016,28 @@ export const adminService = {
     return Array.isArray(data) ? data : data?.providers ?? data?.data ?? data?.items ?? []
   },
 
+  getConsultationBookings: async ({ status, search, page = 1, limit = 20 } = {}) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) })
+    if (status) params.set('status', status)
+    if (search?.trim()) params.set('search', search.trim())
+    return adminRequest(`/admin/consultations?${params.toString()}`)
+  },
+
+  getConsultationBooking: async (bookingId) => {
+    const id = String(bookingId || '').trim()
+    if (!id) throw new Error('Consultation request ID is required')
+    return adminRequest(`/admin/consultations/${encodeURIComponent(id)}`)
+  },
+
+  updateConsultationBooking: async (bookingId, payload = {}) => {
+    const id = String(bookingId || '').trim()
+    if (!id) throw new Error('Consultation request ID is required')
+    return adminRequest(`/admin/consultations/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+
   createProvider: async (payload) => {
     requireBackendFeature('Provider management')
     return adminRequest('/admin/providers', {

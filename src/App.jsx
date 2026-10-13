@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Home from './pages/Home'
+import ConsultationBooking from './pages/ConsultationBooking'
+import { CONSULTATION_BOOKING_PATH } from './constants/consultation'
 import HowItWorks from './pages/HowItWorks'
 import Partners from './pages/Partners'
 import Apply from './pages/Apply'
@@ -41,6 +43,7 @@ import FinancierApplicationDetail from './pages/admin/FinancierApplicationDetail
 import Analytics from './pages/admin/Analytics'
 import Customers from './pages/admin/Customers'
 import CustomerDetail from './pages/admin/CustomerDetail'
+import ConsultationManagement from './pages/admin/ConsultationManagement'
 // Credit Officer Portal
 import CreditLayout from './pages/credit/CreditLayout'
 import CreditDashboard from './pages/credit/CreditDashboard'
@@ -116,6 +119,7 @@ function App() {
       <NotificationProvider>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path={CONSULTATION_BOOKING_PATH} element={<ConsultationBooking />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/partners" element={<Navigate to="/" replace />} />
         <Route path="/apply" element={<Apply />} />
@@ -246,6 +250,14 @@ function App() {
             element={
               <RequireRoles allowedRoles={['admin', 'sales', 'support']}>
                 <ProviderManagement />
+              </RequireRoles>
+            }
+          />
+          <Route
+            path="consultations"
+            element={
+              <RequireRoles allowedRoles={['admin', 'sales', 'support']}>
+                <ConsultationManagement />
               </RequireRoles>
             }
           />

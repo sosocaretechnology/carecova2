@@ -18,6 +18,7 @@ import {
   Wallet,
   BarChart2,
   Users,
+  CalendarDays,
   X,
 } from 'lucide-react'
 
@@ -48,6 +49,7 @@ const NAV_GROUPS = [
     label: 'Partners',
     items: [
       { name: 'Providers',  path: '/admin/providers', icon: Building2, roles: ['admin', 'sales', 'support'] },
+      { name: 'Consultations', path: '/admin/consultations', icon: CalendarDays, roles: ['admin', 'sales', 'support'] },
       { name: 'Financing',  path: '/admin/financing', icon: Banknote,  roles: ['financier'] },
     ],
   },
