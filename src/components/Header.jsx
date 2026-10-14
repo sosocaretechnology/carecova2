@@ -4,6 +4,7 @@ import Button from './Button'
 import NotificationBell from './NotificationBell'
 import { useCustomerAuth } from '../hooks/useCustomerAuth'
 import logo from '../assets/logo.png'
+import { CONSULTATION_BOOKING_PATH } from '../constants/consultation'
 
 export default function Header() {
   const [userId, setUserId] = useState(null)
@@ -47,6 +48,7 @@ export default function Header() {
 
         <nav className={`nav${menuOpen ? ' nav--open' : ''}`}>
           <Link to="/how-it-works" onClick={closeMenu}>How It Works</Link>
+          <Link to={CONSULTATION_BOOKING_PATH} onClick={closeMenu}>Consultation</Link>
           <Link to="/calculator" onClick={closeMenu}>Calculator</Link>
           <Link to="/apply" onClick={closeMenu}>Apply</Link>
           <Link to="/track" onClick={closeMenu}>Track</Link>

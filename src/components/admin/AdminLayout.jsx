@@ -17,6 +17,7 @@ const PAGE_TITLES = {
   '/admin/audit':          'Audit Logs',
   '/admin/users':          'User Management',
   '/admin/providers':      'Providers',
+  '/admin/consultations':  'Consultation Requests',
   '/admin/recovery':       'Recovery',
   '/admin/disbursements':  'Disbursement Queue',
   '/admin/analytics':      'Analytics',

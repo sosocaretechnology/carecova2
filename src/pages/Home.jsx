@@ -4,6 +4,7 @@ import Footer from '../components/Footer'
 import Button from '../components/Button'
 import SecurityBadge from '../components/SecurityBadge'
 import heroImage from '../assets/hero-family.jpg'
+import { CONSULTATION_BOOKING_PATH } from '../constants/consultation'
 
 export default function Home() {
 
@@ -170,6 +171,9 @@ export default function Home() {
             </div>
             <Link to="/apply">
               <Button variant="light">Apply for Treatment Credit</Button>
+            </Link>
+            <Link to={CONSULTATION_BOOKING_PATH}>
+              <Button variant="light">Book a Free Consultation</Button>
             </Link>
           </div>
         </section>

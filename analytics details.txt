@@ -1,0 +1,23 @@
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4CZD5YMQ60"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4CZD5YMQ60');
+</script>
+
+
+Stream details
+Stream Name
+carecova
+Stream URL
+https://carecova.com
+Stream ID
+15819425454
+Measurement Id
+G-4CZD5YMQ60
+
+
+Account Id: 408920285
