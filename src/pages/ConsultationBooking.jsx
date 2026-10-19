@@ -6,6 +6,7 @@ import Footer from '../components/Footer'
 import Button from '../components/Button'
 import { consultationService } from '../services/consultationService'
 import { validateConsultationBooking } from '../utils/consultationValidation'
+import { CONSULTATION_BOOKING_FEE_NAIRA } from '../constants/consultation'
 import './ConsultationBooking.css'
 
 const INITIAL_FORM = {
@@ -102,6 +103,8 @@ export default function ConsultationBooking() {
 
   const hasFacilities = Object.keys(facilities).length > 0
   const bookingAvailable = config?.available === true && !configError
+  // Keep paid reservations closed until the API provides a verified payment-initiation flow.
+  const paymentFlowConfigured = false
   const minimumDateTime = toLocalDateTimeValue(new Date())
 
   const updateField = (event) => {
@@ -113,6 +116,10 @@ export default function ConsultationBooking() {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (!paymentFlowConfigured) {
+      setSubmitError('Online payment for this reservation is not set up yet. Please contact CareCova before submitting.')
+      return
+    }
     if (submittingRef.current) return
 
     const nextErrors = validateConsultationBooking(form)
@@ -167,13 +174,13 @@ export default function ConsultationBooking() {
           <div className="container consultation-intro-inner">
             <Link to="/" className="consultation-back"><ArrowLeft size={17} aria-hidden="true" /> Back to CareCova</Link>
             <p className="eyebrow">A helpful first conversation</p>
-            <h1>Book a Free Consultation</h1>
+            <h1>Book a Reservation</h1>
             <p className="consultation-intro-copy">
-              Speak with us about your healthcare needs. Request a free, 30-minute introductory consultation with a participating healthcare facility. Our team will contact you to confirm your appointment.
+              Book a 30-minute consultation with a participating healthcare facility. The reservation fee is ₦{CONSULTATION_BOOKING_FEE_NAIRA.toLocaleString('en-NG')}. Your appointment is confirmed only after our team contacts you.
             </p>
             <div className="consultation-offer-points">
               <span><Clock3 size={18} aria-hidden="true" /> 30 minutes</span>
-              <span><CheckCircle2 size={18} aria-hidden="true" /> Free during our launch period</span>
+              <span><CheckCircle2 size={18} aria-hidden="true" /> ₦{CONSULTATION_BOOKING_FEE_NAIRA.toLocaleString('en-NG')} reservation fee</span>
               <span><ShieldCheck size={18} aria-hidden="true" /> Your request is not yet an appointment</span>
             </div>
           </div>
@@ -199,7 +206,7 @@ export default function ConsultationBooking() {
                   <h2>Thanks, {form.fullName.trim().split(/\s+/)[0] || 'we have your request'}.</h2>
                   <p>Your request is pending confirmation. The CareCova team will contact you to agree on an appointment. This submission does not confirm an appointment or guarantee immediate access to a clinician.</p>
                   <div className="consultation-reference"><span>Request reference</span><strong>{receipt.bookingReference}</strong></div>
-                  <p className="consultation-success-meta">{receipt.facilityName} · Free · {receipt.durationMinutes} minutes</p>
+                  <p className="consultation-success-meta">{receipt.facilityName} · ₦{CONSULTATION_BOOKING_FEE_NAIRA.toLocaleString('en-NG')} · {receipt.durationMinutes} minutes</p>
                   <Button variant="secondary" onClick={resetForm}>Send another request</Button>
                 </div>
               ) : configError ? (
@@ -222,10 +229,16 @@ export default function ConsultationBooking() {
               ) : (
                 <>
                   <div className="consultation-form-heading">
-                    <div><p className="eyebrow">Free during launch</p><h2>Request your consultation</h2></div>
-                    <span className="consultation-price">₦0</span>
+                    <div><p className="eyebrow">Paid reservation</p><h2>Book your consultation</h2></div>
+                    <span className="consultation-price">₦{CONSULTATION_BOOKING_FEE_NAIRA.toLocaleString('en-NG')}</span>
                   </div>
-                  <p className="consultation-form-lead">Share the details below and our team will follow up to confirm a date and time.</p>
+                  <p className="consultation-form-lead">Share your details to reserve a 30-minute consultation. Payment must be completed before your reservation can be submitted.</p>
+
+                  {!paymentFlowConfigured && (
+                    <div className="consultation-inline-message consultation-inline-error" role="status">
+                      Online payment for the ₦{CONSULTATION_BOOKING_FEE_NAIRA.toLocaleString('en-NG')} reservation is not connected yet. No booking will be accepted until secure payment is enabled; please contact CareCova for assistance.
+                    </div>
+                  )}
 
                   {!hasFacilities && !facilitiesLoading && !facilityError && (
                     <div className="consultation-inline-message" role="status">
@@ -305,10 +318,10 @@ export default function ConsultationBooking() {
                     </div>
 
                     {submitError && <div className="consultation-submit-error" role="alert">{submitError}</div>}
-                    <Button type="submit" disabled={submitting || facilitiesLoading || !hasFacilities} className="consultation-submit-button">
-                      {submitting ? 'Sending request…' : 'Request my free consultation'}
+                    <Button type="submit" disabled={!paymentFlowConfigured || submitting || facilitiesLoading || !hasFacilities} className="consultation-submit-button">
+                      {submitting ? 'Preparing reservation…' : paymentFlowConfigured ? 'Continue to payment' : 'Online payment setup required'}
                     </Button>
-                    <p className="consultation-form-footnote">No payment is required to submit this request.</p>
+                    <p className="consultation-form-footnote">The ₦{CONSULTATION_BOOKING_FEE_NAIRA.toLocaleString('en-NG')} fee is payable to reserve a consultation.</p>
                   </form>
                 </>
               )}

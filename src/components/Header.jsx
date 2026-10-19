@@ -48,9 +48,7 @@ export default function Header() {
 
         <nav className={`nav${menuOpen ? ' nav--open' : ''}`}>
           <Link to="/how-it-works" onClick={closeMenu}>How It Works</Link>
-          <Link to={CONSULTATION_BOOKING_PATH} onClick={closeMenu}>Consultation</Link>
-          <Link to="/calculator" onClick={closeMenu}>Calculator</Link>
-          <Link to="/apply" onClick={closeMenu}>Apply</Link>
+          <Link to={CONSULTATION_BOOKING_PATH} className="booking-nav-link" onClick={closeMenu}>Book a Reservation</Link>
           <Link to="/track" onClick={closeMenu}>Track</Link>
           <Link to="/faq" onClick={closeMenu}>FAQ</Link>
           <div className="mobile-nav-actions">
@@ -59,7 +57,6 @@ export default function Header() {
             ) : (
               <Link to="/login" className="mobile-nav-account" onClick={closeMenu}>Sign In</Link>
             )}
-            <Link to="/apply" className="mobile-nav-cta" onClick={closeMenu}>Apply Now</Link>
           </div>
         </nav>
 

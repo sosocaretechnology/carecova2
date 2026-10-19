@@ -16,7 +16,7 @@ const validRequest = {
   consentAccepted: true,
 }
 
-test('accepts a valid free-consultation request', () => {
+test('accepts a valid consultation booking request', () => {
   assert.deepEqual(validateConsultationBooking(validRequest), {})
 })
 
@@ -47,5 +47,5 @@ test('homepage CTA and public router point to the consultation booking page', ()
   const home = readFileSync(`${here}../pages/Home.jsx`, 'utf8')
   assert.equal(CONSULTATION_BOOKING_PATH, '/consultation')
   assert.match(app, /Route path=\{CONSULTATION_BOOKING_PATH\} element=\{<ConsultationBooking \/>\}/)
-  assert.match(home, /<Link to=\{CONSULTATION_BOOKING_PATH\}>[\s\S]*?Book a Free Consultation/)
+  assert.match(home, /<Link to=\{CONSULTATION_BOOKING_PATH\}>[\s\S]*?Book a Reservation/)
 })

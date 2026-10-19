@@ -3,6 +3,7 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
 import Button from '../components/Button'
 import SecurityBadge from '../components/SecurityBadge'
+import TawkToChat from '../components/TawkToChat'
 import heroImage from '../assets/hero-family.jpg'
 import { CONSULTATION_BOOKING_PATH } from '../constants/consultation'
 
@@ -11,6 +12,7 @@ export default function Home() {
   return (
     <>
       <Header />
+      <TawkToChat />
       <main>
         <section className="hero mesh-bg-hero">
           <div className="container hero-content">
@@ -173,7 +175,7 @@ export default function Home() {
               <Button variant="light">Apply for Treatment Credit</Button>
             </Link>
             <Link to={CONSULTATION_BOOKING_PATH}>
-              <Button variant="light">Book a Free Consultation</Button>
+              <Button variant="light">Book a Reservation</Button>
             </Link>
           </div>
         </section>

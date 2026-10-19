@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight, Mail, Phone, RefreshCw, Search } from 'lucide-react'
 import { adminService } from '../../services/adminService'
+import { CONSULTATION_BOOKING_FEE_NAIRA } from '../../constants/consultation'
 import './ConsultationManagement.css'
 
 const PAGE_SIZE = 20
@@ -159,7 +160,7 @@ export default function ConsultationManagement() {
         <div>
           <p className="cc-eyebrow">Care coordination</p>
           <h1>Consultation requests</h1>
-          <p>Review free consultation requests and confirm agreed appointment details.</p>
+          <p>Review consultation reservations and confirm agreed appointment details.</p>
         </div>
         <button className="cc-button cc-button-secondary" type="button" onClick={() => window.location.reload()} aria-label="Refresh consultation requests">
           <RefreshCw size={16} aria-hidden="true" /> Refresh
@@ -220,7 +221,7 @@ export default function ConsultationManagement() {
             <>
               <div className="consultation-detail-header">
                 <div><span className={`consultation-status consultation-status-${selected.status}`}>{STATUS_LABELS[selected.status] || selected.status}</span><h2>{selected.fullName}</h2><p>{selected.bookingReference}</p></div>
-                <span className="consultation-detail-price">Free · {selected.durationMinutes} min</span>
+                <span className="consultation-detail-price">₦{Number(selected.pricing?.amountNaira ?? selected.amountNaira ?? CONSULTATION_BOOKING_FEE_NAIRA).toLocaleString('en-NG')} · {selected.durationMinutes} min</span>
               </div>
               <div className="consultation-detail-contact">
                 <a href={`tel:${selected.phone}`}><Phone size={16} aria-hidden="true" />{selected.phone}</a>
@@ -231,7 +232,7 @@ export default function ConsultationManagement() {
                 <div><dt>Submitted</dt><dd>{formatDate(selected.createdAt)}</dd></div>
                 <div><dt>Preferred time</dt><dd>{formatDate(selected.preferredAt)}</dd></div>
                 <div><dt>Confirmed appointment</dt><dd>{formatDate(selected.appointmentAt)}</dd></div>
-                <div><dt>Payment</dt><dd>{selected.pricing?.launchOffer ? 'Free during launch · no payment required' : 'Payment not required'}</dd></div>
+                <div><dt>Payment</dt><dd>{selected.paymentStatus || selected.payment?.status || 'Not recorded'}</dd></div>
               </dl>
               <div className="consultation-detail-section"><h3>Reason for consultation</h3><p>{selected.reason || 'Restricted to support and admin staff.'}</p></div>
               <div className="consultation-detail-section"><h3>Relevant medical history</h3><p>{selected.healthHistory || 'No history was shared or it is not available for your staff role.'}</p></div>

@@ -30,6 +30,17 @@ This repo is the **frontend only**. Pushing here does **not** change or deploy t
 
 Optional (if you use image uploads): add `VITE_CLOUDINARY_CLOUD_NAME` and `VITE_CLOUDINARY_UPLOAD_PRESET` to `.env`. Do **not** put the Cloudinary API secret in the frontend.
 
+### Tawk.to live chat
+
+The landing page can show a Tawk.to live-chat bubble. Create a property in the Tawk.to dashboard, then add its public Property ID and widget ID to the root `.env` file:
+
+```env
+VITE_TAWK_PROPERTY_ID=your_property_id
+VITE_TAWK_WIDGET_ID=default
+```
+
+The widget ID is commonly `default`; use the ID from the embed snippet if your dashboard provides a different one. Restart the dev server after editing `.env`. For deployments, set both values as build-time environment variables in the hosting provider. These IDs are public identifiers; never place a Tawk.to API secret or other private credential in a `VITE_` variable. If the IDs are missing, the page does not load the third-party chat script.
+
 ## If the app looks broken after clone/pull
 
 - Run **`npm install`** so dependencies and assets are correct.
