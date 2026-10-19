@@ -37,6 +37,8 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_CLOUDINARY_CLOUD_NAME: ${{ vars.VITE_CLOUDINARY_CLOUD_NAME }}
           VITE_CLOUDINARY_UPLOAD_PRESET: ${{ vars.VITE_CLOUDINARY_UPLOAD_PRESET }}
+          VITE_TAWK_PROPERTY_ID: ${{ vars.VITE_TAWK_PROPERTY_ID }}
+          VITE_TAWK_WIDGET_ID: ${{ vars.VITE_TAWK_WIDGET_ID }}
 
       - name: Prepare deployment package
         run: |

@@ -71,5 +71,7 @@ Configure these GitHub repository variables for build-time frontend env values:
 - `VITE_API_BASE_URL`
 - `VITE_CLOUDINARY_CLOUD_NAME`
 - `VITE_CLOUDINARY_UPLOAD_PRESET`
+- `VITE_TAWK_PROPERTY_ID`
+- `VITE_TAWK_WIDGET_ID`
 
 If the Vercel secrets are missing, the deploy job is skipped and the workflow still runs CI successfully.
