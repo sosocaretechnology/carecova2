@@ -17,6 +17,8 @@ export default function Footer() {
           <Link to="/">Home</Link>
           <Link to="/how-it-works">How it Works</Link>
           <Link to="/track">Track Loan</Link>
+          <Link to="/blog">Blog</Link>
+          <Link to="/faq">FAQ</Link>
         </div>
         <div className="footer-column">
           <h4>Contact</h4>

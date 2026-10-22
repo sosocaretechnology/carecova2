@@ -21,6 +21,7 @@ import MakePayment from './pages/MakePayment'
 import PaymentConfirmation from './pages/PaymentConfirmation'
 import Notifications from './pages/Notifications'
 import FAQ from './pages/FAQ'
+import Blog from './pages/Blog'
 import Profile from './pages/Profile'
 import AdminLogin from './pages/AdminLogin'
 import FinancierLogin from './pages/FinancierLogin'
@@ -153,6 +154,7 @@ function App() {
         <Route path="/make-payment" element={<MakePayment />} />
         <Route path="/payment-confirmation" element={<PaymentConfirmation />} />
         <Route path="/faq" element={<FAQ />} />
+        <Route path="/blog" element={<Blog />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<AdminLogin />} />
   <Route path="/financier-login" element={<FinancierLogin />} />
