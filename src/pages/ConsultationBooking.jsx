@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Clock3, ShieldCheck, Copy, Check } from 'lucid
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import Button from '../components/Button'
+import WhatsAppFloat from '../components/WhatsAppFloat'
 import { consultationService } from '../services/consultationService'
 import { validateConsultationBooking } from '../utils/consultationValidation'
 import { CONSULTATION_BOOKING_FEE_NAIRA } from '../constants/consultation'
@@ -16,8 +17,8 @@ const BANK_DETAILS = {
   currency: 'NGN',
 }
 
-const OFFICE_WHATSAPP = '+2348163471359'
-const OFFICE_PHONE = '+234 816 347 1359'
+const OFFICE_WHATSAPP = '+2349160103000'
+const OFFICE_PHONE = '0916 010 3000'
 const OFFICE_EMAIL = 'support@carecova.com'
 
 const INITIAL_FORM = {
@@ -395,6 +396,7 @@ export default function ConsultationBooking() {
 
   return (
     <>
+      <WhatsAppFloat />
       <Header />
       <main className="consultation-page">
         <section className="consultation-intro">

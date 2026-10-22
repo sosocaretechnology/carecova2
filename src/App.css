@@ -10224,3 +10224,78 @@
     gap: 12px;
   }
 }
+
+/* ==========================================================================
+   WhatsApp Floating Button
+   ========================================================================== */
+
+.wa-float {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px 12px 14px;
+  background: #25d366;
+  color: #fff;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.45);
+  transition: transform 0.2s, box-shadow 0.2s, padding 0.3s;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.wa-float:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(37, 211, 102, 0.55);
+  background: #20ba5a;
+}
+
+.wa-float-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.wa-float-label {
+  max-width: 200px;
+  overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .wa-float {
+    bottom: 20px;
+    right: 16px;
+    padding: 13px;
+    border-radius: 50%;
+  }
+  .wa-float-label {
+    display: none;
+  }
+}
+
+/* Hero slide WhatsApp text link (slide 1 only) */
+.hero-wa-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  color: var(--color-green-dark, #1a6b3c);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.hero-wa-link:hover {
+  color: var(--color-green, #2d8653);
+  text-decoration: underline;
+}
+.hero-wa-link svg {
+  flex-shrink: 0;
+  color: #25d366;
+}
