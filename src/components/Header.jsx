@@ -158,9 +158,27 @@ export default function Header() {
               <button className="mobile-drawer-close" onClick={closeMenu} aria-label="Close menu">✕</button>
             </div>
 
-            {/* Book a Consultation hero CTA */}
+            {/* Dual hero CTAs */}
             <div className="mobile-drawer-cta">
-              <Link to={CONSULTATION_BOOKING_PATH} className="mobile-drawer-book-btn" onClick={closeMenu}>
+              {/* Primary: Apply for financing */}
+              <Link to="/apply" className="mobile-drawer-finance-btn" onClick={closeMenu}>
+                <div className="mobile-drawer-book-icon" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" />
+                    <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+                    <line x1="12" y1="12" x2="12" y2="16" />
+                    <line x1="10" y1="14" x2="14" y2="14" />
+                  </svg>
+                </div>
+                <div className="mobile-drawer-book-text">
+                  <span className="mobile-drawer-book-label">Apply for Healthcare Financing</span>
+                  <span className="mobile-drawer-book-sub">Get treated now · repay in monthly installments</span>
+                </div>
+                <span className="mobile-drawer-book-arrow" aria-hidden="true">→</span>
+              </Link>
+
+              {/* Secondary: Book a consultation */}
+              <Link to={CONSULTATION_BOOKING_PATH} className="mobile-drawer-consult-btn" onClick={closeMenu}>
                 <div className="mobile-drawer-book-icon" aria-hidden="true">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

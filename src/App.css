@@ -8628,11 +8628,51 @@
 
 /* Consultation CTA block */
 .mobile-drawer-cta {
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--color-border-light);
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
+/* Green — Healthcare Financing (primary action) */
+.mobile-drawer-finance-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  border-radius: var(--radius-xl);
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mobile-drawer-finance-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.4);
+}
+
+/* Pink — Book a Consultation (secondary action) */
+.mobile-drawer-consult-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+  background: linear-gradient(135deg, #c2185b, #e879a0);
+  border-radius: var(--radius-xl);
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(232, 121, 160, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mobile-drawer-consult-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(232, 121, 160, 0.4);
+}
+
+/* Keep old class name as alias so nothing breaks */
 .mobile-drawer-book-btn {
   display: flex;
   align-items: center;

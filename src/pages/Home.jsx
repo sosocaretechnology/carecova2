@@ -19,9 +19,26 @@ import {
 /* ── Slide definitions ───────────────────────────────────────────── */
 const SLIDES = [
   {
+    id: 3,
+    image: slideImg4,
+    imagePosition: '65% center',
+    duration: 15000,
+    badge: 'Healthcare Financing',
+    badgePink: false,
+    headingGreen: 'Get Treated Now,',
+    headingPink: 'Pay Over Time',
+    body: "Access quality healthcare at top clinics today — no upfront payment needed. We cover the cost and you repay in simple, flexible monthly installments that fit your budget.",
+    showPricing: false,
+    cta: { label: 'Apply for Financing', path: '/apply' },
+    ctaPink: false,
+    quote: 'Your health should\nnever wait.',
+    showVideoCard: false,
+  },
+  {
     id: 0,
     image: slideImg1,
     imagePosition: '70% center',
+    duration: 6000,
     badge: 'Fertility Consultation',
     badgePink: true,
     headingGreen: 'Compare Fertility Clinics',
@@ -37,6 +54,7 @@ const SLIDES = [
     id: 1,
     image: slideImg2,
     imagePosition: '60% center',
+    duration: 6000,
     badge: 'IVF Financing',
     badgePink: false,
     headingGreen: 'Fund Your IVF Journey',
@@ -52,6 +70,7 @@ const SLIDES = [
     id: 2,
     image: slideImg3,
     imagePosition: '58% center',
+    duration: 6000,
     badge: 'Surrogacy',
     badgePink: true,
     headingGreen: 'Your Surrogacy Journey',
@@ -61,21 +80,6 @@ const SLIDES = [
     cta: { label: 'Explore Surrogacy Options', path: CONSULTATION_BOOKING_PATH },
     ctaPink: true,
     quote: 'A new life begins\nwith the right support.',
-    showVideoCard: false,
-  },
-  {
-    id: 3,
-    image: slideImg4,
-    imagePosition: '65% center',
-    badge: 'Healthcare Financing',
-    badgePink: false,
-    headingGreen: 'Get Treated Now,',
-    headingPink: 'Pay Over Time',
-    body: "Don't let upfront costs delay your health. Access quality elective medical care at our partner clinics immediately and repay in clear, flexible installments.",
-    showPricing: false,
-    cta: { label: 'Start My Application', path: '/apply' },
-    ctaPink: false,
-    quote: 'Your health should\nnever wait.',
     showVideoCard: false,
   },
 ]
@@ -187,21 +191,19 @@ export default function Home() {
     goTo((current + 1) % SLIDES.length)
   }, [current, goTo])
 
-  /* Auto-advance every 6 seconds */
+  /* Auto-advance; first slide stays 10s, others 6s */
   useEffect(() => {
-    timerRef.current = setInterval(() => {
+    const dur = SLIDES[current]?.duration ?? 6000
+    timerRef.current = setTimeout(() => {
       setCurrent((c) => (c + 1) % SLIDES.length)
-    }, 6000)
-    return () => clearInterval(timerRef.current)
-  }, [])
+    }, dur)
+    return () => clearTimeout(timerRef.current)
+  }, [current])
 
-  /* Reset timer on manual nav */
+  /* Manual nav — clear pending timeout; effect re-arms automatically */
   const manualNav = (fn) => {
-    clearInterval(timerRef.current)
+    clearTimeout(timerRef.current)
     fn()
-    timerRef.current = setInterval(() => {
-      setCurrent((c) => (c + 1) % SLIDES.length)
-    }, 6000)
   }
 
   const slide = SLIDES[current]
