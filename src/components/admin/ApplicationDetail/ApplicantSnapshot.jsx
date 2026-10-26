@@ -65,6 +65,62 @@ export default function ApplicantSnapshot({ loan, onUpdated }) {
     const [savingIdentity, setSavingIdentity] = useState(false)
     const [identityError, setIdentityError] = useState('')
 
+    const [editingGuarantor, setEditingGuarantor] = useState(false)
+    const [gForm, setGForm] = useState({
+      guarantorName: '',
+      guarantorPhone: '',
+      guarantorEmail: '',
+      guarantorBvn: '',
+      guarantorRelationship: '',
+      guarantorEmploymentSector: '',
+      guarantorMonthlyIncome: '',
+    })
+    const [savingGuarantor, setSavingGuarantor] = useState(false)
+    const [guarantorError, setGuarantorError] = useState('')
+
+    const openGuarantorEdit = () => {
+      setGForm({
+        guarantorName: loan.guarantorName || guarantor.fullName || '',
+        guarantorPhone: loan.guarantorPhone || guarantor.phone || '',
+        guarantorEmail: loan.guarantorEmail || guarantor.email || '',
+        guarantorBvn: loan.guarantorBvn || guarantor.bvn || '',
+        guarantorRelationship: loan.guarantorRelationship || guarantor.relationship || '',
+        guarantorEmploymentSector: loan.guarantorEmploymentSector || guarantor.employmentSector || '',
+        guarantorMonthlyIncome: loan.guarantorMonthlyIncome || guarantor.monthlyIncome || '',
+      })
+      setGuarantorError('')
+      setEditingGuarantor(true)
+    }
+
+    const handleSaveGuarantor = async () => {
+      setSavingGuarantor(true)
+      setGuarantorError('')
+      try {
+        const payload = {
+          guarantorName: gForm.guarantorName.trim(),
+          guarantorPhone: gForm.guarantorPhone.trim(),
+          guarantorEmail: gForm.guarantorEmail.trim(),
+          guarantorBvn: gForm.guarantorBvn.trim(),
+          guarantorRelationship: gForm.guarantorRelationship.trim(),
+          ...(gForm.guarantorEmploymentSector ? { guarantorEmploymentSector: gForm.guarantorEmploymentSector } : {}),
+          ...(gForm.guarantorMonthlyIncome ? { guarantorMonthlyIncome: Number(gForm.guarantorMonthlyIncome) } : {}),
+          guarantor: {
+            fullName: gForm.guarantorName.trim(),
+            phone: gForm.guarantorPhone.trim(),
+            email: gForm.guarantorEmail.trim(),
+            bvn: gForm.guarantorBvn.trim(),
+          },
+        }
+        await adminService.updateGuarantor(loan.id, payload)
+        setEditingGuarantor(false)
+        onUpdated?.()
+      } catch (err) {
+        setGuarantorError(err.message || 'Failed to save guarantor details')
+      } finally {
+        setSavingGuarantor(false)
+      }
+    }
+
     const handleSaveIdentity = async () => {
       setSavingIdentity(true)
       setIdentityError('')
@@ -326,38 +382,119 @@ export default function ApplicantSnapshot({ loan, onUpdated }) {
                 </div>
             </div>
 
-            <div className="detail-card" style={{ borderLeft: '4px solid #3b82f6' }}>
-                    <h2>Guarantor (Required)</h2>
-                    <div className="info-grid">
-                        <div className="info-group">
-                            <div className="info-label">Name</div>
-                            <div className="info-value">{guarantorName || '—'}</div>
-                        </div>
-                        <div className="info-group">
-                            <div className="info-label">Phone</div>
-                            <div className="info-value">{guarantorPhone || '—'}</div>
-                        </div>
-                        <div className="info-group">
-                            <div className="info-label">Email</div>
-                            <div className="info-value">{guarantorEmail || '—'}</div>
-                        </div>
-                        <div className="info-group">
-                            <div className="info-label">BVN</div>
-                            <div className="info-value">{guarantorBvn || '—'}</div>
-                        </div>
-                        <div className="info-group">
-                            <div className="info-label">Relationship</div>
-                            <div className="info-value">{guarantorRelationship || '—'}</div>
-                        </div>
-                        <div className="info-group">
-                            <div className="info-label">Sector</div>
-                            <div className="info-value capitalize">{guarantorEmploymentSector || '—'}</div>
-                        </div>
-                        <div className="info-group col-span-2">
-                            <div className="info-label">Income</div>
-                            <div className="info-value">{guarantorMonthlyIncome ? `₦${Number(guarantorMonthlyIncome).toLocaleString()}` : '—'}</div>
-                        </div>
+            <div className="detail-card" style={{ borderLeft: `4px solid ${!guarantorName ? '#ef4444' : '#3b82f6'}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                        <h2 style={{ margin: 0 }}>
+                            Guarantor (Required)
+                            {!guarantorName && <span style={{ marginLeft: '8px', fontSize: '0.72rem', background: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '4px', padding: '2px 7px', fontWeight: 600, verticalAlign: 'middle' }}>Missing</span>}
+                        </h2>
+                        {!editingGuarantor && (
+                            <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                                <button
+                                    onClick={openGuarantorEdit}
+                                    style={{ padding: '5px 12px', borderRadius: '6px', border: '1.5px solid #3b82f6', background: '#eff6ff', color: '#2563eb', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+                                >
+                                    {guarantorName ? 'Edit' : 'Fill In Details'}
+                                </button>
+                                {loan.phone && (
+                                    <a
+                                        href={`https://wa.me/${loan.phone.replace(/\D/g, '').replace(/^0/, '234')}?text=${encodeURIComponent(`Hello ${loan.fullName || loan.patientName || ''}, CareCova needs your guarantor's details to process your application. Please reply with your guarantor's full name, phone, email, BVN and their relationship to you.`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ padding: '5px 12px', borderRadius: '6px', border: '1.5px solid #25d366', background: '#f0fdf4', color: '#15803d', fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                    >
+                                        Request via WhatsApp
+                                    </a>
+                                )}
+                            </div>
+                        )}
                     </div>
+
+                    {editingGuarantor ? (
+                        <div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                                {[
+                                  { key: 'guarantorName',         label: 'Full Name',     type: 'text',   placeholder: 'Guarantor full name' },
+                                  { key: 'guarantorPhone',        label: 'Phone',         type: 'tel',    placeholder: '08012345678' },
+                                  { key: 'guarantorEmail',        label: 'Email',         type: 'email',  placeholder: 'guarantor@email.com' },
+                                  { key: 'guarantorBvn',         label: 'BVN',           type: 'text',   placeholder: '11 digits', numeric: true, maxLen: 11 },
+                                  { key: 'guarantorRelationship', label: 'Relationship',  type: 'text',   placeholder: 'e.g. Spouse, Sibling, Parent' },
+                                  { key: 'guarantorMonthlyIncome', label: 'Monthly Income (₦)', type: 'text', placeholder: '0', numeric: true },
+                                ].map(({ key, label, type, placeholder, numeric, maxLen }) => (
+                                  <div key={key} style={{ gridColumn: key === 'guarantorName' || key === 'guarantorRelationship' ? '1 / -1' : undefined }}>
+                                    <div className="info-label" style={{ marginBottom: '3px' }}>{label}</div>
+                                    <input
+                                      type={type}
+                                      value={gForm[key]}
+                                      onChange={e => setGForm(f => ({ ...f, [key]: numeric ? e.target.value.replace(/\D/g, '').slice(0, maxLen || 20) : e.target.value }))}
+                                      placeholder={placeholder}
+                                      style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1.5px solid #d1d5db', fontSize: '0.8125rem', boxSizing: 'border-box' }}
+                                    />
+                                  </div>
+                                ))}
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                  <div className="info-label" style={{ marginBottom: '3px' }}>Employment Sector</div>
+                                  <select
+                                    value={gForm.guarantorEmploymentSector}
+                                    onChange={e => setGForm(f => ({ ...f, guarantorEmploymentSector: e.target.value }))}
+                                    style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1.5px solid #d1d5db', fontSize: '0.8125rem', background: '#fff' }}
+                                  >
+                                    <option value="">— Select sector —</option>
+                                    {['private', 'public', 'self_employed', 'business_owner', 'student', 'retired', 'unemployed'].map(s => (
+                                      <option key={s} value={s}>{s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                            </div>
+                            {guarantorError && <p style={{ margin: '0 0 8px', fontSize: '0.75rem', color: '#dc2626' }}>{guarantorError}</p>}
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    onClick={handleSaveGuarantor}
+                                    disabled={savingGuarantor}
+                                    style={{ padding: '7px 18px', borderRadius: '6px', border: 'none', background: '#2563eb', color: '#fff', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer' }}
+                                >
+                                    {savingGuarantor ? 'Saving…' : 'Save Guarantor Details'}
+                                </button>
+                                <button
+                                    onClick={() => setEditingGuarantor(false)}
+                                    style={{ padding: '7px 14px', borderRadius: '6px', border: '1px solid #d1d5db', background: '#fff', fontSize: '0.8125rem', cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="info-grid">
+                            <div className="info-group">
+                                <div className="info-label">Name</div>
+                                <div className="info-value" style={!guarantorName ? { color: '#ef4444' } : {}}>{guarantorName || 'Not provided'}</div>
+                            </div>
+                            <div className="info-group">
+                                <div className="info-label">Phone</div>
+                                <div className="info-value" style={!guarantorPhone ? { color: '#ef4444' } : {}}>{guarantorPhone || 'Not provided'}</div>
+                            </div>
+                            <div className="info-group">
+                                <div className="info-label">Email</div>
+                                <div className="info-value" style={!guarantorEmail ? { color: '#ef4444' } : {}}>{guarantorEmail || 'Not provided'}</div>
+                            </div>
+                            <div className="info-group">
+                                <div className="info-label">BVN</div>
+                                <div className="info-value" style={!guarantorBvn ? { color: '#ef4444' } : {}}>{guarantorBvn || 'Not provided'}</div>
+                            </div>
+                            <div className="info-group">
+                                <div className="info-label">Relationship</div>
+                                <div className="info-value" style={!guarantorRelationship ? { color: '#ef4444' } : {}}>{guarantorRelationship || 'Not provided'}</div>
+                            </div>
+                            <div className="info-group">
+                                <div className="info-label">Sector</div>
+                                <div className="info-value capitalize">{guarantorEmploymentSector || '—'}</div>
+                            </div>
+                            <div className="info-group col-span-2">
+                                <div className="info-label">Income</div>
+                                <div className="info-value">{guarantorMonthlyIncome ? `₦${Number(guarantorMonthlyIncome).toLocaleString()}` : '—'}</div>
+                            </div>
+                        </div>
+                    )}
             </div>
 
             {(loan.coBorrowers || []).length > 0 && (

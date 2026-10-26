@@ -2082,6 +2082,26 @@ export const adminService = {
     })
   },
 
+  updateGuarantor: async (loanId, guarantorData) => {
+    requireBackendFeature('Update guarantor details')
+    const trimmed = assertBackendLoanId(loanId, 'Update guarantor')
+    // Try dedicated guarantor endpoint; fall back to general PATCH if route missing
+    try {
+      return await adminRequest(`/admin/loan-applications/${encodeURIComponent(trimmed)}/guarantor`, {
+        method: 'PATCH',
+        body: JSON.stringify(guarantorData),
+      })
+    } catch (err) {
+      if (looksLikeMissingRouteError(err)) {
+        return adminRequest(`/admin/loan-applications/${encodeURIComponent(trimmed)}`, {
+          method: 'PATCH',
+          body: JSON.stringify(guarantorData),
+        })
+      }
+      throw err
+    }
+  },
+
   requestDocuments: async (loanId, { documents, message } = {}) => {
     requireBackendFeature('Request documents')
     const trimmed = assertBackendLoanId(loanId, 'Request documents')
