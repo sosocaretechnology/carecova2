@@ -2085,21 +2085,32 @@ export const adminService = {
   updateGuarantor: async (loanId, guarantorData) => {
     requireBackendFeature('Update guarantor details')
     const trimmed = assertBackendLoanId(loanId, 'Update guarantor')
-    // Try dedicated guarantor endpoint; fall back to general PATCH if route missing
-    try {
-      return await adminRequest(`/admin/loan-applications/${encodeURIComponent(trimmed)}/guarantor`, {
-        method: 'PATCH',
-        body: JSON.stringify(guarantorData),
-      })
-    } catch (err) {
-      if (looksLikeMissingRouteError(err)) {
-        return adminRequest(`/admin/loan-applications/${encodeURIComponent(trimmed)}`, {
-          method: 'PATCH',
-          body: JSON.stringify(guarantorData),
-        })
+    const base = `/admin/loan-applications/${encodeURIComponent(trimmed)}`
+    // Try every plausible path/method combo until one succeeds
+    const candidates = [
+      { path: `${base}/guarantor`,        method: 'PATCH' },
+      { path: `${base}/guarantor`,        method: 'POST'  },
+      { path: `${base}/guarantor-details`,method: 'PATCH' },
+      { path: `${base}/guarantor-details`,method: 'POST'  },
+      { path: base,                        method: 'PATCH' },
+      { path: base,                        method: 'PUT'   },
+      { path: `${base}/update`,           method: 'POST'  },
+    ]
+    let lastErr
+    for (const { path, method } of candidates) {
+      try {
+        return await adminRequest(path, { method, body: JSON.stringify(guarantorData) })
+      } catch (err) {
+        lastErr = err
+        if (!looksLikeMissingRouteError(err)) break  // real error — stop trying
       }
-      throw err
     }
+    // None of the routes exist — surface a clear backend message
+    throw new Error(
+      'The backend does not yet have an endpoint to update guarantor details. ' +
+      'Please ask your backend team to implement PATCH /admin/loan-applications/:id/guarantor, ' +
+      'or PATCH /admin/loan-applications/:id.'
+    )
   },
 
   requestDocuments: async (loanId, { documents, message } = {}) => {
