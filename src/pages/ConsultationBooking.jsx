@@ -28,7 +28,7 @@ const INITIAL_FORM = {
   gender: '',
   providerId: '',
   reason: '',
-  healthHistory: '',
+  healthHistory: undefined,
   preferredAt: '',
   consentAccepted: false,
 }
@@ -368,7 +368,7 @@ export default function ConsultationBooking() {
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim(),
         reason: form.reason.trim(),
-        healthHistory: form.healthHistory.trim() || undefined,
+
         preferredAt: form.preferredAt ? new Date(form.preferredAt).toISOString() : undefined,
         consentAccepted: true,
       }
@@ -554,11 +554,6 @@ export default function ConsultationBooking() {
                         <label htmlFor="consultation-reason">Reason for consultation <span aria-hidden="true">*</span></label>
                         <textarea id="consultation-reason" name="reason" value={form.reason} onChange={updateField} rows={4} maxLength={1000} required aria-invalid={!!errors.reason} aria-describedby={errors.reason ? 'error-reason' : 'reason-help'} />
                         <span className="consultation-field-help" id={errors.reason ? 'error-reason' : 'reason-help'}>{errors.reason || `${form.reason.length}/1,000 characters.`}</span>
-                      </div>
-                      <div className="consultation-field consultation-field-wide">
-                        <label htmlFor="consultation-healthHistory">Relevant medical history <span className="consultation-optional">Optional</span></label>
-                        <textarea id="consultation-healthHistory" name="healthHistory" value={form.healthHistory} onChange={updateField} rows={3} maxLength={1500} />
-                        <span className="consultation-field-help" id="history-help">Only share history relevant to this request. This information is encrypted and visible only to admin staff.</span>
                       </div>
                       <div className="consultation-field consultation-field-wide">
                         <label htmlFor="consultation-preferredAt">Preferred date and time <span className="consultation-optional">Optional</span></label>

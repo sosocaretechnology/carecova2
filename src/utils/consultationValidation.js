@@ -7,8 +7,6 @@ export function validateConsultationBooking(values, now = Date.now()) {
   const email = String(values.email || '').trim()
   const phone = String(values.phone || '').replace(/[\s()-]/g, '')
   const reason = String(values.reason || '').trim()
-  const healthHistory = String(values.healthHistory || '').trim()
-
   if (fullName.length < 2) errors.fullName = 'Enter your full name.'
   else if (fullName.length > 120) errors.fullName = 'Name must be 120 characters or fewer.'
 
@@ -17,8 +15,6 @@ export function validateConsultationBooking(values, now = Date.now()) {
   if (!String(values.providerId || '').trim()) errors.providerId = 'Choose a partner facility.'
   if (reason.length < 2) errors.reason = 'Tell us briefly what you would like to discuss.'
   else if (reason.length > 1000) errors.reason = 'Please keep this to 1,000 characters or fewer.'
-  if (healthHistory.length > 1500) errors.healthHistory = 'Please keep this to 1,500 characters or fewer.'
-
   if (values.preferredAt) {
     const preferredAt = new Date(values.preferredAt).getTime()
     if (!Number.isFinite(preferredAt) || preferredAt <= now) {
