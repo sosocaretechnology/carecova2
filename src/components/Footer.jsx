@@ -23,7 +23,7 @@ export default function Footer() {
         <div className="footer-column">
           <h4>Contact</h4>
           <p>support@carecova.com</p>
-          <p>(+234) 816 347 1359</p>
+          <p>(+234) 916 010 3000</p>
           <p>15 Rumuola Road, Port Harcourt, Nigeria</p>
         </div>
       </div>
