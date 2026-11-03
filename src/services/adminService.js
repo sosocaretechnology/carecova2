@@ -2122,11 +2122,12 @@ export const adminService = {
     })
   },
 
-  submitP2VestReview: async (loanId, bvn, guarantor) => {
+  submitP2VestReview: async (loanId, bvn, guarantor, customerEmail) => {
     requireBackendFeature('P2Vest credit review')
     const trimmed = assertBackendLoanId(loanId, 'P2Vest review')
     const payload = {}
     if (bvn) payload.bvn = String(bvn).trim()
+    if (customerEmail && customerEmail.trim()) payload.customerEmail = customerEmail.trim()
     if (guarantor && (guarantor.fullName || guarantor.phone || guarantor.email || guarantor.bvn)) {
       payload.guarantor = {
         fullName: (guarantor.fullName || '').trim(),

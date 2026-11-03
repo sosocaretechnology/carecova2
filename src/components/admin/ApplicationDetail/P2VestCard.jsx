@@ -75,6 +75,7 @@ export default function P2VestCard({ loan, onUpdated }) {
   const [selectedProvider, setSelectedProvider] = useState('')
   const [assigning, setAssigning] = useState(false)
   const [bvnInput, setBvnInput] = useState('')
+  const [customerEmailOverride, setCustomerEmailOverride] = useState('')
   const [guarantorInput, setGuarantorInput] = useState({
     fullName: loan?.guarantor?.fullName || loan?.guarantorName || loan?.coBorrower?.name || '',
     phone:    loan?.guarantor?.phone    || loan?.guarantorPhone || loan?.coBorrower?.phone || '',
@@ -100,7 +101,7 @@ export default function P2VestCard({ loan, onUpdated }) {
     setSuccess('')
     setSubmitting(true)
     try {
-      await adminService.submitP2VestReview(loan.id, bvnInput || undefined, guarantorInput)
+      await adminService.submitP2VestReview(loan.id, bvnInput || undefined, guarantorInput, customerEmailOverride || undefined)
       setSuccess('Application submitted to P2Vest. The credit decision will appear here shortly.')
       setBvnInput('')
       setGuarantorInput({ fullName: '', phone: '', email: '', bvn: '' })
@@ -346,6 +347,20 @@ export default function P2VestCard({ loan, onUpdated }) {
           />
         </div>
       )}
+
+      {/* Applicant email override — shown when the stored email differs from what P2Vest expects */}
+      <div style={{ marginBottom: '12px' }}>
+        <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', marginBottom: '4px' }}>
+          Applicant email for P2Vest <span style={{ color: '#9ca3af' }}>(override — use if P2Vest rejects because of email conflict)</span>
+        </label>
+        <input
+          type="email"
+          placeholder={`Currently: ${loan?.email || 'not set'}`}
+          value={customerEmailOverride}
+          onChange={(e) => setCustomerEmailOverride(e.target.value)}
+          style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: '7px', border: '1.5px solid #e2e8f0', fontSize: '0.8125rem', background: '#fff', color: '#111827', outline: 'none' }}
+        />
+      </div>
 
       {/* Guarantor — always editable so details can be corrected before re-submit */}
       <div style={{ marginBottom: '12px', padding: '10px 12px', borderRadius: '8px', background: '#fffbeb', border: '1px solid #fde68a' }}>
