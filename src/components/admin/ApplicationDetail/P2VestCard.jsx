@@ -87,7 +87,7 @@ export default function P2VestCard({ loan, onUpdated }) {
   const hasDecision = !!decision?.decisionStatus
   const hasRequestId = !!loan?.p2vestRequestId
   const isApproved = decision?.decisionStatus === 'approved'
-  const isAccepted = !!loan?.p2vestLoanId
+  const isAccepted = !!loan?.p2vestLoanId || !!loan?.p2vestAcceptedAt
   const disbursementStatus = loan?.disbursementStatus
   const linkedProvider = loan?.providerName || loan?.provider?.name
   const hasVirtualAccount = !!loan?.p2vestVirtualAccountNumber
@@ -262,7 +262,7 @@ export default function P2VestCard({ loan, onUpdated }) {
             <CheckCircle size={15} color="#16a34a" />
             <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#15803d' }}>Loan Offer Accepted</span>
           </div>
-          <InfoRow label="P2Vest Loan ID" value={loan.p2vestLoanId} />
+          <InfoRow label="P2Vest Loan ID" value={loan.p2vestLoanId ?? '(accepted — ID pending sync)'} />
           {loan.p2vestAcceptedAt && <InfoRow label="Accepted At" value={fmtDate(loan.p2vestAcceptedAt)} />}
 
           {/* Virtual repayment account */}
