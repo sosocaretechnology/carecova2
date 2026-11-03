@@ -14,8 +14,6 @@ export default function VerificationRisk({
   onUpdated,
 }) {
   const { session } = useAuth()
-  const [bvnVerifying, setBvnVerifying] = useState(false)
-  const [bvnError, setBvnError]         = useState('')
   const [ninVerifying, setNinVerifying] = useState(false)
   const [ninResultLocal, setNinResultLocal] = useState(null)
   const [ninError, setNinError]         = useState('')
@@ -29,14 +27,6 @@ export default function VerificationRisk({
   const isGov = sector === 'government'
   const isPrivate = sector === 'private'
 
-  // ── BVN result (persisted on loan) ──────────────────────────────────────
-  const bvnResult     = loan.bvnVerification
-  const bvnVerifiedAt = bvnResult?.verifiedAt
-  const bvnData       = bvnResult?.data || {}
-  const bvnFullName   = [bvnData.first_name, bvnData.middle_name, bvnData.last_name].filter(Boolean).join(' ') || null
-  const bvnDob        = bvnData.date_of_birth || bvnData.dob || null
-  const bvnPhone      = bvnData.phone_number || bvnData.phone || null
-
   // ── NIN result (persisted on loan OR from this session) ─────────────────
   const ninResult     = ninResultLocal || loan.ninVerification
   const ninVerifiedAt = ninResult?.verifiedAt
@@ -45,44 +35,26 @@ export default function VerificationRisk({
   const ninDob        = ninData.date_of_birth || ninData.dob || null
   const ninPhone      = ninData.phone_number || ninData.phone || null
 
-  const hasEither   = !!(loan.bvn || loan.nin)
-  const anyVerified = !!(bvnResult || ninResult)
-  const verifying   = bvnVerifying || ninVerifying
+  const hasNin      = !!loan.nin
+  const anyVerified = !!ninResult
 
-  // ── Fire BVN + NIN in parallel ──────────────────────────────────────────
   const handleVerifyIdentity = () => {
-    if (loan.bvn) {
-      setBvnVerifying(true)
-      setBvnError('')
-      adminService.verifyBvnForLoan(loan.id)
-        .then(updated => { if (onUpdated) onUpdated(updated) })
-        .catch(err => {
-          const raw = err.message || ''
-          setBvnError(
-            /not available for your business|contact support/i.test(raw)
-              ? 'BVN lookup is not yet enabled on your Mono account. Go to Mono dashboard → Services and activate "BVN Lookup".'
-              : raw || 'BVN verification failed'
-          )
-        })
-        .finally(() => setBvnVerifying(false))
-    }
-    if (loan.nin) {
-      setNinVerifying(true)
-      setNinError('')
-      adminService.verifyNinForLoan(loan.id)
-        .then(updated => {
-          setNinResultLocal(updated?.ninVerification || null)
-          if (onUpdated) onUpdated(updated)
-        })
-        .catch(err => setNinError(err.message || 'NIN verification failed'))
-        .finally(() => setNinVerifying(false))
-    }
+    if (!loan.nin) return
+    setNinVerifying(true)
+    setNinError('')
+    adminService.verifyNinForLoan(loan.id)
+      .then(updated => {
+        setNinResultLocal(updated?.ninVerification || null)
+        if (onUpdated) onUpdated(updated)
+      })
+      .catch(err => setNinError(err.message || 'NIN verification failed'))
+      .finally(() => setNinVerifying(false))
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-      {/* ── Identity Verification (BVN via Mono + NIN via Dojah — parallel) ── */}
+      {/* ── Identity Verification (NIN via Mono Lookup) ── */}
       <div className="detail-card" style={{ borderLeft: '4px solid #6366f1' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div>
@@ -103,45 +75,10 @@ export default function VerificationRisk({
           )}
         </div>
 
-        {/* BVN result */}
-        {bvnResult && (
-          <div style={{ marginTop: '10px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', fontSize: '0.8125rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div style={{ gridColumn: '1 / -1', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em', marginBottom: 2 }}>BVN — Mono</div>
-            <div>
-              <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px' }}>Full Name</div>
-              <div style={{ fontWeight: 700, color: '#111827' }}>{bvnFullName || '—'}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px' }}>BVN</div>
-              <div style={{ fontFamily: 'monospace', color: '#111827' }}>{bvnData.bvn || loan.bvn || '—'}</div>
-            </div>
-            {bvnDob && (
-              <div>
-                <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px' }}>Date of Birth</div>
-                <div style={{ color: '#111827' }}>{bvnDob}</div>
-              </div>
-            )}
-            {bvnPhone && (
-              <div>
-                <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px' }}>Phone</div>
-                <div style={{ color: '#111827' }}>{bvnPhone}</div>
-              </div>
-            )}
-            <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #bbf7d0', paddingTop: '8px', color: '#6b7280', fontSize: '0.75rem' }}>
-              Verified at {bvnVerifiedAt ? new Date(bvnVerifiedAt).toLocaleString() : '—'}
-            </div>
-          </div>
-        )}
-        {bvnError && (
-          <div className="alert-box alert-error" style={{ marginTop: '10px', fontSize: '0.8125rem' }}>
-            <strong>BVN:</strong> {bvnError}
-          </div>
-        )}
-
         {/* NIN result */}
         {ninResult && (
           <div style={{ marginTop: '10px', padding: '12px', background: '#f0f9ff', borderRadius: '8px', fontSize: '0.8125rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div style={{ gridColumn: '1 / -1', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em', marginBottom: 2 }}>NIN — Dojah</div>
+            <div style={{ gridColumn: '1 / -1', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em', marginBottom: 2 }}>NIN — Mono</div>
             <div>
               <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px' }}>Full Name</div>
               <div style={{ fontWeight: 700, color: '#111827' }}>{ninFullName || '—'}</div>
@@ -176,22 +113,22 @@ export default function VerificationRisk({
         <div style={{ marginTop: '12px' }}>
           <button
             onClick={handleVerifyIdentity}
-            disabled={verifying || !hasEither}
+            disabled={ninVerifying || !hasNin}
             style={{
               padding: '7px 16px', borderRadius: '7px', border: '1.5px solid',
-              borderColor: hasEither ? '#6366f1' : '#d1d5db',
-              background: hasEither ? '#eef2ff' : '#f9fafb',
-              color: hasEither ? '#4338ca' : '#9ca3af',
+              borderColor: hasNin ? '#6366f1' : '#d1d5db',
+              background: hasNin ? '#eef2ff' : '#f9fafb',
+              color: hasNin ? '#4338ca' : '#9ca3af',
               fontWeight: 600, fontSize: '0.8125rem',
-              cursor: (verifying || !hasEither) ? 'not-allowed' : 'pointer',
+              cursor: (ninVerifying || !hasNin) ? 'not-allowed' : 'pointer',
             }}
           >
-            {verifying ? 'Verifying…' : anyVerified ? 'Re-verify Identity' : 'Verify Identity'}
-            {hasEither && <span style={{ fontWeight: 400, marginLeft: '6px', color: '#9ca3af', fontSize: '0.75rem' }}>BVN + NIN</span>}
+            {ninVerifying ? 'Verifying…' : anyVerified ? 'Re-verify NIN' : 'Verify NIN'}
+            {hasNin && <span style={{ fontWeight: 400, marginLeft: '6px', color: '#9ca3af', fontSize: '0.75rem' }}>via Mono</span>}
           </button>
-          {!hasEither && (
+          {!hasNin && (
             <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '4px' }}>
-              Add a BVN or NIN to the applicant identity card first
+              Add a NIN to the applicant identity card first
             </div>
           )}
         </div>
