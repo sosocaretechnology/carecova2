@@ -11,8 +11,8 @@ export default function SupportModal({ isOpen, onClose, context = {} }) {
     ? `Hello, I need help with my loan application. Loan ID: ${loanId}`
     : 'Hello, I need help with CareCova.'
 
-  const whatsappUrl = `https://wa.me/2348163471359?text=${encodeURIComponent(whatsappMessage)}`
-  const phoneUrl = 'tel:+2348163471359'
+  const whatsappUrl = `https://wa.me/2349160103000?text=${encodeURIComponent(whatsappMessage)}`
+  const phoneUrl = 'tel:+2349160103000'
   const emailUrl = 'mailto:support@carecova.com?subject=Support Request'
 
   return (
@@ -53,7 +53,7 @@ export default function SupportModal({ isOpen, onClose, context = {} }) {
             </div>
             <div className="support-option-content">
               <h3>Phone Call</h3>
-              <p>+234 816 347 1359</p>
+              <p>0916 010 3000</p>
             </div>
           </a>
 
