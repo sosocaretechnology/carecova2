@@ -265,7 +265,7 @@ export default async function handler(req, res) {
     const sa = JSON.parse(SA_JSON)
     const accessToken = await getAccessToken(sa)
 
-    const [coreBatch, detailBatch, realtime, searchConsole, advertising] = await Promise.all([
+    const [coreBatch, detailBatch, realtime, searchConsole, advertising, nigeriaReport] = await Promise.all([
       batchRunReports(accessToken, requests.slice(0, 5)),
       batchRunReports(accessToken, requests.slice(5)),
       runRealtimeReport(accessToken, {
@@ -292,6 +292,26 @@ export default async function handler(req, res) {
           { name: 'advertiserAdCostPerClick' },
           { name: 'advertiserAdCostPerKeyEvent' },
         ],
+      }).catch(() => null),
+      runReport(accessToken, {
+        dateRanges: [dateRange],
+        dimensions: [{ name: 'region' }, { name: 'city' }],
+        metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
+        dimensionFilter: {
+          andGroup: {
+            expressions: [
+              publicPathFilter(),
+              {
+                filter: {
+                  fieldName: 'country',
+                  stringFilter: { value: 'Nigeria', matchType: 'EXACT' },
+                },
+              },
+            ],
+          },
+        },
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+        limit: 30,
       }).catch(() => null),
     ])
 
@@ -347,6 +367,12 @@ export default async function handler(req, res) {
         users: row.activeUsers,
         sessions: row.sessions,
       })),
+      nigeriaLocations: nigeriaReport ? reportRows(nigeriaReport).map((row) => ({
+        state: row.region,
+        city: row.city,
+        users: row.activeUsers,
+        sessions: row.sessions,
+      })) : [],
       events: reportRows(reports[6]).map((row) => ({
         name: row.eventName,
         count: row.eventCount,

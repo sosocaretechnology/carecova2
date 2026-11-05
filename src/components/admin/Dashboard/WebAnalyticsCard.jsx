@@ -344,6 +344,17 @@ export default function WebAnalyticsCard() {
               ]}
             />
             <ReportTable
+              title="Nigeria — States & Cities"
+              rows={stats.nigeriaLocations}
+              emptyMessage="No Nigerian traffic recorded for this period."
+              columns={[
+                { key: 'state', label: 'State' },
+                { key: 'city', label: 'City' },
+                { key: 'users', label: 'Users', numeric: true, render: formatNumber },
+                { key: 'sessions', label: 'Sessions', numeric: true, render: formatNumber },
+              ]}
+            />
+            <ReportTable
               title="Events"
               rows={stats.events}
               columns={[
