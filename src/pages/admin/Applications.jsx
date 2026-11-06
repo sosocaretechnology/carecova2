@@ -6,7 +6,7 @@ import { customerService } from '../../services/customerService'
 import { computeAffordability, computeRiskFlags } from '../../utils/affordabilityEngine'
 import StatusBadge from '../../components/StatusBadge'
 import { APPLICATION_STATUS, getStageLabel } from '../../utils/statusModel'
-import { Search, Download, RotateCcw, Trash2, ChevronRight, AlertTriangle } from 'lucide-react'
+import { Search, Download, RotateCcw, Trash2, ChevronRight, AlertTriangle, CheckCircle, ChevronDown } from 'lucide-react'
 import FullScreenLoader from '../../components/ui/FullScreenLoader'
 
 function relativeDate(dateStr) {
@@ -41,6 +41,9 @@ export default function Applications() {
     const [loading, setLoading] = useState(true)
     const [loans, setLoans] = useState([])
     const [claimingId, setClaimingId] = useState(null)
+    const [reviewingId, setReviewingId] = useState(null)
+    const [statusOverrideId, setStatusOverrideId] = useState(null)
+    const [statusOverrideLoading, setStatusOverrideLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
     const [showTrash, setShowTrash] = useState(false)
     const [trash, setTrash] = useState([])
@@ -105,6 +108,46 @@ export default function Applications() {
             console.error('Restore failed:', err)
         } finally {
             setRestoringId(null)
+        }
+    }
+
+    const FORCE_STATUS_OPTIONS = [
+        { value: 'submitted',                label: 'Submitted' },
+        { value: 'pending',                  label: 'Pending' },
+        { value: 'pending_admin_review',     label: 'Pending Admin Review' },
+        { value: 'incomplete',               label: 'Incomplete' },
+        { value: 'approved',                 label: 'Approved' },
+        { value: 'approved_for_disbursement',label: 'Approved for Disbursement' },
+        { value: 'active',                   label: 'Active' },
+        { value: 'completed',                label: 'Completed' },
+        { value: 'rejected',                 label: 'Rejected' },
+        { value: 'admin_rejected',           label: 'Admin Rejected' },
+        { value: 'sales_rejected',           label: 'Sales Rejected' },
+    ]
+
+    const handleMarkReviewed = async (loanId) => {
+        setReviewingId(loanId)
+        try {
+            await adminService.markAsReviewed(loanId)
+            await loadLoans()
+        } catch (err) {
+            alert(err.message || 'Could not mark as reviewed')
+        } finally {
+            setReviewingId(null)
+        }
+    }
+
+    const handleForceStatus = async (loanId, newStatus) => {
+        if (!newStatus) return
+        setStatusOverrideLoading(true)
+        try {
+            await adminService.forceUpdateStatus(loanId, newStatus)
+            setStatusOverrideId(null)
+            await loadLoans()
+        } catch (err) {
+            alert(err.message || 'Could not update status')
+        } finally {
+            setStatusOverrideLoading(false)
         }
     }
 
@@ -371,7 +414,7 @@ export default function Applications() {
                                 <th>Status</th>
                                 <th>Assigned</th>
                                 <th>Date</th>
-                                <th></th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -467,19 +510,64 @@ export default function Applications() {
                                                     {relativeDate(loan.submittedAt)}
                                                 </span>
                                             </td>
-                                            <td>
-                                                {loan.phone && (
-                                                    <button
-                                                        aria-label="View Customer 360 profile"
-                                                        className="cc-btn-360"
-                                                        onClick={e => {
-                                                            e.stopPropagation()
-                                                            navigate(`/admin/customers/${encodeURIComponent(customerService.normalisePhone(loan.phone))}`)
-                                                        }}
-                                                    >
-                                                        360
-                                                    </button>
-                                                )}
+                                            <td onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    {loan.phone && (
+                                                        <button
+                                                            aria-label="View Customer 360 profile"
+                                                            className="cc-btn-360"
+                                                            onClick={e => {
+                                                                e.stopPropagation()
+                                                                navigate(`/admin/customers/${encodeURIComponent(customerService.normalisePhone(loan.phone))}`)
+                                                            }}
+                                                        >
+                                                            360
+                                                        </button>
+                                                    )}
+                                                    {/* Mark as Reviewed — for admin/super_admin on unreviewed apps */}
+                                                    {(session?.role === 'admin' || session?.role === 'super_admin') &&
+                                                     ['submitted', 'pending', 'pending_stage1'].includes(loan.status) && (
+                                                        <button
+                                                            className="button button--secondary button--sm"
+                                                            title="Mark as Reviewed — advances to Admin Review stage"
+                                                            disabled={reviewingId === loan.id}
+                                                            onClick={() => handleMarkReviewed(loan.id)}
+                                                            style={{ gap: 4 }}
+                                                        >
+                                                            <CheckCircle size={13} />
+                                                            {reviewingId === loan.id ? '…' : 'Reviewed'}
+                                                        </button>
+                                                    )}
+                                                    {/* Status override — super_admin only */}
+                                                    {isSuperAdmin && (
+                                                        statusOverrideId === loan.id ? (
+                                                            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                                                <select
+                                                                    className="admin-select"
+                                                                    defaultValue={loan.status}
+                                                                    disabled={statusOverrideLoading}
+                                                                    autoFocus
+                                                                    onChange={e => handleForceStatus(loan.id, e.target.value)}
+                                                                    onBlur={() => setStatusOverrideId(null)}
+                                                                    style={{ fontSize: 'var(--text-xs)', padding: '2px 6px' }}
+                                                                >
+                                                                    {FORCE_STATUS_OPTIONS.map(o => (
+                                                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                className="button button--ghost button--sm"
+                                                                title="Override application status"
+                                                                onClick={() => setStatusOverrideId(loan.id)}
+                                                                style={{ gap: 2, padding: '3px 6px' }}
+                                                            >
+                                                                <ChevronDown size={13} />
+                                                            </button>
+                                                        )
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     )

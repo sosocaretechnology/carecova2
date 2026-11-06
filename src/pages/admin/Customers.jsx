@@ -50,24 +50,23 @@ export default function Customers() {
   const [filterKyc, setFilterKyc] = useState('all')
   const [filterMono, setFilterMono] = useState('all')
 
-  const load = async () => {
-    let cancelled = false
+  const load = async (signal) => {
     setLoading(true)
     setError(null)
     try {
       const data = await customerService.getCustomers()
-      if (!cancelled) setCustomers(data)
+      if (!signal?.aborted) setCustomers(data)
     } catch (err) {
-      if (!cancelled) setError(err.message || 'Failed to load customers')
+      if (!signal?.aborted) setError(err.message || 'Failed to load customers')
     } finally {
-      if (!cancelled) setLoading(false)
+      if (!signal?.aborted) setLoading(false)
     }
-    return () => { cancelled = true }
   }
 
   useEffect(() => {
-    const cancel = load()
-    return cancel
+    const controller = new AbortController()
+    load(controller.signal)
+    return () => controller.abort()
   }, [])
 
   const filtered = useMemo(() => {
@@ -101,7 +100,7 @@ export default function Customers() {
         <AlertTriangle size={36} className="cc-error-state-icon" />
         <div className="cc-error-state-title">Could not load customers</div>
         <div className="cc-error-state-desc">{error}</div>
-        <button className="button button--secondary button--sm" onClick={load}>
+        <button className="button button--secondary button--sm" onClick={() => load()}>
           <RefreshCw size={14} /> Try again
         </button>
       </div>

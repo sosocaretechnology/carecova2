@@ -2235,6 +2235,26 @@ export const adminService = {
 
   // ── Timed delete (super_admin only, 7-day grace period) ─────────────────
 
+  markAsReviewed: async (loanId) => {
+    requireBackendFeature('Mark as reviewed')
+    const trimmed = assertBackendLoanId(loanId, 'Mark as reviewed')
+    const updated = await adminRequest(`/admin/loan-applications/${trimmed}/approve-stage1`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+    return normalizeLoanFromApi(updated)
+  },
+
+  forceUpdateStatus: async (loanId, status, note = '') => {
+    requireBackendFeature('Force status update')
+    const trimmed = assertBackendLoanId(loanId, 'Force status update')
+    const updated = await adminRequest(`/admin/loan-applications/${trimmed}/force-status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, note }),
+    })
+    return normalizeLoanFromApi(updated)
+  },
+
   deleteApplication: async (loanId) => {
     requireBackendFeature('Delete application')
     const trimmed = assertBackendLoanId(loanId, 'Delete application')

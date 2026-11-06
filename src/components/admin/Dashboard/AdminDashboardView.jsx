@@ -1,9 +1,9 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Shield, TrendingUp, DollarSign, AlertCircle } from 'lucide-react'
+import { Shield, TrendingUp, DollarSign, AlertCircle, Building2 } from 'lucide-react'
 import StatusBadge from '../../StatusBadge'
 
-export default function AdminDashboardView({ kpis, queues, insights }) {
+export default function AdminDashboardView({ kpis, queues, insights, providerCount = 0 }) {
     const navigate = useNavigate()
 
     return (
@@ -28,6 +28,13 @@ export default function AdminDashboardView({ kpis, queues, insights }) {
                     <div className="kpi-title">Portfolio At Risk</div>
                     <div className="kpi-value">₦{kpis.overdueValue.toLocaleString()}</div>
                     <div className="kpi-subtext">{kpis.overdueCount} loans in arrears</div>
+                </div>
+                <div className="admin-kpi-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/admin/providers')}>
+                    <div className="kpi-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Building2 size={14} /> Total Providers
+                    </div>
+                    <div className="kpi-value">{providerCount}</div>
+                    <div className="kpi-subtext">Registered healthcare providers</div>
                 </div>
             </section>
 

@@ -16,6 +16,7 @@ export default function Dashboard() {
     const [kpis, setKpis] = useState(null)
     const [queues, setQueues] = useState(null)
     const [insights, setInsights] = useState(null)
+    const [providerCount, setProviderCount] = useState(0)
 
     useEffect(() => {
         if (session?.role === 'financier') {
@@ -46,14 +47,16 @@ export default function Dashboard() {
                         setInsights({})
                     }
                 } else {
-                    const [kpiData, queueData, insightData] = await Promise.all([
+                    const [kpiData, queueData, insightData, providers] = await Promise.all([
                         adminService.getKPIs(),
                         adminService.getQueues(),
-                        adminService.getInsights()
+                        adminService.getInsights(),
+                        adminService.getProviders().catch(() => []),
                     ])
                     setKpis(kpiData)
                     setQueues(queueData)
                     setInsights(insightData)
+                    setProviderCount(Array.isArray(providers) ? providers.length : 0)
                 }
             } catch (err) {
                 console.error('Error loading dashboard data:', err)
@@ -113,11 +116,11 @@ export default function Dashboard() {
             case 'support':
                 return <SupportDashboardView kpis={kpis} queues={queues} />
             case 'credit_officer':
-                return <AdminDashboardView kpis={kpis} queues={queues} insights={insights ?? {}} />
+                return <AdminDashboardView kpis={kpis} queues={queues} insights={insights ?? {}} providerCount={providerCount} />
             case 'admin':
             case 'super_admin':
             default:
-                return <AdminDashboardView kpis={kpis} queues={queues} insights={insights ?? {}} />
+                return <AdminDashboardView kpis={kpis} queues={queues} insights={insights ?? {}} providerCount={providerCount} />
         }
     }
 
